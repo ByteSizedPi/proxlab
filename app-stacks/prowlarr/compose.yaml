@@ -1,0 +1,46 @@
+services:
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - DOTNET_SYSTEM_NET_DISABLEIPV6=true
+    volumes:
+      - ${CONFIG_ROOT}/prowlarr:/config
+    ports:
+      - 9696:9696   # direct access for testing — remove once Traefik fronts this service
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9696/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Uncomment once the shared "media"/"proxy" networks exist and Traefik is deployed.
+    # At that point also remove the `ports:` block above — Traefik becomes the only entry point.
+    # networks:
+    #   - media
+    #   - proxy
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.jj.home`)"
+    #   - "traefik.http.routers.prowlarr.entrypoints=websecure"
+    #   - "traefik.http.routers.prowlarr.tls=true"
+    #   - "traefik.http.routers.prowlarr.middlewares=authelia@file"
+    #   - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
+    #   - "traefik.docker.network=proxy"
+
+# networks:
+#   media:
+#     external: true
+#   proxy:
+#     external: true

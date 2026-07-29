@@ -1,0 +1,65 @@
+##############################################
+# 🦎 Komodo Core — the control plane itself 🦎 #
+##############################################
+#
+# Adapted from the upstream mongo.compose.yaml, with ONE deliberate change:
+# the `periphery` service has been REMOVED.
+#
+# Why: Komodo manages this very stack. If Periphery ran in this stack, then
+# redeploying Core would restart Periphery mid-deploy and kill the agent that
+# is performing the deploy. Periphery therefore runs as a systemd unit on the
+# host instead — see ../periphery/README.md.
+#
+# Bootstrap note: this stack is started manually the first time
+# (`docker compose up -d` from this directory), then adopted into Komodo as a
+# Stack with `files_on_host` pointing here. See ../README.md.
+
+services:
+  mongo:
+    image: mongo
+    labels:
+      komodo.skip: # Prevent Komodo from stopping it with StopAllContainers
+    command: --quiet --wiredTigerCacheSizeGB 0.25
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${KOMODO_DATABASE_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${KOMODO_DATABASE_PASSWORD}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  core:
+    image: ghcr.io/moghtech/komodo-core:${COMPOSE_KOMODO_IMAGE_TAG:-2}
+    init: true
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    ports:
+      - 9120:9120
+    env_file: ./compose.env
+    environment:
+      KOMODO_DATABASE_ADDRESS: mongo:27017
+    volumes:
+      # Core <-> Periphery Noise handshake keys.
+      - keys:/config/keys
+      # Dated database backups — https://komo.do/docs/setup/backup
+      - ${COMPOSE_KOMODO_BACKUPS_PATH}:/backups
+      # Core-level secrets and git provider tokens MUST be supplied in a
+      # config file — they cannot be set via environment variables.
+      # This file is NOT in git. See ../README.md "Secrets".
+      - ./core.config.toml:/config/config.toml:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  mongo-data:
+  mongo-config:
+  keys:

@@ -1,0 +1,22 @@
+## Servers — the Periphery agents Komodo talks to.
+##
+## Sync this file FIRST, before stacks.toml: every Stack references a server
+## by name, and the sync fails if the name doesn't resolve yet.
+
+[[server]]
+name = "app-prod"
+[server.config]
+## Periphery runs as a systemd unit on this host (see ../../periphery/).
+## Because Core and Periphery are on the same machine, this stays on
+## localhost — do NOT expose 8120 to the network.
+address = "http://localhost:8120"
+enabled = true
+
+## Alerting — these fire into whatever Alerters you configure in the UI.
+send_unreachable_alerts = true
+send_cpu_alerts = true
+send_mem_alerts = true
+send_disk_alerts = true
+cpu_warning = 90
+mem_warning = 80
+disk_warning = 85

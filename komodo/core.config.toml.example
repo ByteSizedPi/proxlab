@@ -1,0 +1,49 @@
+## Komodo Core config file — copy to core.config.toml and fill in.
+##   cp core.config.toml.example core.config.toml
+## core.config.toml is gitignored.
+##
+## WHY THIS FILE EXISTS AT ALL:
+## Two things genuinely cannot be configured via environment variables and
+## must be supplied here — git provider tokens and Core-level secrets.
+## Everything else should stay in compose.env.
+##
+## Full reference:
+##   https://github.com/moghtech/komodo/blob/main/config/core.config.toml
+
+#################
+# GIT PROVIDERS #
+#################
+## Lets Komodo clone this repo if you ever make it private, and raises the
+## GitHub API rate limit. Use a fine-grained PAT with read-only Contents
+## scope on this one repo — nothing more.
+
+# [[git_provider]]
+# domain = "github.com"
+# accounts = [
+#   { username = "YOUR_GITHUB_USERNAME", token = "github_pat_..." },
+# ]
+
+######################
+# REGISTRY PROVIDERS #
+######################
+## Only needed for private images. linuxserver.io images are public.
+
+# [[docker_registry]]
+# domain = "docker.io"
+# accounts = [
+#   { username = "YOUR_DOCKERHUB_USERNAME", token = "dckr_pat_..." },
+# ]
+
+###########
+# SECRETS #
+###########
+## Core-level secrets, available to interpolate into any Stack's environment
+## as [[SECRET_NAME]]. Hidden in the UI and in logs.
+##
+## Prefer the UI (Settings > Variables, "Secret" toggle) for most secrets —
+## it's easier to rotate and doesn't require redeploying Core. Use this file
+## for secrets you want to survive a database loss, since UI variables live
+## in Mongo but these live on disk.
+
+# [secrets]
+# PROWLARR_API_KEY = "..."

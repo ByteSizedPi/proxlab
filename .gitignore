@@ -1,3 +1,19 @@
-# Real environment files stay local — commit *.env.example instead.
-*.env
-!*.env.example
+# === Secrets: never commit ===
+# Komodo writes this file into each stack's run directory at deploy time.
+# It is the ONLY file Komodo interpolates [[VARIABLE]] / [[SECRET]] into,
+# so it is the one file guaranteed to contain plaintext secrets.
+komodo.env
+
+# Komodo Core's own env — contains the Mongo password, JWT and webhook secrets.
+# Commit compose.env.example instead.
+komodo/compose.env
+
+# Core config file — holds git provider tokens and [secrets], neither of
+# which can be supplied via environment variables. Commit the .example.
+komodo/core.config.toml
+
+# Local-only experiments that should never leave this machine.
+*.local.env
+
+# === Editor / tooling ===
+.claude/settings.local.json

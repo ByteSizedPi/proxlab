@@ -1,0 +1,80 @@
+## Stacks — the workloads Komodo deploys.
+##
+## Replace GITHUB_USER/server below with your actual repo before the first sync.
+##
+## ── The env layering, and why it's ordered this way ──────────────────────
+##
+## Komodo passes files to `docker compose` as repeated --env-file flags:
+##
+##   env_file_path        -> komodo.env   (Komodo WRITES this; the ONLY file
+##                                         [[VARIABLE]] / [[SECRET]] gets
+##                                         interpolated into. Gitignored.)
+##   additional_env_files -> ../common.env, <stack>.env   (committed, plain)
+##
+## ⚠️  Since v1.16.12, additional_env_files OVERRIDE env_file_path on key
+## conflicts — Komodo's own managed file has the LOWEST precedence. That is
+## backwards from what you'd expect, and it is only safe here because the key
+## sets are disjoint by design: secrets exist solely in komodo.env, plain
+## config solely in the committed files. Never define the same key in both.
+##
+## ⚠️  `../common.env` reaches above run_directory. If Komodo rejects the
+## traversal on first sync, flip to the repo-root form instead:
+##     run_directory = "stacks"
+##     file_paths = ["prowlarr/compose.yaml"]
+##     additional_env_files = ["common.env", "prowlarr/prowlarr.env"]
+## Bind mounts are unaffected either way — compose.yaml uses absolute
+## ${CONFIG_ROOT} paths, not paths relative to the run directory.
+
+[[stack]]
+name = "prowlarr"
+tags = ["media", "arr"]
+[stack.config]
+server = "app-prod"
+
+# --- Source ---
+repo = "GITHUB_USER/server"
+branch = "main"
+run_directory = "stacks/prowlarr"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+env_file_path = "komodo.env"
+additional_env_files = ["../common.env", "prowlarr.env"]
+
+# --- Automation ---
+# Redeploy when this repo is pushed to (needs the Stack webhook in GitHub).
+webhook_enabled = true
+# Redeploy when a newer image digest appears upstream. Independent of git.
+auto_update = true
+poll_for_updates = true
+
+
+## ── Komodo Core itself ───────────────────────────────────────────────────
+##
+## This one is deliberately NOT a git-mode stack, unlike everything above.
+##
+## Core's compose.env holds the Mongo password Core needs in order to reach
+## the database. A git-mode stack would have to source that from a Komodo
+## Variable — but Variables live IN that same database, so Core would need
+## the database to learn how to reach the database. Circular.
+##
+## So: the repo is cloned to a fixed path on app-prod, compose.env and
+## core.config.toml are written there by hand once, and Komodo points at
+## those files in place via files_on_host. Redeploying still works, and
+## still restarts Core, because Periphery is a systemd unit outside this
+## stack — that separation is the whole reason Core can manage itself.
+##
+## Uncomment after the manual bootstrap in README.md step 6.
+
+# [[stack]]
+# name = "komodo-core"
+# tags = ["platform"]
+# [stack.config]
+# server = "app-prod"
+# files_on_host = true
+# run_directory = "/home/jj/server/komodo"
+# file_paths = ["compose.yaml"]
+# # No env_file_path: compose.yaml already does `env_file: ./compose.env`,
+# # and Komodo must not overwrite that file.
+# webhook_enabled = false   # keep manual — you want to watch this one deploy
+# auto_update = false       # never auto-update the thing doing the updating

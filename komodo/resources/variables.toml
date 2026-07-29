@@ -1,0 +1,32 @@
+## Variables — NON-SECRET values interpolated into Stacks as [[NAME]].
+##
+## ⚠️  NEVER put a secret in this file. It is committed to a public GitHub
+## repo. Anything declared here is world-readable.
+##
+## Secrets go in ONE of two places, neither of which is git:
+##   1. Komodo UI > Settings > Variables, with the "Secret" toggle on.
+##      Stored in Mongo, masked in the UI and in deploy logs. Preferred —
+##      easy to rotate, no Core restart needed.
+##   2. komodo/core.config.toml under [secrets]. On disk, survives DB loss.
+##
+## Both are referenced identically in compose files: [[MY_SECRET]].
+##
+## Note the overlap with stacks/common.env — that file covers plain compose
+## variable substitution and works for local `docker compose` runs too.
+## Use Variables here only for values Komodo itself needs to interpolate,
+## or values shared with resources that have no env file.
+
+[[variable]]
+name = "TZ"
+value = "Africa/Johannesburg"
+description = "Server timezone, matches stacks/common.env"
+
+[[variable]]
+name = "CONFIG_ROOT"
+value = "/mnt/docker-data/appdata"
+description = "Per-app config/database root on app-prod"
+
+[[variable]]
+name = "DATA_ROOT"
+value = "/mnt/docker-data/data"
+description = "Shared media/download root — one mount so *arr hardlinks work"

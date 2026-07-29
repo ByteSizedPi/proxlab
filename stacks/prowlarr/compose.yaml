@@ -8,7 +8,7 @@ services:
       - TZ=${TZ}
       - DOTNET_SYSTEM_NET_DISABLEIPV6=true
     volumes:
-      - ${CONFIG_ROOT}/prowlarr:/config
+      - ${CONFIG_ROOT}/prowlarr:/config:Z   # :Z relabels for SELinux hosts; no-op elsewhere
     ports:
       - 9696:9696   # direct access for testing — remove once Traefik fronts this service
     security_opt:

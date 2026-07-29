@@ -1,0 +1,19 @@
+## Procedures — ordered batches of executions, runnable on a schedule.
+##
+## Komodo creates two of these itself on first launch ("Backup Core Database"
+## and "Global Auto Update") unless KOMODO_DISABLE_INIT_RESOURCES=true.
+## Don't redeclare those here or the sync will fight with Core over them.
+##
+## Left intentionally near-empty. Add procedures here once there's something
+## worth batching — e.g. stopping the *arr stack before a backup window, then
+## starting it again after.
+
+# [[procedure]]
+# name = "restart-media-stacks"
+# [procedure.config]
+# [[procedure.config.stage]]
+# name = "restart"
+# enabled = true
+# executions = [
+#   { execution.type = "DeployStack", execution.params.stack = "prowlarr", enabled = true },
+# ]

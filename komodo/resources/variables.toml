@@ -1,5 +1,11 @@
 ## Variables — NON-SECRET values interpolated into Stacks as [[NAME]].
 ##
+## ⚠️ Nothing in this file applies unless the Resource Sync has
+## `include_variables = true`. Komodo gates Variables and User Groups behind
+## separate opt-in flags, both false by default. With it off the file is
+## fetched and parsed successfully and then produces zero variables, with no
+## error and no warning — it simply looks like the file was ignored.
+##
 ## ⚠️  NEVER put a secret in this file. It is committed to a public GitHub
 ## repo. Anything declared here is world-readable.
 ##

@@ -31,7 +31,7 @@ tags = ["media", "arr"]
 server = "app-prod"
 
 # --- Source ---
-repo = "ByteSizedPi/server"
+repo = "ByteSizedPi/proxlab"
 branch = "main"
 run_directory = "stacks/prowlarr"
 file_paths = ["compose.yaml"]

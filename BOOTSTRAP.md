@@ -5,7 +5,7 @@ was actually done — an earlier draft described migrating a live Komodo, which
 turned out not to apply.
 
 Paths: the dev copy lives at `/home/jj/server` on the laptop; the prod clone
-is `/home/jj/proxlab` on `app-prod`. Both hold `ByteSizedPi/server`.
+is `/home/jj/proxlab` on `app-prod`. Both hold `ByteSizedPi/proxlab`.
 
 ---
 
@@ -13,7 +13,7 @@ is `/home/jj/proxlab` on `app-prod`. Both hold `ByteSizedPi/server`.
 
 ```sh
 cd /home/jj/server
-git remote add origin git@github.com:ByteSizedPi/server.git
+git remote add origin git@github.com:ByteSizedPi/proxlab.git
 git push -u origin main
 ```
 
@@ -63,7 +63,7 @@ docker volume rm komodo_mongo-data komodo_mongo-config komodo_keys
 ```sh
 sudo mkdir -p /mnt/docker-data/{appdata,data,komodo/backups}
 sudo chown -R jj:jj /mnt/docker-data
-cd ~ && git clone https://github.com/ByteSizedPi/server.git proxlab
+cd ~ && git clone https://github.com/ByteSizedPi/proxlab.git proxlab
 cd ~/proxlab/komodo
 ```
 
@@ -180,8 +180,14 @@ neither is much use to an attacker alone.
 
 ## 10. Create the Resource Sync
 
-UI → Syncs → New: provider `github.com`, repo `ByteSizedPi/server`, branch
+UI → Syncs → New: provider `github.com`, repo `ByteSizedPi/proxlab`, branch
 `main`, resource path `komodo/resources`.
+
+⚠️ **Turn on "Include Variables".** Komodo gates Variables and User Groups
+behind separate opt-in flags on the sync (`include_variables`,
+`include_user_groups`), both **false** by default. Leave it off and
+`variables.toml` is read, reported as parsed, and silently produces nothing —
+no error anywhere.
 
 **Execute**, and read the diff before confirming. Expect: create 1 server,
 3 variables, 1 stack; delete nothing. Deletions mean UI-created resources

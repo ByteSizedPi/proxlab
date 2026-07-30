@@ -32,6 +32,22 @@ name = "app-prod"
 address = "https://host.docker.internal:8120"
 enabled = true
 
+## Periphery self-signs its certificate, so chain validation cannot succeed.
+## This is not the security boundary — the Noise handshake with Periphery's
+## public key authenticates the peer; TLS here is only transport encryption
+## over loopback. Defaults to true upstream, stated explicitly because a
+## security-relevant setting should not be inherited silently.
+insecure_tls = true
+
+## Rotate Server keys when RotateAllServerKeys runs. Default true.
+## Note the consequence: Periphery's public key is not permanent, so if you
+## ever rebuild either side independently, re-read the key from Periphery's
+## startup log rather than reusing an old one.
+auto_rotate_keys = true
+
+## The Periphery public key is NOT part of ServerConfig, so it is not managed
+## by this sync and won't be reset by it. It stays as configured in the UI.
+
 ## Alerting — these fire into whatever Alerters you configure in the UI.
 send_unreachable_alerts = true
 send_cpu_alerts = true

@@ -1,6 +1,5 @@
 ## Stacks — the workloads Komodo deploys.
 ##
-## Replace GITHUB_USER/server below with your actual repo before the first sync.
 ##
 ## ── The env layering, and why it's ordered this way ──────────────────────
 ##
@@ -32,7 +31,7 @@ tags = ["media", "arr"]
 server = "app-prod"
 
 # --- Source ---
-repo = "GITHUB_USER/server"
+repo = "ByteSizedPi/server"
 branch = "main"
 run_directory = "stacks/prowlarr"
 file_paths = ["compose.yaml"]

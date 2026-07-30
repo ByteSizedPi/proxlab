@@ -1,11 +1,17 @@
-############################################
-# Periphery as a container — LOCAL DEV ONLY #
-############################################
+####################################
+# LOCAL SANDBOX OVERLAY — dev only #
+####################################
 #
 # Layer this on top of compose.yaml to get a complete, self-contained Komodo
 # on a throwaway machine:
 #
-#   docker compose -f compose.yaml -f compose.periphery.yaml up -d
+#   docker compose --env-file compose.env \
+#     -f compose.yaml -f compose.local.yaml up -d
+#
+# The --env-file flag is required. `env_file:` below passes variables INTO
+# the container, but ${...} substitution in the compose file itself is done
+# by Compose before any container exists, and Compose only reads the shell
+# or --env-file for that. Omit it and Mongo's credentials resolve to empty.
 #
 # ⚠️  Do NOT use this on app-prod. There, Periphery runs as a systemd unit
 # outside the stack, because Komodo manages its own Core stack and an agent

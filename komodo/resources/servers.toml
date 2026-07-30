@@ -12,8 +12,10 @@ name = "app-prod"
 ##
 ## ⚠️ The address differs between the two ways Periphery can run:
 ##
-##   systemd on app-prod  ->  http://localhost:8120
-##       Same host, plain HTTP over loopback.
+##   systemd on pve-prod  ->  https://localhost:8120
+##       Same host, over loopback. HTTPS not HTTP: Periphery generates a
+##       self-signed cert and sets ssl_enabled=true by default, so plain
+##       HTTP is refused.
 ##
 ##   container (local dev, compose.periphery.yaml)  ->  https://periphery:8120
 ##       "periphery" is the compose service name resolved on the container
@@ -22,7 +24,7 @@ name = "app-prod"
 ##       self-signed cert and enables SSL by default.
 ##
 ## Getting this wrong shows up as a permanently "unreachable" server.
-address = "http://localhost:8120"
+address = "https://localhost:8120"
 enabled = true
 
 ## Alerting — these fire into whatever Alerters you configure in the UI.

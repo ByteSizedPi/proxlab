@@ -40,6 +40,16 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${KOMODO_DATABASE_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${KOMODO_DATABASE_PASSWORD}
+    healthcheck:
+      # `ping` is one of the few commands Mongo allows pre-authentication,
+      # so this needs no credentials and won't break when they rotate.
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ping:1}).ok' | grep -q 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      # Generous: first boot initialises the data directory and creates the
+      # root user before it will answer anything.
+      start_period: 40s
     logging:
       driver: json-file
       options:
@@ -51,7 +61,11 @@ services:
     init: true
     restart: unless-stopped
     depends_on:
-      - mongo
+      mongo:
+        # Wait for Mongo to actually answer, not merely to have started.
+        # Without this Core races the database on boot and logs auth errors
+        # until it retries into a working state.
+        condition: service_healthy
     ports:
       - 9120:9120
     env_file: ./compose.env
@@ -76,6 +90,18 @@ services:
       # file first (`cp core.config.toml.example core.config.toml`), THEN
       # uncomment. Only needed for private repos or file-based secrets.
       # - ./core.config.toml:/config/config.toml:ro
+    healthcheck:
+      # ⚠️ /version is UNDOCUMENTED. Upstream ships no healthchecks in any
+      # official compose file and documents no health endpoint, so this was
+      # found empirically (200 + a version string on both Core and
+      # Periphery). It may change across releases — if Core starts reporting
+      # unhealthy after an upgrade, check this before assuming a real fault.
+      # `/` also returns 200 but serves the whole UI, so it's a heavier probe.
+      test: ["CMD-SHELL", "curl -fsS -o /dev/null http://localhost:9120/version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     logging:
       driver: json-file
       options:

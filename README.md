@@ -81,6 +81,42 @@ cd stacks/prowlarr
 docker compose --env-file ../common.env --env-file prowlarr.env up
 ```
 
+## Healthcheck convention
+
+**Every service in this repo defines a `healthcheck`.** No exceptions — a
+container without one reports "running" while being completely broken, and
+Komodo's dashboard inherits that lie.
+
+```yaml
+healthcheck:
+  test: ["CMD-SHELL", "<cheap command that exits non-zero when broken>"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 30s   # longer if first boot does initialisation work
+```
+
+Rules that matter more than the numbers:
+
+- **Probe the actual service, not the process.** `curl` its port; don't check
+  that a PID exists. A wedged process is still a process.
+- **Use `-f` with curl.** Without it curl exits 0 on a 404, so the check
+  passes against a server that's answering nothing useful. This bit us on
+  `app-prod`: `curl -sk .../health` printed OK against a 404 for weeks'
+  worth of false confidence.
+- **Verify the command inside the image before committing it.** These images
+  are minimal and differ — Core and Periphery have `curl`, Mongo has
+  `mongosh`, none have a shell beyond `sh`.
+- **`start_period` is not `interval`.** Failures during `start_period` don't
+  count toward `retries`, so set it to the real cold-start time or the
+  container gets killed while legitimately starting.
+- **Depend on health, not existence.** `depends_on: condition:
+  service_healthy` is what makes a healthcheck do work at boot rather than
+  just colour a dashboard.
+
+Upstream Komodo ships no healthchecks and documents no health endpoint, so
+the ones here were determined empirically and are noted as such in-file.
+
 ## Adding a stack
 
 1. `mkdir stacks/<name>` with a `compose.yaml` and a `<name>.env`

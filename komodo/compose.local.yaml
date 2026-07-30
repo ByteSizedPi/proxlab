@@ -52,6 +52,15 @@ services:
       # resolves bind mounts against the wrong filesystem.
       # See https://github.com/moghtech/komodo/discussions/180
       - ${PERIPHERY_ROOT_DIRECTORY:-/etc/komodo}:${PERIPHERY_ROOT_DIRECTORY:-/etc/komodo}
+    healthcheck:
+      # -k because Periphery self-signs; /version because it's the only path
+      # that returns 200 — `/` gives 400 and there is no /health, despite
+      # what the obvious guess would be. See the note in ../compose.yaml.
+      test: ["CMD-SHELL", "curl -fsSk -o /dev/null https://localhost:8120/version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     logging:
       driver: json-file
       options:

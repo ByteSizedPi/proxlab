@@ -8,6 +8,11 @@ komodo.env
 # Commit compose.env.example instead.
 komodo/compose.env
 
+# Symlink to compose.env so `docker compose` picks it up for ${...}
+# substitution without --env-file on every single command. Points at a
+# secret-bearing file, so it must never be committed either.
+komodo/.env
+
 # Core config file — holds git provider tokens and [secrets], neither of
 # which can be supplied via environment variables. Commit the .example.
 komodo/core.config.toml

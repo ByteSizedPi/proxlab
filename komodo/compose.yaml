@@ -13,6 +13,19 @@
 # Bootstrap note: this stack is started manually the first time
 # (`docker compose up -d` from this directory), then adopted into Komodo as a
 # Stack with `files_on_host` pointing here. See ../README.md.
+#
+# ⚠️ Requires a `.env` symlink next to this file:
+#     ln -s compose.env .env
+#
+# There are two separate env mechanisms and both are needed:
+#   - `env_file: ./compose.env` passes variables INTO the core container.
+#   - `${KOMODO_DATABASE_USERNAME}` below is substituted by Compose itself,
+#     BEFORE any container exists. Compose only reads the shell, `.env`, or
+#     an explicit --env-file for that.
+#
+# Without the symlink every Compose command needs --env-file compose.env —
+# including `logs` and `ps`, not just `up`. Forgetting it on one command
+# yields "variable is not set" warnings and `invalid spec: :/backups`.
 
 services:
   mongo:

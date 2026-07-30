@@ -7,6 +7,8 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
       - DOTNET_SYSTEM_NET_DISABLEIPV6=true
+      # TEMPORARY poll-loop test marker — remove once verified.
+      - POLL_TEST=2026-07-30T13:04:21Z
     volumes:
       - ${CONFIG_ROOT}/prowlarr:/config:Z   # :Z relabels for SELinux hosts; no-op elsewhere
     ports:

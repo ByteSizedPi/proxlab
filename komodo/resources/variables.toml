@@ -1,38 +1,40 @@
-## Variables — NON-SECRET values interpolated into Stacks as [[NAME]].
+## Variables — values Komodo itself interpolates as [[NAME]].
 ##
-## ⚠️ Nothing in this file applies unless the Resource Sync has
+## Deliberately empty. See "When to use this file" below before adding
+## anything, because the obvious use is the wrong one.
+##
+## ⚠️ Nothing here applies unless the Resource Sync has
 ## `include_variables = true`. Komodo gates Variables and User Groups behind
 ## separate opt-in flags, both false by default. With it off the file is
 ## fetched and parsed successfully and then produces zero variables, with no
 ## error and no warning — it simply looks like the file was ignored.
 ##
-## ⚠️  NEVER put a secret in this file. It is committed to a public GitHub
-## repo. Anything declared here is world-readable.
-##
-## Secrets go in ONE of two places, neither of which is git:
-##   1. Komodo UI > Settings > Variables, with the "Secret" toggle on.
-##      Stored in Mongo, masked in the UI and in deploy logs. Preferred —
-##      easy to rotate, no Core restart needed.
-##   2. komodo/core.config.toml under [secrets]. On disk, survives DB loss.
-##
-## Both are referenced identically in compose files: [[MY_SECRET]].
-##
-## Note the overlap with stacks/common.env — that file covers plain compose
-## variable substitution and works for local `docker compose` runs too.
-## Use Variables here only for values Komodo itself needs to interpolate,
-## or values shared with resources that have no env file.
+## ⚠️ NEVER put a secret in this file. It is committed to a public GitHub
+## repo, so anything declared here is world-readable.
 
-[[variable]]
-name = "TZ"
-value = "Africa/Johannesburg"
-description = "Server timezone, matches stacks/common.env"
-
-[[variable]]
-name = "CONFIG_ROOT"
-value = "/mnt/docker-data/appdata"
-description = "Per-app config/database root on app-prod"
-
-[[variable]]
-name = "DATA_ROOT"
-value = "/mnt/docker-data/data"
-description = "Shared media/download root — one mount so *arr hardlinks work"
+## ── Single source of truth ────────────────────────────────────────────────
+##
+## TZ, CONFIG_ROOT and DATA_ROOT used to be declared here AND in
+## stacks/common.env. Deploying prowlarr on 2026-07-30 showed the Komodo
+## Variables were entirely unused: the container took its values from
+## common.env, because the compose file uses ${CONFIG_ROOT} — shell
+## substitution from --env-file — not [[CONFIG_ROOT]], which is Komodo's own
+## interpolation. Two mechanisms, only one of them wired up.
+##
+## Duplicating them bought nothing and risked silent drift, so they were
+## removed. The rule now:
+##
+##   non-secret config  ->  stacks/common.env and stacks/<app>.env
+##                          (committed, and testable with plain
+##                          `docker compose --env-file`)
+##
+##   secrets            ->  Komodo UI > Settings > Variables, "Secret" on
+##                          or komodo/core.config.toml under [secrets]
+##                          (never in git)
+##
+## ── When to use this file ─────────────────────────────────────────────────
+##
+## Only for NON-SECRET values that Komodo must interpolate itself, where an
+## env file can't reach — resources with no compose file of their own, such
+## as Procedures, Alerters, or Builds. If a value ends up in a container's
+## environment, it belongs in an env file instead.

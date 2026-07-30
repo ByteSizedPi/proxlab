@@ -12,6 +12,32 @@ services:
       # HOST. Inside this container "localhost" is the container itself, so
       # the Cloudflare-side ingress rule must target host.docker.internal.
       - "host.docker.internal:host-gateway"
+
+    # ── Cloudflare-side config (dashboard, not this file) ──────────────────
+    #
+    # This tunnel is remotely managed, so routes live in the Zero Trust
+    # dashboard rather than a local config.yml. The public hostname is:
+    #
+    #   Hostname : hooks.jjventer.co.za
+    #   Path     : ^/listener/.*
+    #   Service  : http://host.docker.internal:9120
+    #
+    # ⚠️ The path is a Go regex matched against the FULL path INCLUDING the
+    # leading slash. `listener/.*` matches nothing and every request falls
+    # through to a generic Cloudflare 404 — which looks identical to a
+    # correctly-blocked request, so it's easy to mistake for success.
+    # Anchor it with ^ and include the slash.
+    #
+    # ⚠️ This single rule is the entire security boundary. Only /listener/*
+    # is publicly reachable; the Komodo UI and API stay LAN-only. Widening it
+    # to `.*` would publish the whole of Komodo to the internet behind
+    # nothing but a login form.
+    #
+    # Verify from OUTSIDE the LAN after any change:
+    #   curl -so /dev/null -w '%{http_code}\n' https://hooks.jjventer.co.za/
+    #     -> 404  (UI not exposed)
+    #   curl -so /dev/null -w '%{http_code}\n' https://hooks.jjventer.co.za/listener/
+    #     -> NOT 404  (routing works; 405/400 are fine, they come from Komodo)
     security_opt:
       - no-new-privileges:true
     restart: unless-stopped

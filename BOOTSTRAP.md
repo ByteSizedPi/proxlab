@@ -1,162 +1,196 @@
 # Bootstrap runbook
 
-One-time setup, in order. Steps 1–2 are local; 3 onward are on `app-prod`.
+Setup for a **clean** `app-prod`, in order. Rewritten 2026-07-30 to match what
+was actually done — an earlier draft described migrating a live Komodo, which
+turned out not to apply.
 
-Each step says what breaks if you skip it. Don't reorder — several steps exist
-only to make a later one safe.
+Paths: the dev copy lives at `/home/jj/server` on the laptop; the prod clone
+is `/home/jj/proxlab` on `app-prod`. Both hold `ByteSizedPi/server`.
 
 ---
 
-## 1. Push the repo (local)
+## 1. Push the repo (laptop)
 
 ```sh
 cd /home/jj/server
-git remote add origin git@github.com:GITHUB_USER/server.git
+git remote add origin git@github.com:ByteSizedPi/server.git
 git push -u origin main
 ```
 
-Then replace the `GITHUB_USER/server` placeholder in
-`komodo/resources/stacks.toml` with the real path, commit, push again.
+Public repo — it contains no secrets by construction. If you make it private,
+Komodo needs a git token in `komodo/core.config.toml` under `[[git_provider]]`
+before it can clone; tokens cannot be supplied via environment variables.
 
-## 2. Decide public or private
+## 2. DNS (parallel, has propagation delay)
 
-Public is fine — this repo contains no secrets by construction. If you make it
-private, you must add a git provider token in step 8 or Komodo cannot clone.
+Register the domain, then point its **nameservers** at Cloudflare from the
+registrar's control panel — not by adding records at Cloudflare while the old
+nameservers still answer, which fails invisibly.
+
+```sh
+dig @1.1.1.1 NS jjventer.co.za +short   # want *.ns.cloudflare.com
+```
+
+WHOIS updates immediately; the published zone lags, so a correct config can
+look broken for an hour. Once it resolves, hit "Check nameservers now" on
+Cloudflare, then create an **Edit zone DNS** API token scoped to this zone —
+Traefik needs it for DNS-01 later, and Cloudflare shows it once.
+
+⚠️ Don't enable DNSSEC at the registrar. If you want it, enable it from
+Cloudflare and let it hand you the DS record.
 
 ---
 
-## 3. Back up Mongo before touching anything
+## 3. Confirm a clean slate
 
 ```sh
 ssh app-prod
-docker exec -t $(docker ps -qf name=komodo-mongo) \
-  mongodump --archive --gzip \
-  -u "$KOMODO_DATABASE_USERNAME" -p "$KOMODO_DATABASE_PASSWORD" \
-  > ~/komodo-backup-$(date +%F).archive.gz
-ls -lh ~/komodo-backup-*.archive.gz
+docker ps -a | grep -i komodo || echo "no containers"
+docker volume ls | grep -i komodo || echo "no volumes"
 ```
 
-Everything after this modifies a running Komodo. This is your undo.
-
-## 4. Record what's currently running
+⚠️ A surviving `komodo_mongo-data` is the one thing that breaks this silently.
+Mongo only reads `MONGO_INITDB_ROOT_*` when initialising an **empty** data
+directory, so a new password against an old volume is ignored and Core then
+fails to authenticate with nothing naming the cause.
 
 ```sh
-cd ~/komodo
-cp compose.env ~/compose.env.bak
-docker compose -f mongo.compose.yaml ps
-docker volume ls | grep komodo
+docker volume rm komodo_mongo-data komodo_mongo-config komodo_keys
 ```
 
-Note the volume names. They'll be `komodo_mongo-data`, `komodo_mongo-config`,
-`komodo_keys` — prefixed with the **project name**, which Compose derives from
-the directory name (`komodo`).
-
-This matters for step 6: the new location `/home/jj/server/komodo` is *also*
-named `komodo`, so the project name is unchanged and the existing volumes are
-reused. Put the repo anywhere else and Compose invents a new project, creates
-empty volumes, and you get a blank Komodo with your data orphaned.
-
-## 5. Install Periphery as a systemd unit
-
-Currently Periphery is a container inside the Core stack. It has to move out
-before Komodo can manage Core — see `periphery/README.md` for why.
+## 4. Storage and clone
 
 ```sh
-curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py | python3
+sudo mkdir -p /mnt/docker-data/{appdata,data,komodo/backups}
+sudo chown -R jj:jj /mnt/docker-data
+cd ~ && git clone https://github.com/ByteSizedPi/server.git proxlab
+cd ~/proxlab/komodo
+```
+
+`DATA_ROOT` in `stacks/common.env` points at `/mnt/docker-data/data`. That's
+fine for config, but a media library cannot live on a 63G root disk — revisit
+it when the *arr stack lands.
+
+## 5. Configure Core
+
+```sh
+cp compose.env.example compose.env
+chmod 600 compose.env
+ln -s compose.env .env          # see below — not optional
+openssl rand -hex 16            # database password
+openssl rand -hex 32            # JWT secret
+openssl rand -hex 32            # webhook secret
+```
+
+Fill in every `CHANGE_ME`, set `KOMODO_HOST` to the address you actually type
+in a browser, and verify:
+
+```sh
+grep -n CHANGE_ME compose.env || echo "clean"
+grep -oE '^[A-Z_]+=' compose.env | sort | uniq -d   # empty = no duplicates
+grep -cE '^[A-Z_]+=' compose.env                    # want 14
+```
+
+⚠️ `KOMODO_INIT_ADMIN_USERNAME` / `_PASSWORD` are only read against an **empty
+database**. Typo the password and the fix is wiping volumes, not editing the
+file. Omit the password entirely and it silently defaults to `changeme`.
+
+### Why the `.env` symlink
+
+Two separate mechanisms, both needed:
+
+- `env_file: ./compose.env` injects variables **into** the container.
+- `${KOMODO_DATABASE_USERNAME}` is substituted by Compose **before any
+  container exists**, and Compose only reads the shell, `.env`, or an explicit
+  `--env-file` for that.
+
+Without the symlink, *every* Compose command needs `--env-file compose.env` —
+`logs` and `ps` too, not just `up`. Forgetting it on one produces `variable is
+not set` and `invalid spec: :/backups`, which reads as a config error rather
+than a missing flag.
+
+## 6. Periphery as a systemd unit
+
+```sh
+curl -sSL -o /tmp/setup-periphery.py \
+  https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py
+sudo python3 /tmp/setup-periphery.py
 sudo systemctl enable --now periphery
-systemctl status periphery
-curl -s http://localhost:8120/health || echo "not up yet"
+systemctl status periphery --no-pager
+curl -sk https://localhost:8120/health && echo " <- OK"
 ```
 
-⚠️ **The container and systemd Periphery do not share key material.** The
-container's Noise keys are in the `komodo_keys` volume; the systemd install
-generates its own under `/etc/komodo`. After the switch, Core will show the
-server as unreachable until you reconcile them — either point
-`periphery.config.toml` at the same keys, or accept the new public key on the
-Server in the UI. Expect one round of "unreachable" here; it is not a failure.
+⚠️ **Download the script, don't pipe it.** `curl … | python3` makes stdin the
+script, so the installer's polkit password prompt breaks the pipe. It then
+reports a bogus "failed to download binary — check your version tag", which
+sends you chasing the wrong problem.
 
-📋 This creates a system-level systemd unit. Log the unit file and the reason
+Note `-k` and **https**: Periphery sets `ssl_enabled = true` and self-signs, so
+plain HTTP is refused.
+
+Periphery must stay **outside** the Core stack. Inside it, redeploying Core
+restarts the agent mid-deploy and kills the deploy — see `periphery/README.md`.
+
+Save the public key from the startup log; the UI asks for it.
+
+📋 System-level systemd unit → log it and `/etc/komodo/periphery.config.toml`
 in `~/dotfiles/SYSTEM.md`.
 
-## 6. Move Core onto the repo's compose file
+## 7. Start Core
 
 ```sh
-cd ~ && git clone git@github.com:GITHUB_USER/server.git
-cd ~/server/komodo
-cp compose.env.example compose.env
-```
-
-Now merge your real values from `~/compose.env.bak` into `compose.env`. The
-database username and password **must** match the existing Mongo volume or
-Core cannot authenticate. Set these too:
-
-- `KOMODO_JWT_SECRET` — `openssl rand -hex 32`. Empty means a new secret each
-  boot, which logs you out on every redeploy of this stack.
-- `KOMODO_WEBHOOK_SECRET` — `openssl rand -hex 32`. Save it; step 11 needs it.
-- `KOMODO_UI_WRITE_DISABLED=false` — leave false for now.
-
-Optionally `cp core.config.toml.example core.config.toml` if you need git
-tokens or file-based secrets.
-
-Then cut over:
-
-```sh
-cd ~/komodo && docker compose -f mongo.compose.yaml down    # keeps volumes
-cd ~/server/komodo && docker compose up -d
+cd ~/proxlab/komodo
+docker compose up -d
 docker compose logs -f core
 ```
 
-Verify the UI loads and your existing resources are still there. If yes, the
-volumes carried over correctly and `~/komodo` can be deleted (keep the backup).
+No `-f compose.local.yaml` — that overlay adds a Periphery *container* and is
+sandbox-only.
+
+Want: `Successfully created init admin user` and `Server starting on
+http://[::]:9120`.
 
 ---
 
-## 7. Create the Server
+## 8. Add the Server
 
-UI → Servers → the `app-prod` server should already exist. Confirm its address
-is `http://localhost:8120` and it shows healthy. Fix the key mismatch from
-step 5 here if it's still unreachable.
-
-## 8. Add secrets — the only thing configured by hand
-
-UI → Settings → Variables. For each secret: create it, **toggle "Secret" on**,
-save. Reference it in any compose file as `[[NAME]]`.
-
-Nothing here goes in git. That is the whole point of the split — the repo holds
-structure, Komodo holds secrets, and neither is useful to an attacker alone.
-
-If the repo is private, add the git provider token to
-`komodo/core.config.toml` under `[[git_provider]]` and restart Core. Tokens
-cannot be set via environment variables — that file is the only option.
-
-## 9. Create the Resource Sync
-
-UI → Syncs → New.
+UI → Servers → New.
 
 | Field | Value |
 |---|---|
-| Git provider | `github.com` |
-| Repo | `GITHUB_USER/server` |
-| Branch | `main` |
-| Resource path | `komodo/resources` |
+| Name | `app-prod` — must match exactly |
+| Address | `https://host.docker.internal:8120` |
 
-Save, then **Execute** — but read the diff first. It should propose creating
-one server and one stack. If it proposes *deleting* things, stop: your existing
-UI-created resources aren't declared in the TOML yet. Either add them, or set
-the sync to not manage deletes until you've reconciled.
+⚠️ **Not `localhost`.** Core runs in a container, where `localhost` is the
+container itself; Periphery is on the host. `host.docker.internal` resolves via
+the `extra_hosts: host-gateway` entry on the core service in `compose.yaml` —
+the two are coupled, and removing either breaks the connection.
 
-## 10. Verify the Prowlarr stack
+The name must match because `stacks.toml` says `server = "app-prod"` and
+`servers.toml` creates the same name. A mismatch yields two servers with the
+stack bound to the wrong one.
 
-The sync should have created it. Deploy it and check:
+## 9. Add secrets — the only thing configured by hand
 
-```sh
-docker ps | grep prowlarr
-cat /etc/komodo/stacks/prowlarr/komodo.env    # path may differ
-```
+UI → Settings → Variables. Create each, toggle **Secret** on, save. Reference
+them anywhere as `[[NAME]]`.
 
-⚠️ If the deploy fails on `../common.env`, Komodo rejected the path traversal
-above `run_directory`. Switch `stacks.toml` to the repo-root form documented in
-the comments there:
+Nothing here goes in git. The repo holds structure, Komodo holds secrets, and
+neither is much use to an attacker alone.
+
+## 10. Create the Resource Sync
+
+UI → Syncs → New: provider `github.com`, repo `ByteSizedPi/server`, branch
+`main`, resource path `komodo/resources`.
+
+**Execute**, and read the diff before confirming. Expect: create 1 server,
+3 variables, 1 stack; delete nothing. Deletions mean UI-created resources
+aren't declared in TOML yet.
+
+## 11. Verify the Prowlarr stack
+
+⚠️ If the deploy fails on `../common.env`, Komodo rejected path traversal above
+`run_directory`. Switch to the repo-root form documented in `stacks.toml`:
 
 ```toml
 run_directory = "stacks"
@@ -164,57 +198,50 @@ file_paths = ["prowlarr/compose.yaml"]
 additional_env_files = ["common.env", "prowlarr/prowlarr.env"]
 ```
 
-Test this on Prowlarr before writing twenty more stack entries.
+Test this on one stack before writing twenty more entries — it changes all of
+them.
 
-## 11. Wire the webhooks
+## 12. Deploy trigger: poll now, webhooks later
 
-For **each** of the Sync and the Prowlarr Stack, copy its webhook URL from
-Komodo, then in GitHub → repo Settings → Webhooks → Add:
+**Stay on `KOMODO_RESOURCE_POLL_INTERVAL` while `app-prod` is shut down
+nightly.** A webhook fires once; if the box is off, GitHub retries briefly,
+gives up, and that push is missed permanently. Polling reconciles to current
+`main` on next boot.
 
-| Field | Value |
-|---|---|
-| Payload URL | the copied Komodo URL |
-| Content type | `application/json` |
-| Secret | `KOMODO_WEBHOOK_SECRET` from step 6 |
-| Events | Just the push event |
+Webhooks also need `app-prod` reachable *inbound* from GitHub, which needs the
+VPS ingress. Revisit both together.
 
-Test: change a comment in `stacks/prowlarr/compose.yaml`, push, watch the
-Updates feed. GitHub's "Recent Deliveries" tab shows the response if nothing
-happens.
+When that day comes: Komodo generates the URL per resource; GitHub → Settings →
+Webhooks → payload URL, `application/json`, secret = `KOMODO_WEBHOOK_SECRET`,
+push events only. Webhooks fire only for the branch configured on the resource,
+and a mismatch fails silently.
 
-Webhooks only fire for the branch configured on the resource. A mismatch fails
-silently — this is the single most common reason "nothing happens on push".
+## 13. Adopt Core into Komodo
 
-## 12. Adopt Core into Komodo
+Only once everything above is proven. Uncomment the `komodo-core` block in
+`komodo/resources/stacks.toml` (`run_directory = "/home/jj/proxlab/komodo"`),
+push, let the sync create it.
 
-Only now, with Periphery on systemd and everything else proven:
+Deploying it restarts Core, so the UI disconnects and the log may show a
+failure that actually succeeded. Keep `webhook_enabled = false` and
+`auto_update = false` — never auto-update the thing performing updates.
 
-Uncomment the `komodo-core` block at the bottom of
-`komodo/resources/stacks.toml`, adjust `run_directory` to wherever you cloned
-(`/home/jj/server/komodo`), push, let the sync create it.
-
-Deploying it restarts Core, so the UI will disconnect and the update log may
-show a failure even though it succeeded. Reconnect and confirm. Leave
-`webhook_enabled = false` — you want to watch this one deploy by hand.
-
-## 13. Harden
-
-Once syncs are reliably driving everything:
+## 14. Harden
 
 ```
 KOMODO_UI_WRITE_DISABLED=true
 ```
 
-Now the UI is read-only and git is genuinely the only path to change config.
-Do this last: while it's on, you cannot fix a broken sync from the UI.
+Git becomes the only path to change config. Do this **last** — while it's on
+you cannot fix a broken sync from the UI.
 
 ---
 
 ## Steady state
 
 ```
-edit compose file → push to main → Stack webhook → redeploy
-add a stack       → push to main → Sync webhook  → create, then deploy
-new image upstream → auto_update polls registry  → redeploy (no git involved)
-rotate a secret   → UI → Variables → redeploy the stack
+edit a compose file → push → poll picks it up → redeploy
+add a stack         → push → sync creates it  → deploy
+new image upstream  → auto_update polls registry (no git involved)
+rotate a secret     → UI → Variables → redeploy the stack
 ```

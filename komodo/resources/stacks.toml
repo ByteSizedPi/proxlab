@@ -71,7 +71,7 @@ poll_for_updates = true
 # [stack.config]
 # server = "app-prod"
 # files_on_host = true
-# run_directory = "/home/jj/server/komodo"
+# run_directory = "/home/jj/proxlab/komodo"
 # file_paths = ["compose.yaml"]
 # # No env_file_path: compose.yaml already does `env_file: ./compose.env`,
 # # and Komodo must not overwrite that file.

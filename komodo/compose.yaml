@@ -44,6 +44,12 @@ services:
     env_file: ./compose.env
     environment:
       KOMODO_DATABASE_ADDRESS: mongo:27017
+    extra_hosts:
+      # Periphery runs as a systemd unit on the HOST, not in this network.
+      # Inside this container "localhost" is the container itself, so Core
+      # needs a name that resolves to the host. host-gateway maps to the
+      # Docker bridge gateway, which the host listens on ([::]:8120).
+      - "host.docker.internal:host-gateway"
     volumes:
       # Core <-> Periphery Noise handshake keys.
       - keys:/config/keys

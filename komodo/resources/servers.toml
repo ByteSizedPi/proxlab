@@ -12,10 +12,15 @@ name = "app-prod"
 ##
 ## ⚠️ The address differs between the two ways Periphery can run:
 ##
-##   systemd on pve-prod  ->  https://localhost:8120
-##       Same host, over loopback. HTTPS not HTTP: Periphery generates a
-##       self-signed cert and sets ssl_enabled=true by default, so plain
-##       HTTP is refused.
+##   systemd on the host  ->  https://host.docker.internal:8120
+##       NOT localhost. Core runs in a container, where "localhost" is the
+##       container itself — Periphery is on the host and would be
+##       unreachable. host.docker.internal resolves to the Docker bridge
+##       gateway via the `extra_hosts: host-gateway` entry on the core
+##       service in ../compose.yaml. Remove one and the other breaks.
+##
+##       HTTPS not HTTP: Periphery sets ssl_enabled=true by default and
+##       generates a self-signed cert, so plain HTTP is refused.
 ##
 ##   container (local dev, compose.periphery.yaml)  ->  https://periphery:8120
 ##       "periphery" is the compose service name resolved on the container
@@ -24,7 +29,7 @@ name = "app-prod"
 ##       self-signed cert and enables SSL by default.
 ##
 ## Getting this wrong shows up as a permanently "unreachable" server.
-address = "https://localhost:8120"
+address = "https://host.docker.internal:8120"
 enabled = true
 
 ## Alerting — these fire into whatever Alerters you configure in the UI.

@@ -52,6 +52,35 @@ auto_update = true
 poll_for_updates = true
 
 
+[[stack]]
+name = "cloudflared"
+tags = ["platform", "ingress"]
+[stack.config]
+server = "app-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/cloudflared"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+# This is where the tunnel token enters. CF_TUNNEL_TOKEN is a Komodo Variable
+# with "Secret" enabled; Komodo resolves [[CF_TUNNEL_TOKEN]] and writes the
+# real value into komodo.env in the run directory at deploy time. The token
+# never exists in this repo, and Komodo masks it in the UI and deploy logs.
+environment = """
+TUNNEL_TOKEN=[[CF_TUNNEL_TOKEN]]
+"""
+env_file_path = "komodo.env"
+additional_env_files = ["../common.env", "cloudflared.env"]
+
+# --- Automation ---
+webhook_enabled = false   # chicken-and-egg: this stack IS the webhook path
+auto_update = true
+poll_for_updates = true
+
+
 ## ── Komodo Core itself ───────────────────────────────────────────────────
 ##
 ## This one is deliberately NOT a git-mode stack, unlike everything above.

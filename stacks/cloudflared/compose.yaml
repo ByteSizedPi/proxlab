@@ -1,0 +1,42 @@
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    command: tunnel --no-autoupdate run
+    environment:
+      # Injected by Komodo into komodo.env from the CF_TUNNEL_TOKEN secret
+      # Variable. Never appears in this repo. See ../../komodo/resources/stacks.toml.
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    extra_hosts:
+      # The tunnel's job is to reach Komodo Core, which publishes 9120 on the
+      # HOST. Inside this container "localhost" is the container itself, so
+      # the Cloudflare-side ingress rule must target host.docker.internal.
+      - "host.docker.internal:host-gateway"
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+    # ⚠️ NO HEALTHCHECK — a deliberate, documented exception to the repo-wide
+    # convention in ../../README.md.
+    #
+    # cloudflare/cloudflared is distroless: no shell, no curl, no wget. There
+    # is nothing in the image capable of probing the tunnel, and Docker's
+    # healthcheck can only run binaries the image already contains.
+    #
+    # Faking one (`CMD true`) would be worse than none — it reports healthy
+    # unconditionally, which is exactly the false-confidence failure the
+    # convention exists to prevent.
+    #
+    # Health is observable elsewhere instead:
+    #   - Cloudflare Zero Trust dashboard shows tunnel connection status
+    #   - `docker logs cloudflared` reports registered connections
+    #   - the webhook simply stops firing, which GitHub's "Recent Deliveries"
+    #     tab surfaces directly
+    #
+    # Revisit if Cloudflare ever ships a non-distroless tag.
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

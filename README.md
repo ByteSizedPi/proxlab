@@ -117,6 +117,14 @@ Rules that matter more than the numbers:
 Upstream Komodo ships no healthchecks and documents no health endpoint, so
 the ones here were determined empirically and are noted as such in-file.
 
+**Exceptions must be justified in the compose file itself.** Some images are
+distroless — `cloudflare/cloudflared` has no shell, no curl, no wget — and
+Docker can only run binaries the image already contains, so no probe is
+possible. In that case write *no* healthcheck and explain why, next to where
+it would have gone. Never write a placeholder like `CMD true`: it reports
+healthy unconditionally, which is the precise false-confidence failure this
+convention exists to prevent.
+
 ## Adding a stack
 
 1. `mkdir stacks/<name>` with a `compose.yaml` and a `<name>.env`

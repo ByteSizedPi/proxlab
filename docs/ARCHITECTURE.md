@@ -67,10 +67,33 @@ resolve admin names wherever they are. AdGuard rewrites are global rather
 than per-client, so genuinely hiding the names would need a second resolver —
 not worth it for an information leak of this size.
 
-⚠️ Fix first: `tailscale status` reports *"Some peers are advertising routes
-but --accept-routes is false"*. The subnet router is advertising
-`10.42.0.0/24` and clients are ignoring it. Until `--accept-routes` is on,
-tailnet access to the bridge doesn't work at all.
+### `--accept-routes` — on for remote devices, OFF for the laptop
+
+`tailscale status` warns that peers advertise routes while `--accept-routes`
+is false. Enable it on the **phone and any remote device** — that's how they
+reach `10.42.0.0/24`.
+
+⚠️ **Never enable it on `jj-laptop`.** The laptop is physically attached to
+`10.42.0.0/24` via `enp0s31f6` and is `10.42.0.1`, the subnet's gateway.
+Accepting the route installs `10.42.0.0/24 dev tailscale0` into Tailscale's
+policy table 52, and rule `5270: lookup 52` is consulted before
+`32766: lookup main` — so the physical route is never used.
+
+The symptom is confusing: the Proxmox box keeps LAN connectivity but loses
+all internet. Outbound works (VM → laptop → masquerade → wifi), but the
+laptop returns replies via `tailscale0` instead of `enp0s31f6`, so the NAT
+return path is silently dropped. AdGuard then appears broken too — it
+answers local rewrites instantly but times out on anything needing upstream,
+because its queries leave and the answers never come back.
+
+Rule: **any machine physically on a subnet must not accept a tailnet route
+for that subnet.** Since the PowerEdge is tethered to the laptop, there is
+no case where the laptop is away yet still needs to reach `10.42.0.x`.
+
+```sh
+sudo tailscale set --accept-routes=false     # on jj-laptop
+ip route get 10.42.0.205                     # must show dev enp0s31f6
+```
 
 ## Public ingress: VPS as the single front door
 

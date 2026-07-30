@@ -195,17 +195,28 @@ aren't declared in TOML yet.
 
 ## 11. Verify the Prowlarr stack
 
-⚠️ If the deploy fails on `../common.env`, Komodo rejected path traversal above
-`run_directory`. Switch to the repo-root form documented in `stacks.toml`:
+Deploy from the UI, then check what actually landed rather than trusting the
+green tick:
 
-```toml
-run_directory = "stacks"
-file_paths = ["prowlarr/compose.yaml"]
-additional_env_files = ["common.env", "prowlarr/prowlarr.env"]
+```sh
+docker inspect prowlarr --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{println}}{{end}}'
+docker inspect prowlarr --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -E '^(PUID|TZ)'
 ```
 
-Test this on one stack before writing twenty more entries — it changes all of
-them.
+Want the mount resolved to `/mnt/docker-data/appdata/prowlarr` — that proves
+`CONFIG_ROOT` came out of `common.env` and was substituted, i.e. the whole env
+layering resolved.
+
+✅ Verified working 2026-07-30, including the `../common.env` traversal above
+`run_directory`.
+
+Note Periphery clones the repo *per stack*, so the run directory is nested:
+`/etc/komodo/stacks/<stack>/<run_directory>`. `env_file_path` is relative to
+that, not to the clone root.
+
+`komodo.env` is absent when no compose file references a `[[VARIABLE]]` —
+Komodo only writes it when there's something to interpolate. That's expected,
+not a failure.
 
 ## 12. Deploy trigger: poll now, webhooks later
 

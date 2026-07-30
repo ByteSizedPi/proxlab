@@ -16,8 +16,12 @@
 ## sets are disjoint by design: secrets exist solely in komodo.env, plain
 ## config solely in the committed files. Never define the same key in both.
 ##
-## ⚠️  `../common.env` reaches above run_directory. If Komodo rejects the
-## traversal on first sync, flip to the repo-root form instead:
+## ✅ `../common.env` reaches above run_directory, and this was verified
+## working on app-prod 2026-07-30 — Periphery resolved it and the container
+## came up with PUID/PGID/TZ from common.env and CONFIG_ROOT substituted into
+## the bind mount. No need for the flatter repo-root form.
+##
+## For reference, if a future Komodo version tightens this, the equivalent is:
 ##     run_directory = "stacks"
 ##     file_paths = ["prowlarr/compose.yaml"]
 ##     additional_env_files = ["common.env", "prowlarr/prowlarr.env"]

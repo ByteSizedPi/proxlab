@@ -1,0 +1,53 @@
+############################################
+# Periphery as a container — LOCAL DEV ONLY #
+############################################
+#
+# Layer this on top of compose.yaml to get a complete, self-contained Komodo
+# on a throwaway machine:
+#
+#   docker compose -f compose.yaml -f compose.periphery.yaml up -d
+#
+# ⚠️  Do NOT use this on app-prod. There, Periphery runs as a systemd unit
+# outside the stack, because Komodo manages its own Core stack and an agent
+# living inside that stack would kill itself mid-deploy. See ../periphery/.
+#
+# It's safe here precisely because this instance will never manage itself —
+# it's a sandbox for learning the UI.
+
+services:
+  periphery:
+    image: ghcr.io/moghtech/komodo-periphery:${COMPOSE_KOMODO_IMAGE_TAG:-2}
+    init: true
+    restart: unless-stopped
+    depends_on:
+      - core
+    env_file: ./compose.env
+    security_opt:
+      # Required on SELinux hosts (Fedora, RHEL). Without it SELinux denies
+      # the container access to /var/run/docker.sock and to its own root
+      # directory bind mount, and Periphery panics on startup.
+      #
+      # The alternative — relabelling the socket with :z — rewrites the label
+      # on the HOST's socket and can disturb other containers, so it's the
+      # worse trade here. Note that any container holding the Docker socket
+      # is already root-equivalent on the host, so disabling SELinux
+      # confinement for this one container gives up very little that the
+      # socket mount hasn't already given up.
+      - label=disable
+    volumes:
+      # Core <-> Periphery handshake keys, shared with the core service.
+      - keys:/config/keys
+      # How Periphery drives Docker at all.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Lets Periphery report host processes and stats.
+      - /proc:/proc
+      # Everything Periphery clones or runs must live under this path, and the
+      # path must be IDENTICAL inside and outside the container or Docker
+      # resolves bind mounts against the wrong filesystem.
+      # See https://github.com/moghtech/komodo/discussions/180
+      - ${PERIPHERY_ROOT_DIRECTORY:-/etc/komodo}:${PERIPHERY_ROOT_DIRECTORY:-/etc/komodo}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

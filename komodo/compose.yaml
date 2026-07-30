@@ -51,8 +51,12 @@ services:
       - ${COMPOSE_KOMODO_BACKUPS_PATH}:/backups
       # Core-level secrets and git provider tokens MUST be supplied in a
       # config file — they cannot be set via environment variables.
-      # This file is NOT in git. See ../README.md "Secrets".
-      - ./core.config.toml:/config/config.toml:ro
+      #
+      # Commented out by default: if the file doesn't exist, Docker creates a
+      # DIRECTORY at that path and Core fails in confusing ways. Create the
+      # file first (`cp core.config.toml.example core.config.toml`), THEN
+      # uncomment. Only needed for private repos or file-based secrets.
+      # - ./core.config.toml:/config/config.toml:ro
     logging:
       driver: json-file
       options:

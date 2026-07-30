@@ -9,6 +9,19 @@ name = "app-prod"
 ## Periphery runs as a systemd unit on this host (see ../../periphery/).
 ## Because Core and Periphery are on the same machine, this stays on
 ## localhost — do NOT expose 8120 to the network.
+##
+## ⚠️ The address differs between the two ways Periphery can run:
+##
+##   systemd on app-prod  ->  http://localhost:8120
+##       Same host, plain HTTP over loopback.
+##
+##   container (local dev, compose.periphery.yaml)  ->  https://periphery:8120
+##       "periphery" is the compose service name resolved on the container
+##       network — NOT localhost, because port 8120 is deliberately not
+##       published to the host. And https, because Periphery generates a
+##       self-signed cert and enables SSL by default.
+##
+## Getting this wrong shows up as a permanently "unreachable" server.
 address = "http://localhost:8120"
 enabled = true
 

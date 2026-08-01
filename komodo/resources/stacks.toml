@@ -86,60 +86,24 @@ webhook_enabled = false
 auto_update = true
 poll_for_updates = true
 
-
-## ── Komodo Core itself ───────────────────────────────────────────────────
+## ── Komodo Core is deliberately NOT here ────────────────────────────────
 ##
-## This one is deliberately NOT a git-mode stack, unlike everything above.
+## Core and Periphery are updated by scripts/update-komodo.sh, driven by
+## komodo-update.timer on app-prod. Komodo does not manage Komodo.
 ##
-## Core's compose.env holds the Mongo password Core needs in order to reach
-## the database. A git-mode stack would have to source that from a Komodo
-## Variable — but Variables live IN that same database, so Core would need
-## the database to learn how to reach the database. Circular.
+## That was tried, on 2026-08-01, and removed the same day. Core's compose.env
+## holds the Mongo password, so it can't come from a Komodo Variable (those
+## live in the database that password unlocks). That forces `files_on_host`,
+## which reads a clone nothing refreshes, which needs a Repo resource to
+## refresh it, which then fails anyway:
 ##
-## So: the repo is cloned to a fixed path on app-prod, compose.env and
-## core.config.toml are written there by hand once, and Komodo points at
-## those files in place via files_on_host. Redeploying still works, and
-## still restarts Core, because Periphery is a systemd unit outside this
-## stack — that separation is the whole reason Core can manage itself.
+##   fatal: detected dubious ownership in repository at '/home/jj/proxlab'
 ##
-## ⚠️ files_on_host reads a clone that git-mode stacks would keep fresh for
-## themselves but nothing updates here. The `proxlab` Repo resource plus the
-## gitops procedure's pull stage exist solely to fix that; without them this
-## stack pins Core to whatever commit was checked out the day it was made,
-## while still reporting every deploy as a success. See repos.toml.
-
-[[stack]]
-name = "komodo-core"
-tags = ["platform"]
-[stack.config]
-server = "app-prod"
-files_on_host = true
-run_directory = "/home/jj/proxlab/komodo"
-file_paths = ["compose.yaml"]
-# No env_file_path: compose.yaml already does `env_file: ./compose.env`,
-# and Komodo must not overwrite that file.
-# No webhook of its own, like every other stack — but note this one IS
-# matched by the gitops procedure's `*` pattern. A push that changes
-# komodo/compose.yaml therefore restarts Core *during* the procedure run that
-# is deploying it, which kills the run partway through: remaining update
-# records are lost and any sibling deploy dispatched later in the same stage
-# may not happen. Periphery survives and completes what it was already told
-# to do, and the 15-minute schedule reconciles whatever was missed. Treat a
-# failed-looking run after a Core change as expected, not as a fault.
-webhook_enabled = false
-
-# Core updates ITSELF. That sounds reckless and would be, if Periphery were
-# in this stack — Core would kill the agent mid-deploy. Periphery is a
-# systemd unit on the host, so it survives Core being torn down and
-# replaced, finishes the compose command, and Core comes back on the new
-# image. This is the entire payoff of keeping them separate.
-#
-# Pairs with COMPOSE_KOMODO_IMAGE_TAG=2: a new 2.x digest appears upstream,
-# Komodo notices within one poll interval and redeploys. Note this does NOT
-# depend on the built-in "Global Auto Update" procedure, which is scheduled
-# for 03:00 and would never fire on a machine that is switched off then.
-#
-# Expect the deploy log to look like a failure — the UI disconnects because
-# the thing reporting is the thing restarting. Verify with `docker ps`.
-auto_update = true
-poll_for_updates = true
+## because Periphery runs as root against a jj-owned clone. Three layers of
+## machinery, one more override needed, to update a single container — and it
+## also created a drift window between Core and Periphery that a shell script
+## closes for free by updating both in one pass.
+##
+## The `auto_update` on the stacks above still applies to real workloads.
+## Only the control plane is excluded, and only because it is the thing
+## doing the deploying.

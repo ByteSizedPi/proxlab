@@ -1,0 +1,26 @@
+[Unit]
+Description=Update the Komodo control plane (Core + Periphery together)
+Documentation=https://komo.do/docs/setup/connect-servers
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+
+# ⚠️ REQUIRED. systemd starts services with a near-empty environment, and
+# setup-periphery.py does `home_dir = os.environ['HOME']` at the top of
+# load_paths(), before it branches on root vs --user. A root install never
+# uses the value, but reading it still raises KeyError: 'HOME' and the run
+# dies before printing anything useful.
+Environment=HOME=/root
+
+ExecStart=/home/jj/proxlab/scripts/update-komodo.sh
+
+# ⚠️ Do NOT add Restart=on-failure. On Type=oneshot that is an unbounded retry
+# loop, not a safety net — the unit sits in `activating (auto-restart)` and
+# re-runs forever against a permanent error. The timer is the retry mechanism.
+
+# Updating the control plane restarts Core; don't let a slow image pull look
+# like a hang forever.
+TimeoutStartSec=15min

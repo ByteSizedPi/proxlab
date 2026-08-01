@@ -103,17 +103,6 @@ executions = [
 ]
 
 [[procedure.config.stage]]
-name = "pull on-host repo"
-enabled = true
-executions = [
-  # Only `komodo-core` needs this: it runs in files_on_host mode against
-  # /home/jj/proxlab, a clone nothing else would ever update. Must come
-  # BEFORE the deploy stage, or Core deploys the previous commit's compose
-  # file and reports success. See repos.toml.
-  { execution.type = "PullRepo", execution.params.repo = "proxlab", enabled = true },
-]
-
-[[procedure.config.stage]]
 name = "deploy changed stacks"
 enabled = true
 executions = [

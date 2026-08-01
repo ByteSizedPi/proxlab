@@ -117,8 +117,13 @@ curl -sSL -o /tmp/setup-periphery.py \
 sudo python3 /tmp/setup-periphery.py
 sudo systemctl enable --now periphery
 systemctl status periphery --no-pager
-curl -sk https://localhost:8120/health && echo " <- OK"
+curl -fsk https://localhost:8120/version && echo " <- OK"
 ```
+
+⚠️ Note `-f` and `/version`. Periphery has **no** `/health` endpoint, and
+without `-f` curl exits 0 on the resulting 404 — so `curl -sk .../health &&
+echo OK` prints OK against a broken agent. That exact line sat in this runbook
+for days, passing, proving nothing.
 
 ⚠️ **Download the script, don't pipe it.** `curl … | python3` makes stdin the
 script, so the installer's polkit password prompt breaks the pipe. It then
@@ -361,40 +366,59 @@ doesn't care that the caller went away. Confirm against Komodo's update log,
 not GitHub. If such a change breaks the tunnel outright, webhooks stop
 arriving entirely; recover from the LAN UI or wait for the 15-minute schedule.
 
-## 13. Adopt Core into Komodo
+## 13. Install the control-plane updater
 
-Only once everything above is proven. Uncomment the `komodo-core` block in
-`komodo/resources/stacks.toml` (`run_directory = "/home/jj/proxlab/komodo"`),
-push, let the sync create it.
+Komodo does **not** manage Komodo. Core and Periphery are updated together by
+`scripts/update-komodo.sh`, run weekly by `komodo-update.timer`.
 
-Deploying it restarts Core, so the UI disconnects and the log may show a
-failure that actually succeeded. Confirm with `docker ps` on app-prod, not
-from the update log.
-
-This step is what makes Core self-updating: the block sets `auto_update` and
-`poll_for_updates`, so a new `2.x` digest is picked up within one poll
-interval. Safe only because Periphery is a systemd unit outside this stack —
-it keeps running while Core is replaced. `webhook_enabled` stays `false`; the
-`gitops` procedure deliberately doesn't reach this stack.
-
-## 13b. Install the Periphery update timer
-
-Core now updates itself, but Periphery doesn't — different install mechanism,
-no shared version. Without this step the two drift apart on the next release
-and the server goes yellow.
+Updating both in one pass is what makes version drift impossible. They must
+match — Core marks the server yellow otherwise — and they install by different
+mechanisms (Core by compose, Periphery by an installer script), so nothing
+aligns them on its own. Both track the floating `2` tag.
 
 ```sh
-sudo cp periphery/systemd/komodo-periphery-update.{service,timer} /etc/systemd/system/
+cd ~/proxlab && git pull
+sudo cp komodo/systemd/komodo-update.{service,timer} /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now komodo-periphery-update.timer
-systemctl list-timers komodo-periphery-update.timer
+sudo systemctl enable --now komodo-update.timer
+systemctl list-timers komodo-update.timer
 ```
 
-`Persistent=true` in the timer matters: app-prod is off overnight, so a
-scheduled small-hours run would never arrive. systemd instead notices the
-missed run and fires it after the next boot.
+Run it once by hand to prove it works, rather than waiting a week:
 
-Both components track the floating `2` tag. See `periphery/README.md`.
+```sh
+sudo systemctl start komodo-update.service
+journalctl -u komodo-update.service -b --since "10 min ago" --no-pager
+```
+
+It ends by printing both versions. They must match.
+
+`Persistent=true` matters: app-prod is off overnight, so a scheduled
+small-hours run would never arrive. systemd notices the missed run and fires
+it after the next boot instead.
+
+### Why Core is not a Komodo-managed stack
+
+This was built and removed on the same day, 2026-08-01. Worth recording so it
+isn't rediscovered:
+
+Core's `compose.env` holds the Mongo password, so it can't come from a Komodo
+Variable — Variables live in the database that password unlocks. That forces
+`files_on_host`, which reads a clone nothing refreshes, which needs a Repo
+resource to refresh it, which fails anyway with:
+
+```
+fatal: detected dubious ownership in repository at '/home/jj/proxlab'
+```
+
+because Periphery runs as root against a `jj`-owned clone. Three layers of
+machinery plus a `safe.directory` override, to update one container — and it
+still left a drift window between Core and Periphery that a shell script
+closes for free.
+
+Container **workloads** still auto-update through Komodo (`auto_update` +
+`poll_for_updates` on each stack). Only the control plane is excluded, and
+only because it's the thing performing the deploys.
 
 ## 14. Harden
 

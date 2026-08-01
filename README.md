@@ -13,11 +13,14 @@ is configured by hand in the UI except secrets.
 │   ├── compose.yaml         #   Core + Mongo (Periphery deliberately absent)
 │   ├── compose.env.example  #   → copy to compose.env on app-prod (gitignored)
 │   ├── core.config.toml.example
+│   ├── systemd/             #   komodo-update.{service,timer} → /etc/systemd/system
 │   └── resources/           #   desired state, read by the Resource Sync
 │       ├── servers.toml     #     sync order matters: servers before stacks
 │       ├── variables.toml
 │       ├── stacks.toml
 │       └── procedures.toml
+├── scripts/
+│   └── update-komodo.sh     # updates Core + Periphery together
 ├── stacks/                  # the workloads — one directory per stack
 │   ├── common.env           #   shared, non-secret, committed
 │   └── prowlarr/
@@ -171,3 +174,20 @@ publishes `^/listener/.*` and nothing else.
 
 Image updates are separate from git entirely: `auto_update = true` polls the
 registry for newer digests and redeploys on its own schedule.
+
+## What Komodo does *not* manage
+
+Komodo itself. Core and Periphery are updated by `scripts/update-komodo.sh`,
+run weekly by `komodo/systemd/komodo-update.timer` on app-prod, and updating
+both in one pass is what keeps their versions from drifting.
+
+Self-management was built and removed on 2026-08-01. Core's `compose.env`
+holds the Mongo password, so it can't come from a Komodo Variable — those live
+in the database that password unlocks. That forces `files_on_host`, which
+reads a clone nothing refreshes, which needs a Repo resource to refresh it,
+which fails on `detected dubious ownership` because Periphery runs as root
+against a `jj`-owned clone. Three layers of machinery to update one container,
+and a drift window a shell script closes for free.
+
+The rule that came out of it: **the control plane doesn't deploy itself.**
+Everything that isn't Komodo is fully automated; Komodo is a weekly timer.

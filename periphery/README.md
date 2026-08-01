@@ -41,54 +41,39 @@ systemctl status periphery
 
 ## Staying in step with Core
 
-Core and Periphery must run the same version, or Core marks the server yellow
-with a version mismatch. Because they're installed by different mechanisms —
-Core by compose, Periphery by this script — nothing keeps them aligned on its
-own. Both therefore track the **floating major tag `2`**, which is also
-upstream's default, and each has its own updater:
+Core and Periphery must run the same version or Core marks the server yellow
+with a version mismatch. They install by different mechanisms — Core by
+compose, Periphery by this script — so nothing aligns them on its own.
 
-| Component | Updated by | Cadence |
-|---|---|---|
-| Core | Komodo itself — `auto_update` + `poll_for_updates` on the `komodo-core` stack | within `KOMODO_RESOURCE_POLL_INTERVAL` of a release |
-| Periphery | `komodo-periphery-update.timer` in `systemd/` | daily, catching up after boot |
+Both track the floating `2` tag, and **one** thing updates both:
+`../scripts/update-komodo.sh`, run weekly by `komodo-update.timer`. Doing them
+in a single pass is what makes drift impossible rather than something that
+gets corrected eventually. Install per `BOOTSTRAP.md` step 13.
 
-Core auto-updating itself is only safe *because* Periphery is out here in
-systemd: Core can be torn down and replaced while the agent performing that
-work keeps running. This is the same separation described above, now doing a
-second job.
-
-Install the timer on `app-prod`:
+Run it by hand any time:
 
 ```sh
-sudo cp periphery/systemd/komodo-periphery-update.{service,timer} /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now komodo-periphery-update.timer
-systemctl list-timers komodo-periphery-update.timer
+sudo /home/jj/proxlab/scripts/update-komodo.sh
 ```
 
-Test the unit once by hand rather than waiting for the timer:
+It prints both versions at the end. They must match.
 
-```sh
-sudo systemctl start komodo-periphery-update.service
-journalctl -u komodo-periphery-update.service -n 30 --no-pager
-```
+### Two mistakes worth not repeating
 
-Two failures found the first time this ran on `app-prod`, both now fixed in
-the unit but worth recognising if it's ever rewritten:
+Both were made here on 2026-08-01 and are fixed in the unit file:
 
 - `KeyError: 'HOME'` — systemd gives services a near-empty environment, and
-  the installer reads `os.environ['HOME']` before deciding whether it even
-  needs it. Fixed by `Environment=HOME=/root`.
+  `setup-periphery.py` reads `os.environ['HOME']` before deciding whether it
+  even needs it. Fixed by `Environment=HOME=/root`.
 - `Restart=on-failure` on a `Type=oneshot` unit is an endless retry loop, not
   a safety net. It sat in `activating (auto-restart)` re-running every five
-  minutes against a permanent error. The timer is the retry mechanism.
+  minutes against an error that was never going to clear. The timer is the
+  retry mechanism; `Persistent=true` covers runs missed while the box was off.
 
-**Known limitation:** the two updaters are independent, so after a release Core
-may be newer than Periphery until the timer next runs — up to a day. That shows
-as a yellow server in the UI. It is a warning, not an outage. If it ever
-matters more than that, the alternative is to move Periphery back into Core's
-compose file, where both read one `${COMPOSE_KOMODO_IMAGE_TAG}` and cannot
-drift — at the cost of Core no longer being able to manage its own stack.
+When reading the journal, scope it to the current boot — `journalctl -u
+komodo-update.service -b --since "10 min ago"`. A bare `-n 30` shows the tail
+of the *previous* run alongside the current one, and an old traceback sitting
+above a successful run reads exactly like a fresh failure.
 
 ## The one setting that matters
 

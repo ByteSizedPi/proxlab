@@ -1,0 +1,43 @@
+# TLS options — hot-reloaded by the file provider.
+#
+# jjserver has no equivalent to this: it relies on Traefik's defaults, which
+# still accept TLS 1.0/1.1. The `default` options block below applies to every
+# router that does not name its own tlsOptions, so this hardens everything at
+# once.
+#
+# Note this file no longer carries a `tls.certificates` block. jjserver's
+# tls.yaml pointed at a self-signed CA in ./certs; certificates now come from
+# Let's Encrypt via the DNS-01 resolver in ../compose.yaml, so there is nothing
+# to declare — Traefik manages acme.json itself.
+
+tls:
+  options:
+    default:
+      # TLS 1.2 floor. 1.0 and 1.1 are deprecated and broken; nothing in this
+      # homelab needs them.
+      minVersion: VersionTLS12
+
+      # Cipher suites apply to TLS 1.2 ONLY — TLS 1.3's suites are fixed by
+      # the spec and cannot be configured. Forward secrecy and AEAD only.
+      cipherSuites:
+        - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+
+      curvePreferences:
+        - X25519
+        - CurveP256
+
+      # Reject connections that send no SNI, instead of falling back to a
+      # default certificate.
+      #
+      # ⚠️ The practical effect: reaching a service by IP — https://10.42.0.205
+      # — stops working and fails with a TLS handshake error rather than a
+      # certificate warning. That is the intent (a wildcard cert would not
+      # validate for an IP anyway), but it is worth knowing before debugging a
+      # "Traefik is broken" report that is actually someone using the IP.
+      # Always use the hostname.
+      sniStrict: true

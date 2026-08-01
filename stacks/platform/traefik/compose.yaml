@@ -1,0 +1,383 @@
+services:
+  traefik:
+    # Pinned to the v3.7 MINOR line, not `latest`. Every other stack in this
+    # repo floats on `latest` because a broken *arr container is an
+    # inconvenience; a broken Traefik takes every service down at once and the
+    # dashboard with it. `v3.7` still receives patch releases automatically via
+    # Komodo's auto_update, but a v4 with breaking config changes cannot arrive
+    # unannounced. Bump this deliberately after reading the migration guide.
+    image: traefik:v3.7
+    container_name: traefik
+
+    networks:
+      - ingress
+      - docker-api
+
+    # Now possible because socket-proxy is a service in THIS stack rather than
+    # a separate one: depends_on does not work across compose projects, and
+    # Komodo gives every stack its own project. Without this Traefik starts
+    # first about half the time and logs a burst of provider errors until the
+    # proxy answers — harmless but indistinguishable at a glance from the
+    # SELinux failure below.
+    depends_on:
+      socket-proxy:
+        condition: service_healthy
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    environment:
+      - TZ=${TZ}
+      # Cloudflare API token for the ACME DNS-01 challenge. Scope it to
+      # Zone:DNS:Edit on jjventer.co.za ONLY — it is a live credential for
+      # your DNS, so it must not be a Global API Key. Supplied as a Komodo
+      # secret Variable; see komodo/resources/stacks.toml.
+      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
+
+    command:
+      # ── Global ────────────────────────────────────────────────────────────
+      # Both default to phoning home. Off.
+      - "--global.checknewversion=false"
+      - "--global.sendanonymoususage=false"
+
+      # ── EntryPoints ───────────────────────────────────────────────────────
+      # :80 exists only to bounce everything to :443.
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entryPoint.permanent=true"
+
+      - "--entrypoints.websecure.address=:443"
+      # asDefault means a router that names no entrypoint lands on websecure
+      # rather than on EVERY entrypoint (which is the v3 default and would
+      # quietly publish services on plain :80 too).
+      - "--entrypoints.websecure.asDefault=true"
+      - "--entrypoints.websecure.http.tls=true"
+      - "--entrypoints.websecure.http.tls.certresolver=le"
+      # Request ONE wildcard covering every service, here on the entrypoint,
+      # rather than letting each router trigger its own certificate order.
+      # Per-router orders mean a new Let's Encrypt request every time a service
+      # is added — and LE's duplicate-certificate limit is 5/week, which is
+      # easy to hit while iterating on a stack.
+      - "--entrypoints.websecure.http.tls.domains[0].main=${ADMIN_DOMAIN}"
+      - "--entrypoints.websecure.http.tls.domains[0].sans=*.${ADMIN_DOMAIN}"
+      # Applied to every router on this entrypoint.
+      #
+      # ⚠️ Middlewares named here must EXIST or every route through this
+      # entrypoint fails — an unresolvable middleware breaks the whole chain,
+      # not just itself. jjserver has `crowdsec-bouncer@file` in this list;
+      # it is deliberately absent until CrowdSec is actually deployed. Add it
+      # here in the same commit that adds the CrowdSec stack, never before.
+      - "--entrypoints.websecure.http.middlewares=secure-headers@file"
+
+      # HTTP/3 is available and would go here:
+      #   - "--entrypoints.websecure.http3=true"
+      # plus publishing 443/udp. Left off on purpose: everything reaches this
+      # host over Tailscale (WireGuard, itself UDP), and QUIC-inside-WireGuard
+      # hits MTU edge cases that present as random stalls rather than clean
+      # failures. There is no latency win to be had on a LAN/tailnet. Revisit
+      # if services ever get published to the open internet.
+
+      # ── Certificates: Let's Encrypt over DNS-01 ───────────────────────────
+      # DNS-01 is not a preference, it is the only option that works here:
+      #   - the ISP blocks inbound, so HTTP-01 can never be validated;
+      #   - wildcards are DNS-01-only regardless.
+      # jjventer.co.za's nameservers are Cloudflare, so the `cloudflare`
+      # provider applies.
+      - "--certificatesresolvers.le.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.le.acme.dnschallenge=true"
+      - "--certificatesresolvers.le.acme.dnschallenge.provider=cloudflare"
+      # ⚠️ THE LINE THAT MAKES THIS WORK AT ALL ⚠️
+      #
+      # Before telling Let's Encrypt the challenge is ready, Traefik verifies
+      # the TXT record has propagated — using the container's resolver, which
+      # on this network is AdGuard. AdGuard holds a `*.admin.jjventer.co.za`
+      # rewrite, and that wildcard also matches the challenge record
+      # `_acme-challenge.admin.jjventer.co.za`. So AdGuard answers with the
+      # rewrite's A record, Traefik never sees its own TXT, and issuance hangs
+      # until it times out — with no error naming DNS as the cause.
+      #
+      # Forcing public resolvers for the propagation check sidesteps the split
+      # horizon entirely. Do not remove this.
+      - "--certificatesresolvers.le.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53"
+      #
+      # Staging CA — swap in while testing. Untrusted certs, but the rate
+      # limits are ~50x looser. Production LE will lock you out for a week at
+      # 5 duplicate certs, and there is no way to undo that.
+      #   - "--certificatesresolvers.le.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      # After switching back to production you must DELETE acme.json —
+      # it still holds the staging account key and Traefik will keep using it.
+
+      # ── Providers ─────────────────────────────────────────────────────────
+      # Note the endpoint: the socket proxy service below, never
+      # /var/run/docker.sock directly.
+      - "--providers.docker=true"
+      - "--providers.docker.endpoint=tcp://socket-proxy:2375"
+      # Opt-in routing. Without this every container on the network gets
+      # published under a guessed hostname the moment it starts.
+      - "--providers.docker.exposedbydefault=false"
+      # Which network to reach backends on. Containers on several networks are
+      # otherwise picked from non-deterministically — an *arr on both `ingress`
+      # and `media` would resolve to whichever address came back first.
+      - "--providers.docker.network=ingress"
+
+      # Everything in ./dynamic — middlewares, TLS options. Hot-reloaded, so
+      # editing those files does not need a Traefik restart (a compose change
+      # does).
+      - "--providers.file.directory=/dynamic"
+      - "--providers.file.watch=true"
+
+      # ── API / dashboard ───────────────────────────────────────────────────
+      # ⚠️ NOTE THE ABSENCE OF `--api.insecure=true`.
+      #
+      # jjserver sets it, with a comment that it is safe because :8080 is not
+      # published to the host. That is true and beside the point: it serves the
+      # full API *and* dashboard, unauthenticated, to anything that can reach
+      # the container — i.e. every container on the `proxy` network, which is
+      # every service in this repo. It renders the auth middleware on the
+      # dashboard router below completely decorative.
+      #
+      # The dashboard is reached through the router labels instead, which go
+      # through the entrypoint, TLS and the auth middleware like anything else.
+      - "--api=true"
+      - "--api.dashboard=true"
+
+      # ── Observability ─────────────────────────────────────────────────────
+      # --ping alone creates an implicit `traefik` entrypoint on :8080 serving
+      # only /ping (NOT the API — that needs api.insecure). :8080 is not in the
+      # ports list, so it is container-internal. This is what the healthcheck
+      # below calls; verified against traefik:v3.7.
+      - "--ping=true"
+
+      - "--log.level=INFO"
+      - "--accesslog=true"
+      # JSON because CrowdSec parses these logs, and because anything that ends
+      # up shipping them later will too. Costs some `docker logs` readability;
+      # pipe through `jq` when reading by hand.
+      - "--accesslog.format=json"
+      # Access logs drop request headers by default, which is what you want —
+      # they carry the Authorization and Cookie values this proxy authenticates
+      # with. Do not flip accesslog.fields.headers.defaultmode to keep.
+
+      # Inert until something scrapes it: the endpoint lives on that internal
+      # :8080 entrypoint, so a scraper has to be on the `proxy` network.
+      # Netdata can do this once deployed. Kept on because it costs nothing and
+      # turning it on later is a restart.
+      - "--metrics.prometheus=true"
+
+    volumes:
+      # ACME state. A DIRECTORY, not the acme.json file itself — bind-mounting
+      # a file that does not exist yet makes Docker helpfully create a
+      # directory with that name, and Traefik then fails to write its account
+      # key. Letting Traefik create the file inside a mounted directory also
+      # gets the required 0600 permissions for free.
+      #
+      # Outside the repo on purpose: this is state, not config, and Komodo
+      # re-clones the repo on every deploy. Losing it means re-issuing every
+      # certificate against the rate limit.
+      - ${CONFIG_ROOT}/traefik/letsencrypt:/letsencrypt:Z
+      # Dynamic config, read-only. Committed, so it arrives with the clone.
+      - ./dynamic:/dynamic:ro,Z
+
+    labels:
+      - "traefik.enable=true"
+
+      # The dashboard, via the internal api service.
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.${ADMIN_DOMAIN}`)"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-auth@docker"
+
+      # BasicAuth defined here rather than in dynamic/middlewares.yml, because
+      # the htpasswd hash is a credential and dynamic/ is committed to git.
+      # This label is interpolated from the generated komodo.env at deploy time.
+      #
+      # ⚠️⚠️ THE DOLLAR SIGNS MUST BE DOUBLED IN THE KOMODO VARIABLE ⚠️⚠️
+      #
+      # Generate the hash:
+      #   htpasswd -nbB admin '<password>'      ->  admin:$2y$05$Xyz...
+      # then DOUBLE every `$` before storing it as the Komodo secret Variable
+      # TRAEFIK_DASHBOARD_AUTH:
+      #   admin:$$2y$$05$$Xyz...
+      #
+      # Why: Compose runs variable substitution over the values it reads from
+      # --env-file, not just over this file. An un-doubled bcrypt hash is
+      # therefore re-parsed on the way through — `$2y` and `$05` survive as
+      # literals (invalid variable names), but the salt+digest after the third
+      # `$` IS a valid name, so it is substituted with an empty string.
+      #
+      #   stored:    admin:$2y$05$Xyzabc...
+      #   delivered: admin:$2y$05
+      #
+      # The auth then rejects every password. Compose prints "The "Xyzabc..."
+      # variable is not set" once, buried in the deploy log, and nothing else
+      # ever mentions it. Verified against this exact label on docker compose
+      # v2 — `docker inspect` shows the correct single-`$` value only when the
+      # variable is stored doubled.
+      #
+      # This applies to ANY secret containing `$`. Cloudflare API tokens are
+      # alphanumeric so CF_DNS_API_TOKEN is unaffected.
+      - "traefik.http.middlewares.dashboard-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH}"
+      #
+      # ⚠️ Swap to Authelia when it lands: replace the middleware reference
+      # above with `authelia@file` and delete this basicauth label. The
+      # forwardAuth definition is already sitting commented in
+      # dynamic/middlewares.yml.
+
+    security_opt:
+      - no-new-privileges:true
+
+    # Verified working on traefik:v3.7 — `traefik healthcheck --ping` returns
+    # OK / exit 0 against the implicit :8080 entrypoint that --ping creates.
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    restart: unless-stopped
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Docker API proxy ───────────────────────────────────────────────────
+  #
+  # Deliberately a service in THIS stack rather than a stack of its own.
+  #
+  # Read access to /var/run/docker.sock is effectively root on the host: it can
+  # start a privileged container that mounts /. This proxy sits in front of the
+  # socket and allows only the API paths Traefik needs, so a compromised
+  # Traefik cannot control Docker.
+  #
+  # Keeping it in-stack is what makes the `docker-api` network project-local.
+  # As a separate stack that network had to be `external: true`, which meant
+  # "only Traefik joins it" was a convention enforced by nothing. That matters
+  # more than it sounds — see the warning on the network at the bottom.
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: socket-proxy
+
+    # ⚠️ The `:ro` here is close to decorative and is NOT the security control.
+    # Connecting to a unix socket requires WRITE access, so `:ro` cannot stop
+    # API writes — the permission flags below (POST=0 by default) are what make
+    # this read-only. Kept because it costs nothing and documents intent.
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    environment:
+      # ── What Traefik's docker provider actually calls ──────────────────
+      #   CONTAINERS  container list -> routers/services discovery
+      #   NETWORKS    resolve the `ingress` network for backend addresses
+      #   EVENTS      the watch stream; without it Traefik never sees a new
+      #               container and routes go stale until restart
+      #   VERSION     API version negotiation on connect
+      #   PING        the healthcheck below
+      #
+      # EVENTS, PING and VERSION are already 1 by default in this image; they
+      # are written out anyway because a silently-defaulted permission is the
+      # kind of thing that changes between image versions unnoticed.
+      - CONTAINERS=1
+      - NETWORKS=1
+      - EVENTS=1
+      - VERSION=1
+      - PING=1
+
+      # Everything else — POST, EXEC, SECRETS, IMAGES, VOLUMES, SWARM, … —
+      # defaults to 0 and is denied. POST=0 in particular is what makes this
+      # read-only: no container create, start, stop or exec.
+      #
+      # ⚠️ Do NOT add permissions here for Homepage/Netdata when those land.
+      # Give each consumer its OWN socket-proxy instance with only the keys it
+      # needs (Homepage: SERVICES/TASKS, Netdata: INFO). One shared proxy ends
+      # up holding the union of every consumer's permissions and becomes a
+      # single high-value target — which is exactly what jjserver's copy has
+      # become, with STATS and VOLUMES enabled for services that no longer run.
+
+    networks:
+      - docker-api
+
+    security_opt:
+      - no-new-privileges:true
+      # ⚠️ REQUIRED ON SELINUX HOSTS (Fedora, RHEL) — app-prod is one.
+      #
+      # Without it SELinux denies this container access to the docker socket
+      # and NOTHING WORKS, but the failure is silent and misleading: haproxy
+      # starts fine, the container reports "Up", and every request returns
+      #
+      #   503 Service Unavailable / No server is available to handle this request
+      #
+      # which reads like the docker daemon is down rather than a policy denial.
+      # Traefik then logs "Failed to retrieve information of the docker client
+      # and server host" in a retry loop and discovers no routes at all.
+      #
+      # Confirmed with a real AVC on this exact image:
+      #   avc: denied { write } for comm="haproxy" name="docker.sock"
+      #     scontext=...:container_t:s0:c335,c386
+      #     tcontext=...:container_var_run_t:s0 tclass=sock_file
+      #
+      # Note it is denied WRITE despite the `:ro` mount — connecting to a unix
+      # socket is a write operation. Same root cause as the Periphery container
+      # needing this flag.
+      - label=disable
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:2375/_ping | grep -q OK"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    restart: unless-stopped
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  # ── ingress ────────────────────────────────────────────────────────────
+  # Traefik <-> the services it fronts. North-south traffic only: HTTP coming
+  # INTO a service from outside. Service-to-service calls (Sonarr -> Prowlarr's
+  # API) belong on a `media` network instead and never touch Traefik.
+  #
+  # External because it is inherently cross-stack — prowlarr, jellyfin and the
+  # rest are separate Komodo stacks, so separate compose projects, and a
+  # non-external network here would be created as `traefik_ingress` which no
+  # other project could join.
+  #
+  # Created automatically by the stack's pre_deploy command (see
+  # komodo/resources/stacks.toml), so there is no manual bootstrap step.
+  #
+  # Note this is a flat bridge: Docker has no intra-network ACL, so anything on
+  # `ingress` can reach anything else on it directly, bypassing Traefik. It is
+  # not isolation BETWEEN services. Its value is what it keeps OFF — databases,
+  # caches and the socket proxy below are unreachable from the ingress path.
+  ingress:
+    external: true
+
+  # ── docker-api ─────────────────────────────────────────────────────────
+  # Traefik <-> socket-proxy, and nothing else, ever.
+  #
+  # Project-local (NOT external) on purpose. Any container that can reach the
+  # socket proxy can call /containers/<id>/json, and that response includes
+  # Config.Env — i.e. every other container's environment variables. Verified
+  # directly: an unrelated container on this network read a secret straight out
+  # of another container's env. That is CF_TUNNEL_TOKEN, CF_DNS_API_TOKEN, the
+  # dashboard hash and every future API key, in one request, with only the
+  # read-only permissions set above.
+  #
+  # Keeping this network inside the stack means nothing else CAN join it —
+  # enforced by compose, not by remembering. Do not make it external.
+  #
+  # internal: true additionally cuts it off from the outside world. socket-proxy
+  # only ever reads a unix socket, so it has no business reaching the internet.
+  # Traefik is unaffected: it still has connectivity via `ingress`.
+  docker-api:
+    internal: true

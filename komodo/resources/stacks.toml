@@ -123,6 +123,84 @@ webhook_enabled = false
 auto_update = true
 poll_for_updates = true
 
+## Note there is no separate socket-proxy stack. It is a second service inside
+## the traefik stack, which is what lets its network be project-local instead
+## of external — see the network comments in traefik/compose.yaml.
+
+[[stack]]
+name = "traefik"
+tags = ["platform", "ingress"]
+[stack.config]
+server = "app-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/platform/traefik"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+# Two secrets, both Komodo Variables with "Secret" enabled:
+#
+#   CF_DNS_API_TOKEN        Cloudflare API token, scoped Zone:DNS:Edit on
+#                           jjventer.co.za ONLY. Used for the ACME DNS-01
+#                           challenge. Not a Global API Key — that would be a
+#                           full-account credential sitting in a web-facing
+#                           container.
+#
+#   TRAEFIK_DASHBOARD_AUTH  htpasswd line for the dashboard basicauth.
+#
+# ⚠️ TRAEFIK_DASHBOARD_AUTH MUST BE STORED WITH ITS `$` DOUBLED ⚠️
+#
+#     generate:  htpasswd -nbB admin '<password>'
+#                -> admin:$2y$05$Xyz...
+#     store:        admin:$$2y$$05$$Xyz...
+#
+# Compose applies variable substitution to the values it reads out of
+# --env-file, so an un-doubled bcrypt hash gets partially eaten on the way to
+# the label: `$2y` and `$05` survive as literals, but everything after the
+# third `$` parses as a variable name and is replaced with an empty string.
+# The dashboard then rejects every password, and the only clue is one
+# "variable is not set" warning in the deploy log. Verified end-to-end:
+# doubled -> 200 with the right password, un-doubled -> 401 always.
+environment = """
+CF_DNS_API_TOKEN=[[CF_DNS_API_TOKEN]]
+TRAEFIK_DASHBOARD_AUTH=[[TRAEFIK_DASHBOARD_AUTH]]
+"""
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "traefik.env"]
+
+# --- Automation ---
+webhook_enabled = false
+# Pulls v3.7 patch releases. The tag is pinned to the minor line in
+# compose.yaml, so this cannot jump to a breaking v4 on its own.
+auto_update = true
+poll_for_updates = true
+
+# --- Pre-deploy: create the shared ingress network ---
+#
+# `ingress` is external (it has to be — it spans stacks, see the network
+# comments in traefik/compose.yaml), and an external network that does not
+# exist fails the deploy with:
+#
+#   network ingress declared as external, but could not be found
+#
+# Rather than making that a manual bootstrap step everyone forgets, create it
+# here. Traefik is the right stack to own this: nothing can usefully join
+# `ingress` before the thing that routes on it exists.
+#
+# `inspect || create` rather than a bare `create` because this runs on EVERY
+# deploy, and `docker network create` on an existing network exits non-zero,
+# which would fail the deploy from the second run onward. Verified idempotent:
+# exit 0 on three consecutive runs.
+#
+# shell_mode is required — without it the `||` and the redirect are passed as
+# literal arguments to docker rather than interpreted.
+[stack.config.pre_deploy]
+path = ""
+command = "docker network inspect ingress >/dev/null 2>&1 || docker network create ingress"
+shell_mode = true
+
 ## ── Komodo Core is deliberately NOT here ────────────────────────────────
 ##
 ## Core and Periphery are updated by scripts/update-komodo.sh, driven by

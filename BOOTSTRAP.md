@@ -71,6 +71,35 @@ cd ~/proxlab/komodo
 fine for config, but a media library cannot live on a 63G root disk — revisit
 it when the *arr stack lands.
 
+### Shared Docker networks
+
+**Nothing to do here — this is automatic.** Recorded because "which networks
+exist and why" is not obvious from any single file.
+
+- **`ingress`** — Traefik ↔ the services it fronts. North-south only: HTTP
+  arriving at a service from outside. It is `external: true` because it spans
+  stacks, and Komodo gives each stack its own compose project. Created by the
+  traefik stack's `pre_deploy` command, which is idempotent and runs on every
+  deploy, so it survives someone removing the network by hand.
+
+  It is a flat bridge — Docker has no intra-network ACL, so anything on
+  `ingress` can reach anything else on it directly, bypassing Traefik. It is
+  not isolation *between* services; its value is what it keeps *off* it.
+
+- **`docker-api`** — Traefik ↔ socket-proxy, inside the traefik stack. Not
+  external, and must never become external: any container that can reach the
+  socket proxy can call `/containers/<id>/json`, whose response includes
+  `Config.Env` — every other container's environment variables, i.e. every
+  secret on the host. Keeping the network project-local means compose enforces
+  "only Traefik joins it" rather than a comment asking people to remember.
+  Also `internal: true`, since socket-proxy only reads a unix socket and has no
+  reason to reach the internet.
+
+- **`media`** (later, with the *arr stack) — service ↔ service. Sonarr calling
+  Prowlarr's API is east-west traffic that never passes through Traefik. An
+  *arr joins both `ingress` (for its web UI) and `media` (for its peers); a
+  database joins neither.
+
 ## 5. Configure Core
 
 ```sh
@@ -183,6 +212,59 @@ them anywhere as `[[NAME]]`.
 Nothing here goes in git. The repo holds structure, Komodo holds secrets, and
 neither is much use to an attacker alone.
 
+| Variable | What it is | How to get it |
+| --- | --- | --- |
+| `CF_TUNNEL_TOKEN` | Cloudflare Tunnel token | Zero Trust dashboard → the tunnel → install command |
+| `CF_DNS_API_TOKEN` | Cloudflare API token for ACME DNS-01 | dash.cloudflare.com → My Profile → API Tokens |
+| `TRAEFIK_DASHBOARD_AUTH` | htpasswd line for the dashboard | `htpasswd -nbB admin '<password>'` |
+
+**`CF_DNS_API_TOKEN` must be a scoped token, not the Global API Key.** The
+Global Key is a full-account credential with no scoping and no revocation
+short of rotating it everywhere; this token lives in a container that
+terminates TLS for the whole homelab.
+
+Create it as a **Custom Token** with exactly two permissions:
+
+| Field | Value |
+| --- | --- |
+| Name | `traefik-acme-dns01-app-prod` |
+| Permissions | `Zone` → `Zone` → **Read** |
+| | `Zone` → `DNS` → **Edit** |
+| Zone Resources | Include → Specific zone → `jjventer.co.za` |
+| Client IP Filtering | *empty* |
+| TTL | *no expiry* |
+
+⚠️ **Not the "Edit zone DNS" template** — it grants `DNS:Edit` only, and lego
+also needs `Zone:Read` to resolve the domain to its internal zone ID. Without
+it issuance fails at `cloudflare: failed to find zone jjventer.co.za`, which
+reads like a DNS or domain problem rather than a missing permission.
+
+Leave IP filtering and TTL empty on purpose. Both pin the token to something
+that expires — a dynamic ISP address, or a date — and neither fails at the
+moment it lapses. Traefik renews 30 days before expiry, so a dead token is
+invisible for up to a month and then surfaces as every service going untrusted
+at once. The Let's Encrypt expiry mail to `ACME_EMAIL` is the only warning,
+which is why that address needs to be one that gets read.
+
+**`TRAEFIK_DASHBOARD_AUTH` must have its `$` characters doubled.**
+
+```
+htpasswd output:  admin:$2y$05$Xyz...
+store in Komodo:  admin:$$2y$$05$$Xyz...
+```
+
+Compose runs variable substitution over the values it reads from `--env-file`,
+including Komodo's generated `komodo.env`. An un-doubled bcrypt hash is
+therefore re-parsed on the way to the container: `$2y` and `$05` survive
+(invalid variable names), but the salt and digest after the third `$` are a
+valid name and get substituted with an empty string. The dashboard then
+rejects every password, and the only trace is a single "variable is not set"
+warning in the deploy log. Verified both ways — doubled gives `200` with the
+correct password, un-doubled gives `401` always.
+
+This applies to any secret containing `$`. Cloudflare tokens are alphanumeric,
+so the two `CF_*` variables are unaffected.
+
 ## 10. Create the Resource Sync
 
 UI → Syncs → New: provider `github.com`, repo `ByteSizedPi/proxlab`, branch
@@ -195,8 +277,9 @@ behind separate opt-in flags on the sync (`include_variables`,
 no error anywhere.
 
 **Execute**, and read the diff before confirming. Expect: create 1 server,
-3 variables, 1 stack; delete nothing. Deletions mean UI-created resources
-aren't declared in TOML yet.
+the variables from `variables.toml`, and one stack per `[[stack]]` block;
+delete nothing. Deletions mean UI-created resources aren't declared in TOML
+yet.
 
 ## 11. Verify the Prowlarr stack
 

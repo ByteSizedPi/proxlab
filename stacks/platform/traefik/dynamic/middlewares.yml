@@ -1,0 +1,56 @@
+# Dynamic configuration — hot-reloaded by the file provider, no restart needed.
+#
+# ⚠️ THIS FILE IS COMMITTED TO GIT. No credentials here. The dashboard's
+# basicauth hash lives as a Komodo secret Variable and is applied via a label
+# in ../compose.yaml for exactly this reason.
+
+http:
+  middlewares:
+    # Applied to every router on the websecure entrypoint (set in
+    # ../compose.yaml). Carried over from jjserver unchanged — it was already
+    # a sound set.
+    secure-headers:
+      headers:
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        customFrameOptionsValue: "SAMEORIGIN"
+        permissionsPolicy: "camera=(), microphone=(), geolocation=()"
+        # HSTS: one year, including subdomains. forceSTSHeader adds it even on
+        # plain-HTTP responses.
+        #
+        # ⚠️ This is a one-way door per browser. Once a browser has seen this
+        # header for admin.jjventer.co.za it will refuse plain HTTP to that
+        # name — including every subdomain — until the max-age expires. There
+        # is no way to clear it remotely. That is fine while certificates come
+        # from Let's Encrypt, but it does mean falling back to self-signed
+        # certs later would produce hard TLS errors with no click-through.
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        forceSTSHeader: true
+
+    # ── Not yet deployed ──────────────────────────────────────────────────
+    #
+    # Both are defined here ready to go, but stay commented until the service
+    # behind each one is actually running. A router referencing a middleware
+    # that cannot resolve does not skip it — the whole chain fails, so
+    # uncommenting either of these early takes every route down.
+    #
+    # Uncomment in the SAME commit that adds the corresponding stack, and for
+    # crowdsec-bouncer also add it to the entrypoint middleware list in
+    # ../compose.yaml.
+
+    # authelia:
+    #   forwardAuth:
+    #     address: "http://authelia:9091/api/authz/forward-auth"
+    #     trustForwardHeader: true
+    #     authResponseHeaders:
+    #       - Remote-User
+    #       - Remote-Groups
+    #       - Remote-Name
+    #       - Remote-Email
+
+    # crowdsec-bouncer:
+    #   forwardAuth:
+    #     address: "http://crowdsec-bouncer:8080/api/v1/forwardAuth"
+    #     trustForwardHeader: true

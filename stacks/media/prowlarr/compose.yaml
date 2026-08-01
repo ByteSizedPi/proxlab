@@ -25,22 +25,39 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    # Uncomment once the shared "media"/"proxy" networks exist and Traefik is deployed.
-    # At that point also remove the `ports:` block above — Traefik becomes the only entry point.
+    # ── Putting this behind Traefik ───────────────────────────────────────
+    #
+    # STILL DISABLED ON PURPOSE. Enable it in its own commit, only AFTER the
+    # traefik stack has deployed successfully at least once — its pre_deploy
+    # is what creates the `ingress` network. `ingress` is external here, so
+    # until it exists this stack stops deploying at all: uncommenting early
+    # trades a working Prowlarr for a failed one.
+    #
+    # Then also delete the `ports:` block above — Traefik becomes the only
+    # way in, and leaving 9696 published keeps an unauthenticated bypass open
+    # around whatever auth the proxy enforces.
+    #
     # networks:
-    #   - media
-    #   - proxy
+    #   - ingress
     # labels:
     #   - "traefik.enable=true"
-    #   - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.jj.home`)"
-    #   - "traefik.http.routers.prowlarr.entrypoints=websecure"
-    #   - "traefik.http.routers.prowlarr.tls=true"
-    #   - "traefik.http.routers.prowlarr.middlewares=authelia@file"
+    #   - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.admin.jjventer.co.za`)"
     #   - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
-    #   - "traefik.docker.network=proxy"
+    #
+    # Deliberately NOT set here, unlike the jjserver copy this came from:
+    #   entrypoints / tls  — the websecure entrypoint is asDefault and has
+    #                        tls + certresolver on it already, so a router
+    #                        that names nothing lands there correctly. Naming
+    #                        them again is noise that drifts out of sync.
+    #   middlewares        — secure-headers applies via the entrypoint. Do NOT
+    #                        add `authelia@file` until Authelia is deployed;
+    #                        an unresolvable middleware takes down the whole
+    #                        router, it does not degrade gracefully.
+    #   traefik.docker.network — only needed to override the global default,
+    #                        which is already --providers.docker.network=ingress.
+    #                        Once Prowlarr is on BOTH `ingress` and `media`
+    #                        the global default still resolves it correctly.
 
 # networks:
-#   media:
-#     external: true
-#   proxy:
+#   ingress:
 #     external: true

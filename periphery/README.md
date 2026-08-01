@@ -66,7 +66,22 @@ sudo systemctl enable --now komodo-periphery-update.timer
 systemctl list-timers komodo-periphery-update.timer
 ```
 
-Check it afterwards with `journalctl -u komodo-periphery-update.service`.
+Test the unit once by hand rather than waiting for the timer:
+
+```sh
+sudo systemctl start komodo-periphery-update.service
+journalctl -u komodo-periphery-update.service -n 30 --no-pager
+```
+
+Two failures found the first time this ran on `app-prod`, both now fixed in
+the unit but worth recognising if it's ever rewritten:
+
+- `KeyError: 'HOME'` — systemd gives services a near-empty environment, and
+  the installer reads `os.environ['HOME']` before deciding whether it even
+  needs it. Fixed by `Environment=HOME=/root`.
+- `Restart=on-failure` on a `Type=oneshot` unit is an endless retry loop, not
+  a safety net. It sat in `activating (auto-restart)` re-running every five
+  minutes against a permanent error. The timer is the retry mechanism.
 
 **Known limitation:** the two updaters are independent, so after a release Core
 may be newer than Periphery until the timer next runs — up to a day. That shows

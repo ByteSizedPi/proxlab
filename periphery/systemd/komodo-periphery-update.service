@@ -7,6 +7,13 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 
+# ⚠️ REQUIRED. systemd starts services with a near-empty environment, and
+# setup-periphery.py does `home_dir = os.environ['HOME']` at the top of
+# load_paths() — before it branches on root vs --user. A root install never
+# uses the value, but reading it still raises KeyError: 'HOME' and the whole
+# run dies before printing anything useful. Verified on app-prod 2026-08-01.
+Environment=HOME=/root
+
 # Upstream explicitly supports re-running this installer:
 #   "This script can be run multiple times without issue, and it won't change
 #    existing config after the first run. Just run it again after a Komodo
@@ -29,6 +36,9 @@ ExecStart=/usr/bin/bash -c '\
 # Harmless if the installer already did it.
 ExecStartPost=/usr/bin/systemctl restart periphery
 
-# Don't let a network blip at boot mark this as failed forever.
-Restart=on-failure
-RestartSec=5min
+# ⚠️ Do NOT add Restart=on-failure here. On a Type=oneshot unit that produces
+# an endless retry loop — the unit sits in `activating (auto-restart)` and
+# re-runs forever on a permanent failure like a bad path or a missing
+# environment variable, which is exactly what happened the first time this
+# ran. The timer already provides the retry cadence, and Persistent=true
+# covers a run missed because the machine was off.

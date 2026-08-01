@@ -338,6 +338,22 @@ push is lost permanently. Two things cover that — the `gitops` procedure's
 changed) and `KOMODO_RESOURCE_POLL_INTERVAL`. Webhooks also fire only for the
 branch configured on the resource, and a mismatch fails silently.
 
+⚠️ **A commit that changes `procedures.toml` stops all deploys until you run
+the sync by hand.** Stage 1 of the procedure *is* the sync, and a sync running
+inside a procedure cannot modify that procedure. It retries ten times, fails
+with `procedure sync loop exited after max iterations`, and because stage 1
+failed the procedure aborts — stages 2 and 3 never run. Every later webhook and
+scheduled run repeats the failure, since the pending self-update is still
+queued.
+
+The message is useless by design: Komodo builds a detailed error and then
+throws it away, returning a fixed string instead, so nothing in the UI or
+Core's logs names the cause.
+
+Fix: **Syncs → `resources` → Execute** in the UI. Standalone, the sync isn't
+inside the procedure and applies cleanly. Only `procedures.toml` behaves this
+way — stacks, repos, servers and variables all sync fine from inside the run.
+
 ⚠️ A push that changes `stacks/cloudflared/` redeploys the tunnel, which kills
 the connection the triggering webhook arrived over. GitHub logs that delivery
 as **failed** even though the procedure completed — it runs inside Core and

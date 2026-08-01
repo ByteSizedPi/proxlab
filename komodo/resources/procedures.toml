@@ -67,6 +67,34 @@ schedule_enabled = true
 schedule_alert = false      # a no-op run every 15 min is not news
 failure_alert = true
 
+## ⚠️ CHANGING THIS PROCEDURE REQUIRES A MANUAL SYNC ⚠️
+##
+## A sync running *inside* a procedure cannot modify that procedure. Stage 1
+## runs the sync, so when a commit changes this file the sync tries to rewrite
+## the procedure that is currently executing it, retries ten times, and gives
+## up with:
+##
+##   procedure sync loop exited after max iterations
+##
+## That is not cosmetic. The stage fails, so the procedure aborts and stages 2
+## and 3 never run — **all deploys stop** until it is cleared, and every
+## subsequent webhook and scheduled run fails the same way because the pending
+## self-update is still there.
+##
+## Worse, the message tells you nothing. Komodo accumulates the real error and
+## then discards it (bin/core/src/sync/resources.rs — it builds a detailed
+## `log`, then returns `Log::error("run procedure", String::from(...))` with a
+## fresh string). The cause is not in the UI or in Core's logs.
+##
+## FIX: Syncs → `resources` → Execute, by hand in the UI. Run standalone the
+## sync is not inside the procedure, so it applies the update and normal
+## operation resumes. Verified on app-prod 2026-08-01: the identical sync
+## failed twice via the procedure, then succeeded immediately run manually.
+##
+## Every other resource type is unaffected — stacks, repos, servers and
+## variables all sync fine from inside the procedure. Only this file is
+## special, and only because stage 1 is what applies it.
+
 [[procedure.config.stage]]
 name = "sync resources"
 enabled = true

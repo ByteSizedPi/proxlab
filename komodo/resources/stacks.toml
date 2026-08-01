@@ -45,8 +45,10 @@ env_file_path = "komodo.env"
 additional_env_files = ["../common.env", "prowlarr.env"]
 
 # --- Automation ---
-# Redeploy when this repo is pushed to (needs the Stack webhook in GitHub).
-webhook_enabled = true
+# No per-stack webhook. Git-driven deploys come from the single "gitops"
+# procedure (see procedures.toml), which syncs then batch-deploys every stack
+# whose contents changed. One webhook for the repo, not one per service.
+webhook_enabled = false
 # Redeploy when a newer image digest appears upstream. Independent of git.
 auto_update = true
 poll_for_updates = true
@@ -76,7 +78,11 @@ env_file_path = "komodo.env"
 additional_env_files = ["../common.env", "cloudflared.env"]
 
 # --- Automation ---
-webhook_enabled = false   # chicken-and-egg: this stack IS the webhook path
+# Deployed by the "gitops" procedure like everything else — its `*` pattern
+# includes this stack on purpose, so tunnel config changes still ship. Note
+# that redeploying this cuts the connection the triggering webhook arrived
+# over; see the warning at the foot of procedures.toml.
+webhook_enabled = false
 auto_update = true
 poll_for_updates = true
 

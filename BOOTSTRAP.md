@@ -224,12 +224,22 @@ Webhooks are the primary trigger. Inbound reachability comes from the
 Cloudflare Tunnel in `stacks/cloudflared` — no VPS needed, and it publishes
 only `^/listener/.*`, so the UI stays LAN-only.
 
-Add one webhook per resource in GitHub → repo → Settings → Webhooks:
+**One webhook total**, pointed at the `gitops` procedure — not one per stack.
+See README.md for why. The procedure syncs resources, then batch-deploys only
+the stacks whose contents changed.
 
-| Resource | Payload URL |
-|---|---|
-| sync `resources` | `https://hooks.jjventer.co.za/listener/github/sync/<id>/sync` |
-| stack `prowlarr` | `https://hooks.jjventer.co.za/listener/github/stack/<id>/deploy` |
+Chicken-and-egg: the URL contains the procedure's ID, which doesn't exist until
+the procedure has been synced into Komodo. So the first time:
+
+1. Push `procedures.toml`.
+2. Run the `resources` sync **by hand** in the UI → Syncs → `resources` →
+   Execute. This creates the procedure.
+3. Look up its ID (query below), add the webhook, delete any older per-stack
+   webhooks.
+
+```
+https://hooks.jjventer.co.za/listener/github/procedure/<id>/run
+```
 
 Content type `application/json`, secret = `KOMODO_WEBHOOK_SECRET`, SSL
 verification on, **push events only**.
@@ -242,6 +252,7 @@ the readable name form. Get IDs with:
 ```sh
 docker exec -e P="$KOMODO_DATABASE_PASSWORD" komodo-mongo-1 sh -c \
   'mongosh --quiet -u admin -p "$P" --authenticationDatabase admin komodo --eval "
+     db.Procedure.find({},{name:1}).forEach(d=>print(d._id+\"  \"+d.name));
      db.Stack.find({},{name:1}).forEach(d=>print(d._id+\"  \"+d.name));
      db.ResourceSync.find({},{name:1}).forEach(d=>print(d._id+\"  \"+d.name))"'
 ```
@@ -254,27 +265,39 @@ Verify a route before wiring it up, from outside the LAN:
 
 ```sh
 curl -so /dev/null -w '%{http_code}\n' -X POST -d '{}' \
-  https://hooks.jjventer.co.za/listener/github/sync/<id>/sync
+  https://hooks.jjventer.co.za/listener/github/procedure/<id>/run
 ```
 
-`401` means the route is valid and rejected an unsigned request — that is
-success. `404` means the path is wrong. `405` means the resource *type* segment
-is wrong (`resource_sync` instead of `sync`). Never probe with a bare `GET`; it
-returns `405` on a perfectly good route.
+Reading the codes — none of them is a plain "OK", so know which failure is
+which:
 
-`sync` applies the diff immediately; `refresh` only marks it pending for manual
-confirmation in the UI. This repo uses `sync`, made safe by `delete: false` and
-`managed: false` on the sync — removing a stack from `stacks.toml` will *not*
-remove it from Komodo.
+| Code | Meaning |
+|---|---|
+| `401` | **Route is valid**, and it rejected an unsigned request. This is success. |
+| `400` | Route shape is valid but the resource ID doesn't exist. Wrong/stale ID. |
+| `404` | Path is wrong, *or* the Cloudflare ingress regex didn't match at all. |
+| `405` | Wrong resource-type or execution segment — or you probed with `GET`. |
 
-**`KOMODO_RESOURCE_POLL_INTERVAL` stays on as a backstop.** `app-prod` is shut
-down nightly, and a webhook fires once: if the box is off, GitHub retries
-briefly, gives up, and that push is missed permanently. Polling reconciles to
-current `main` on next boot. Webhooks fire only for the branch configured on the
-resource, and a mismatch fails silently.
+Always probe with `POST`; a bare `GET` returns `405` on a perfectly good route.
 
-⚠️ No webhook for `cloudflared` — it *is* the path webhooks arrive over, so
-redeploying it from a webhook would cut the delivery mid-flight.
+Within the sync itself, `sync` applies the diff immediately while `refresh`
+only marks it pending for manual confirmation. The procedure uses `RunSync`
+(apply), made safe by `delete: false` and `managed: false` on the sync —
+removing a stack from `stacks.toml` will *not* remove it from Komodo.
+
+**Backstops stay on.** `app-prod` is shut down nightly and a webhook fires
+exactly once: if the box is off, GitHub retries briefly, gives up, and that
+push is lost permanently. Two things cover that — the `gitops` procedure's
+15-minute schedule (which re-runs the same reconcile and no-ops when nothing
+changed) and `KOMODO_RESOURCE_POLL_INTERVAL`. Webhooks also fire only for the
+branch configured on the resource, and a mismatch fails silently.
+
+⚠️ A push that changes `stacks/cloudflared/` redeploys the tunnel, which kills
+the connection the triggering webhook arrived over. GitHub logs that delivery
+as **failed** even though the procedure completed — it runs inside Core and
+doesn't care that the caller went away. Confirm against Komodo's update log,
+not GitHub. If such a change breaks the tunnel outright, webhooks stop
+arriving entirely; recover from the LAN UI or wait for the 15-minute schedule.
 
 ## 13. Adopt Core into Komodo
 
@@ -300,9 +323,11 @@ you cannot fix a broken sync from the UI.
 ## Steady state
 
 ```
-edit a compose file → push → stack webhook → redeploy
-add a stack         → push → sync webhook  → sync creates it → deploy
-missed push (box off) → poll interval reconciles on next boot
-new image upstream  → auto_update polls registry (no git involved)
-rotate a secret     → UI → Variables → redeploy the stack
+any push           → gitops procedure → sync resources
+                                      → deploy only the stacks that changed
+add a stack        → same path; sync creates it, batch deploys it. No new
+                     webhook, ever.
+missed push (box off) → the procedure's 15-min schedule reconciles
+new image upstream → auto_update polls registry (no git involved)
+rotate a secret    → UI → Variables → redeploy the stack
 ```

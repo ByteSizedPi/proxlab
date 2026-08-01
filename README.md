@@ -131,18 +131,35 @@ convention exists to prevent.
 2. Add a `[[stack]]` block to `komodo/resources/stacks.toml`
 3. Commit and push to `main`
 
-The Resource Sync webhook creates the Stack; its own webhook deploys it.
+That's the whole procedure. No webhook to add, nothing to click: the `gitops`
+procedure's sync stage creates the Stack and its batch stage deploys it,
+because a stack that has never been deployed counts as changed.
 
-## Two webhooks, two jobs
+## One webhook
 
-| Webhook | Fires on | Does |
+There is exactly **one** GitHub webhook, and it stays at one no matter how many
+services get added. It points at the `gitops` procedure
+(`komodo/resources/procedures.toml`), which runs two stages in order:
+
+| Stage | Execution | Does |
 |---|---|---|
-| Resource Sync | any push to `main` | diffs `komodo/resources/*.toml`, creates/updates/deletes resources |
-| Stack | any push to `main` | re-clones and redeploys that stack |
+| 1 | `RunSync` | diffs `komodo/resources/*.toml`, creates/updates resources |
+| 2 | `BatchDeployStackIfChanged` (`pattern = "*"`) | redeploys only stacks whose contents changed |
 
-Both only trigger for the branch configured on the resource. A branch mismatch
-fails silently rather than loudly — this repo uses `main` throughout, matching
-Komodo's default.
+Stage 2 is the part that makes this scale: Komodo compares deployed contents
+against latest contents per stack and skips the ones that match, so a push
+touching one compose file restarts one container. A docs-only push restarts
+nothing. And because stage 1 runs first, a brand-new stack is created and then
+deployed in the same run — no bootstrap click, no new webhook.
+
+A webhook per Stack resource also works and is what the UI nudges you toward.
+It was rejected: it makes every new service a manual step in GitHub's settings,
+scatters state that belongs in this repo across a web UI, and can't deploy a
+stack that doesn't exist yet.
+
+Webhooks only trigger for the branch configured on the resource, and a branch
+mismatch fails silently rather than loudly — this repo uses `main` throughout,
+matching Komodo's default.
 
 URLs are `/listener/<AUTH_TYPE>/<RESOURCE_TYPE>/<NAME_OR_ID>/<EXECUTION>`, and
 accept either a resource name or its Mongo `_id` — but the UI only generates
@@ -150,8 +167,7 @@ the ID form, so what you copy out of Komodo won't match the readable form.
 Setup, verification and how to look up IDs: `BOOTSTRAP.md` step 12.
 
 Inbound reachability is the Cloudflare Tunnel in `stacks/cloudflared`, which
-publishes `^/listener/.*` and nothing else. `cloudflared` therefore has no
-webhook of its own — it is the path the webhooks arrive over.
+publishes `^/listener/.*` and nothing else.
 
 Image updates are separate from git entirely: `auto_update = true` polls the
 registry for newer digests and redeploys on its own schedule.

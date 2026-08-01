@@ -3,17 +3,83 @@
 ## Komodo creates two of these itself on first launch ("Backup Core Database"
 ## and "Global Auto Update") unless KOMODO_DISABLE_INIT_RESOURCES=true.
 ## Don't redeclare those here or the sync will fight with Core over them.
-##
-## Left intentionally near-empty. Add procedures here once there's something
-## worth batching — e.g. stopping the *arr stack before a backup window, then
-## starting it again after.
 
-# [[procedure]]
-# name = "restart-media-stacks"
-# [procedure.config]
-# [[procedure.config.stage]]
-# name = "restart"
-# enabled = true
-# executions = [
-#   { execution.type = "DeployStack", execution.params.stack = "prowlarr", enabled = true },
-# ]
+
+## ── The single deploy entrypoint ─────────────────────────────────────────
+##
+## ONE GitHub webhook drives the entire repo. Not one per stack.
+##
+## The naive design is a webhook per Stack resource, which means every new
+## service is a manual click in GitHub's settings — tens of webhooks, each
+## able to rot independently, none of them visible in this repo. It also
+## can't handle a *new* stack: the webhook can't exist until the resource
+## does, so the first deploy is always manual.
+##
+## Instead GitHub calls this procedure, which does both jobs in order:
+##
+##   stage 1  RunSync                  reconcile resources/*.toml — create,
+##                                     update or retire Komodo resources
+##   stage 2  BatchDeployStackIfChanged redeploy only the stacks whose
+##                                     contents actually differ
+##
+## Stages run SEQUENTIALLY (executions *within* a stage run in parallel),
+## which is what makes this work: a stack added to stacks.toml is created by
+## stage 1 and then deployed by stage 2 in the same run. Adding a service is
+## a directory, a [[stack]] block, and a push. No UI, no new webhook.
+##
+## "IfChanged" is what keeps this from being a sledgehammer. Per Komodo:
+##   "Checks deployed contents vs latest contents, and only if any changes
+##    found will `docker compose up`."
+## So a push touching one compose file restarts one container, not all of
+## them. A docs-only push restarts nothing.
+
+[[procedure]]
+name = "gitops"
+tags = ["platform"]
+[procedure.config]
+
+# Fire on push. The webhook URL is
+#   /listener/github/procedure/<id>/run
+# and the ID only exists after this procedure has been synced into Komodo —
+# so the first sync must be run by hand from the UI. See BOOTSTRAP.md step 12.
+webhook_enabled = true
+
+# Backstop for pushes missed while app-prod was powered down overnight: a
+# webhook fires exactly once and GitHub gives up after a short retry window,
+# so a push during downtime is lost permanently. This re-runs the whole
+# reconcile on a timer, and costs nothing when nothing changed — stage 2
+# compares contents and no-ops.
+schedule_format = "English"
+schedule = "every 15 minutes"
+schedule_enabled = true
+schedule_alert = false      # a no-op run every 15 min is not news
+failure_alert = true
+
+[[procedure.config.stage]]
+name = "sync resources"
+enabled = true
+executions = [
+  { execution.type = "RunSync", execution.params.sync = "resources", enabled = true },
+]
+
+[[procedure.config.stage]]
+name = "deploy changed stacks"
+enabled = true
+executions = [
+  # `pattern` accepts an id, a name, a wildcard or a regex, and supports
+  # comma/newline separated combinations. "*" = every stack, which is the
+  # point: this list must never need editing when a service is added.
+  { execution.type = "BatchDeployStackIfChanged", execution.params.pattern = "*", enabled = true },
+]
+
+## ⚠️ `*` includes cloudflared, deliberately. Its compose file should still
+## redeploy when it changes. The side effect is that redeploying it kills the
+## tunnel carrying the very request that triggered this run, so GitHub records
+## that delivery as FAILED even though the work completed — the procedure runs
+## inside Core and does not care that the caller went away. Check the Komodo
+## update log, not GitHub, before believing a failure on a cloudflared push.
+##
+## ⚠️ If a cloudflared change breaks the tunnel, webhooks stop arriving and
+## this procedure can no longer be triggered from GitHub. Recovery is the LAN
+## UI (http://10.42.0.205:9120) or the 15-minute schedule above, which is the
+## other reason that schedule is enabled.

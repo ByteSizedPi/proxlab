@@ -27,6 +27,14 @@ services:
       - "80:80"
       - "443:443"
 
+    # Lets the file-provider route in dynamic/komodo.yml reach Komodo Core,
+    # which publishes 9120 on the HOST and is not on any network Traefik can
+    # see. Inside this container "localhost" is the container itself, so it
+    # needs a name that resolves to the host. Same pattern the cloudflared
+    # stack uses for the same reason.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
     environment:
       - TZ=${TZ}
       # Cloudflare API token for the ACME DNS-01 challenge. Scope it to

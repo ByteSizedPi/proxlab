@@ -9,8 +9,19 @@ services:
       - DOTNET_SYSTEM_NET_DISABLEIPV6=true
     volumes:
       - ${CONFIG_ROOT}/prowlarr:/config:Z   # :Z relabels for SELinux hosts; no-op elsewhere
-    ports:
-      - 9696:9696   # direct access for testing — remove once Traefik fronts this service
+
+    # ── No `ports:` block. Deliberate. ────────────────────────────────────
+    #
+    # 9696 was published while this was the only service and there was no
+    # proxy. Now that Traefik fronts it, publishing the port again would leave
+    # http://10.42.0.205:9696 open as an unauthenticated path that bypasses
+    # whatever the proxy enforces — today secure-headers and TLS, later
+    # Authelia. Traefik reaches the container over the `ingress` network, so
+    # nothing needs to be published on the host.
+    #
+    # Note this is the OPPOSITE of Komodo Core, which keeps its published port
+    # on purpose as a break-glass route — see dynamic/komodo.yml in the traefik
+    # stack for why that case is different.
     security_opt:
       - no-new-privileges:true
     healthcheck:
@@ -25,39 +36,33 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    # ── Putting this behind Traefik ───────────────────────────────────────
-    #
-    # STILL DISABLED ON PURPOSE. Enable it in its own commit, only AFTER the
-    # traefik stack has deployed successfully at least once — its pre_deploy
-    # is what creates the `ingress` network. `ingress` is external here, so
-    # until it exists this stack stops deploying at all: uncommenting early
-    # trades a working Prowlarr for a failed one.
-    #
-    # Then also delete the `ports:` block above — Traefik becomes the only
-    # way in, and leaving 9696 published keeps an unauthenticated bypass open
-    # around whatever auth the proxy enforces.
-    #
-    # networks:
-    #   - ingress
-    # labels:
-    #   - "traefik.enable=true"
-    #   - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.admin.jjventer.co.za`)"
-    #   - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
-    #
-    # Deliberately NOT set here, unlike the jjserver copy this came from:
-    #   entrypoints / tls  — the websecure entrypoint is asDefault and has
-    #                        tls + certresolver on it already, so a router
-    #                        that names nothing lands there correctly. Naming
-    #                        them again is noise that drifts out of sync.
-    #   middlewares        — secure-headers applies via the entrypoint. Do NOT
-    #                        add `authelia@file` until Authelia is deployed;
-    #                        an unresolvable middleware takes down the whole
-    #                        router, it does not degrade gracefully.
-    #   traefik.docker.network — only needed to override the global default,
-    #                        which is already --providers.docker.network=ingress.
-    #                        Once Prowlarr is on BOTH `ingress` and `media`
-    #                        the global default still resolves it correctly.
+    networks:
+      - ingress
 
-# networks:
-#   ingress:
-#     external: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.admin.jjventer.co.za`)"
+      # Required because the container exposes more than one port; without it
+      # Traefik picks one non-deterministically.
+      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
+      #
+      # Deliberately NOT set here, unlike the jjserver copy this came from:
+      #   entrypoints / tls  — the websecure entrypoint is asDefault and has
+      #                        tls + certresolver on it already, so a router
+      #                        that names nothing lands there correctly. Naming
+      #                        them again is noise that drifts out of sync.
+      #   middlewares        — secure-headers applies via the entrypoint. Do NOT
+      #                        add `authelia@file` until Authelia is deployed;
+      #                        an unresolvable middleware takes down the whole
+      #                        router, it does not degrade gracefully.
+      #   traefik.docker.network — only needed to override the global default,
+      #                        which is already --providers.docker.network=ingress.
+      #                        When Prowlarr later joins `media` as well, the
+      #                        global default still resolves it correctly.
+
+networks:
+  # Created by the traefik stack's pre_deploy hook. External because it spans
+  # compose projects — see the network notes in
+  # ../../platform/traefik/compose.yaml.
+  ingress:
+    external: true

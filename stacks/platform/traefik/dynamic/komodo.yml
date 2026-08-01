@@ -1,0 +1,68 @@
+# Route to Komodo Core itself — the one service Traefik fronts that it does
+# NOT discover through Docker labels.
+#
+# ── Why a file-provider route and not labels ─────────────────────────────
+#
+# Komodo Core is not a Komodo-managed stack. It lives in the control plane
+# (komodo/compose.yaml), deployed by hand and updated by
+# scripts/update-komodo.sh, precisely so that Komodo never redeploys itself.
+# See the long note at the foot of komodo/resources/stacks.toml.
+#
+# Labelling it would mean editing the control plane compose, joining Core to
+# the `ingress` network, and restarting Core — dragging the control plane into
+# the thing it is deliberately kept out of, and splitting Traefik's routing
+# config across two places. A file route keeps all of it here and needs no
+# change to Core at all.
+#
+# ── Why host.docker.internal ─────────────────────────────────────────────
+#
+# Core publishes 9120 on the HOST and is not on any network Traefik can see.
+# `host.docker.internal` resolves to the Docker bridge gateway via the
+# `extra_hosts` entry on the traefik service (../compose.yaml). Same pattern
+# the cloudflared stack already uses to reach Core, and the same reason.
+#
+# Deliberately NOT the bridge gateway IP (172.x.0.1) — that is what jjserver's
+# expert-matcher.yml hardcoded, and it silently breaks whenever Docker
+# renumbers its networks.
+#
+# ⚠️ The hostname is hardcoded rather than ${ADMIN_DOMAIN}. Traefik's file
+# provider does NOT do environment substitution — a `${...}` here would be
+# matched literally and the router would never fire. If ADMIN_DOMAIN ever
+# changes, this file has to change with it.
+
+http:
+  routers:
+    komodo:
+      rule: "Host(`komodo.admin.jjventer.co.za`)"
+      service: komodo
+      # No entryPoints / tls / middlewares block on purpose: websecure is
+      # asDefault and already carries tls + certresolver + secure-headers, so
+      # this router picks all of that up. Restating it here is noise that
+      # drifts out of sync with the entrypoint.
+      #
+      # No auth middleware either — Komodo has its own login. Putting basicauth
+      # in front would mean two prompts for one service.
+
+  services:
+    komodo:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:9120"
+        # Komodo's UI uses websockets for live updates. Traefik proxies the
+        # HTTP/1.1 upgrade transparently, so no extra configuration is needed —
+        # but it is the first thing to check if the UI loads yet never updates.
+
+## ⚠️ DO NOT REMOVE THE PUBLISHED 9120 FROM komodo/compose.yaml ⚠️
+##
+## Unlike a normal service, where publishing a port alongside Traefik leaves an
+## unauthenticated bypass open, Core's direct port is a deliberate break-glass
+## path.
+##
+## Reaching Komodo ONLY through Traefik is a circular dependency: if a bad
+## Traefik config takes the proxy down, the tool you would use to fix Traefik
+## is behind the thing that is broken. http://10.42.0.205:9120 stays as the
+## way back in. That is also the recovery path already documented for a broken
+## cloudflared in procedures.toml.
+##
+## It is not much of an exposure either way: Komodo has its own auth, and the
+## LAN/tailnet is the only place that can reach 9120 at all.

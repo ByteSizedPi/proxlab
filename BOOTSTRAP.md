@@ -218,20 +218,63 @@ that, not to the clone root.
 Komodo only writes it when there's something to interpolate. That's expected,
 not a failure.
 
-## 12. Deploy trigger: poll now, webhooks later
+## 12. Deploy trigger: webhooks, with polling as the backstop
 
-**Stay on `KOMODO_RESOURCE_POLL_INTERVAL` while `app-prod` is shut down
-nightly.** A webhook fires once; if the box is off, GitHub retries briefly,
-gives up, and that push is missed permanently. Polling reconciles to current
-`main` on next boot.
+Webhooks are the primary trigger. Inbound reachability comes from the
+Cloudflare Tunnel in `stacks/cloudflared` — no VPS needed, and it publishes
+only `^/listener/.*`, so the UI stays LAN-only.
 
-Webhooks also need `app-prod` reachable *inbound* from GitHub, which needs the
-VPS ingress. Revisit both together.
+Add one webhook per resource in GitHub → repo → Settings → Webhooks:
 
-When that day comes: Komodo generates the URL per resource; GitHub → Settings →
-Webhooks → payload URL, `application/json`, secret = `KOMODO_WEBHOOK_SECRET`,
-push events only. Webhooks fire only for the branch configured on the resource,
-and a mismatch fails silently.
+| Resource | Payload URL |
+|---|---|
+| sync `resources` | `https://hooks.jjventer.co.za/listener/github/sync/<id>/sync` |
+| stack `prowlarr` | `https://hooks.jjventer.co.za/listener/github/stack/<id>/deploy` |
+
+Content type `application/json`, secret = `KOMODO_WEBHOOK_SECRET`, SSL
+verification on, **push events only**.
+
+The URL shape is `/listener/<AUTH_TYPE>/<RESOURCE_TYPE>/<NAME_OR_ID>/<EXECUTION>`.
+Both a resource name and its Mongo `_id` work in that slot, but **the UI only
+ever generates the ID form** — so what you copy out of Komodo won't look like
+the readable name form. Get IDs with:
+
+```sh
+docker exec -e P="$KOMODO_DATABASE_PASSWORD" komodo-mongo-1 sh -c \
+  'mongosh --quiet -u admin -p "$P" --authenticationDatabase admin komodo --eval "
+     db.Stack.find({},{name:1}).forEach(d=>print(d._id+\"  \"+d.name));
+     db.ResourceSync.find({},{name:1}).forEach(d=>print(d._id+\"  \"+d.name))"'
+```
+
+Note the database user is `admin` (from `MONGO_INITDB_ROOT_USERNAME`), not the
+`komodo` database name — easy to conflate, and the only symptom is
+`Authentication failed`.
+
+Verify a route before wiring it up, from outside the LAN:
+
+```sh
+curl -so /dev/null -w '%{http_code}\n' -X POST -d '{}' \
+  https://hooks.jjventer.co.za/listener/github/sync/<id>/sync
+```
+
+`401` means the route is valid and rejected an unsigned request — that is
+success. `404` means the path is wrong. `405` means the resource *type* segment
+is wrong (`resource_sync` instead of `sync`). Never probe with a bare `GET`; it
+returns `405` on a perfectly good route.
+
+`sync` applies the diff immediately; `refresh` only marks it pending for manual
+confirmation in the UI. This repo uses `sync`, made safe by `delete: false` and
+`managed: false` on the sync — removing a stack from `stacks.toml` will *not*
+remove it from Komodo.
+
+**`KOMODO_RESOURCE_POLL_INTERVAL` stays on as a backstop.** `app-prod` is shut
+down nightly, and a webhook fires once: if the box is off, GitHub retries
+briefly, gives up, and that push is missed permanently. Polling reconciles to
+current `main` on next boot. Webhooks fire only for the branch configured on the
+resource, and a mismatch fails silently.
+
+⚠️ No webhook for `cloudflared` — it *is* the path webhooks arrive over, so
+redeploying it from a webhook would cut the delivery mid-flight.
 
 ## 13. Adopt Core into Komodo
 
@@ -257,8 +300,9 @@ you cannot fix a broken sync from the UI.
 ## Steady state
 
 ```
-edit a compose file → push → poll picks it up → redeploy
-add a stack         → push → sync creates it  → deploy
+edit a compose file → push → stack webhook → redeploy
+add a stack         → push → sync webhook  → sync creates it → deploy
+missed push (box off) → poll interval reconciles on next boot
 new image upstream  → auto_update polls registry (no git involved)
 rotate a secret     → UI → Variables → redeploy the stack
 ```

@@ -144,5 +144,14 @@ Both only trigger for the branch configured on the resource. A branch mismatch
 fails silently rather than loudly — this repo uses `main` throughout, matching
 Komodo's default.
 
+URLs are `/listener/<AUTH_TYPE>/<RESOURCE_TYPE>/<NAME_OR_ID>/<EXECUTION>`, and
+accept either a resource name or its Mongo `_id` — but the UI only generates
+the ID form, so what you copy out of Komodo won't match the readable form.
+Setup, verification and how to look up IDs: `BOOTSTRAP.md` step 12.
+
+Inbound reachability is the Cloudflare Tunnel in `stacks/cloudflared`, which
+publishes `^/listener/.*` and nothing else. `cloudflared` therefore has no
+webhook of its own — it is the path the webhooks arrive over.
+
 Image updates are separate from git entirely: `auto_update = true` polls the
 registry for newer digests and redeploys on its own schedule.

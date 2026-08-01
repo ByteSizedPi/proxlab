@@ -1,8 +1,9 @@
 ## Procedures — ordered batches of executions, runnable on a schedule.
 ##
-## Komodo creates two of these itself on first launch ("Backup Core Database"
-## and "Global Auto Update") unless KOMODO_DISABLE_INIT_RESOURCES=true.
-## Don't redeclare those here or the sync will fight with Core over them.
+## Komodo creates three of these itself on first launch — "Backup Core
+## Database" (01:00), "Global Auto Update" (03:00) and "Rotate Server Keys"
+## (06:00) — unless KOMODO_DISABLE_INIT_RESOURCES=true. Don't redeclare them
+## here or the sync will fight with Core over them.
 
 
 ## ── The single deploy entrypoint ─────────────────────────────────────────
@@ -39,9 +40,20 @@ tags = ["platform"]
 [procedure.config]
 
 # Fire on push. The webhook URL is
-#   /listener/github/procedure/<id>/run
-# and the ID only exists after this procedure has been synced into Komodo —
-# so the first sync must be run by hand from the UI. See BOOTSTRAP.md step 12.
+#   /listener/github/procedure/<id>/main
+#
+# ⚠️ For Procedures and Actions the LAST segment is the BRANCH TO LISTEN ON —
+# not an execution name, unlike every other resource type (Stack takes
+# /deploy, Sync takes /sync, Repo takes /pull). `/run` here would be read as
+# "a branch named run" and the webhook would never fire. Use `/__ANY__` to
+# listen on all branches.
+#
+# This is invisible to probing: branch matching happens AFTER signature
+# validation, so /run and /main both answer 401 to an unsigned request. The
+# only way to tell them apart is a correctly signed delivery, or the docs.
+#
+# The ID only exists after this procedure has been synced into Komodo, so the
+# first sync must be run by hand from the UI. See BOOTSTRAP.md step 12.
 webhook_enabled = true
 
 # Backstop for pushes missed while app-prod was powered down overnight: a

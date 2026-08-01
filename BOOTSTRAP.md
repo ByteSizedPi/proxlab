@@ -238,11 +238,27 @@ the procedure has been synced into Komodo. So the first time:
    webhooks.
 
 ```
-https://hooks.jjventer.co.za/listener/github/procedure/<id>/run
+https://hooks.jjventer.co.za/listener/github/procedure/<id>/main
 ```
 
 Content type `application/json`, secret = `KOMODO_WEBHOOK_SECRET`, SSL
 verification on, **push events only**.
+
+The secret is not optional: the listener is on the public internet and the
+HMAC signature (`X-Hub-Signature-256`) is the only thing authenticating a
+caller. The Cloudflare path filter controls which URLs are reachable, not who
+may call them. Komodo falls back to the global `KOMODO_WEBHOOK_SECRET` unless
+a resource sets its own `webhook_secret`.
+
+⚠️ **For Procedures and Actions the last segment is the branch, not an
+execution.** Every other resource type takes an execution there — Stack
+`/deploy`, Sync `/sync`, Repo `/pull`, Build `/build` — but a Procedure takes
+a branch name, or `/__ANY__` for all branches. `/run` is silently interpreted
+as "a branch named run" and the webhook never fires.
+
+Probing cannot catch this: branch matching happens *after* signature
+validation, so `/run` and `/main` both return `401` to an unsigned request.
+Only a correctly signed delivery, or the docs, distinguish them.
 
 The URL shape is `/listener/<AUTH_TYPE>/<RESOURCE_TYPE>/<NAME_OR_ID>/<EXECUTION>`.
 Both a resource name and its Mongo `_id` work in that slot, but **the UI only
@@ -265,7 +281,7 @@ Verify a route before wiring it up, from outside the LAN:
 
 ```sh
 curl -so /dev/null -w '%{http_code}\n' -X POST -d '{}' \
-  https://hooks.jjventer.co.za/listener/github/procedure/<id>/run
+  https://hooks.jjventer.co.za/listener/github/procedure/<id>/main
 ```
 
 Reading the codes — none of them is a plain "OK", so know which failure is
@@ -277,6 +293,16 @@ which:
 | `400` | Route shape is valid but the resource ID doesn't exist. Wrong/stale ID. |
 | `404` | Path is wrong, *or* the Cloudflare ingress regex didn't match at all. |
 | `405` | Wrong resource-type or execution segment — or you probed with `GET`. |
+
+Know what this does *not* prove: a `401` says the signature check ran, which
+happens before branch matching, so it cannot tell a good branch segment from a
+bad one. See the warning above.
+
+**Space out probes.** Core rate-limits per source IP at
+`auth_rate_limit_max_attempts: 5` per `auth_rate_limit_window_seconds: 15`
+(both visible in the startup config it logs). A loop firing requests
+back-to-back exhausts the window and the throttled responses look like routing
+failures. Sleep ~4s between probes.
 
 Always probe with `POST`; a bare `GET` returns `405` on a perfectly good route.
 

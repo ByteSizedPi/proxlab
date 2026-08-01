@@ -119,6 +119,19 @@ executions = [
 ## inside Core and does not care that the caller went away. Check the Komodo
 ## update log, not GitHub, before believing a failure on a cloudflared push.
 ##
+## ✅ But this is narrower than it sounds: a DEPLOY is not a RESTART.
+## DeployStackIfChanged compares file TEXT, so editing only comments in a
+## compose.yaml does trigger a deploy — but `docker compose up -d` then
+## resolves the config, finds it identical to what is running, and reports
+## `Container cloudflared Running` rather than recreating it. The container is
+## untouched and the tunnel never drops.
+##
+## Verified 2026-08-01: a comment-only commit to
+## stacks/platform/cloudflared/compose.yaml produced DeployStack success=true
+## while the container stayed up with its original uptime and all 18 tunnel
+## connections intact. Only a change to the RESOLVED config — image, env,
+## ports, volumes, command — actually cuts the tunnel.
+##
 ## ⚠️ If a cloudflared change breaks the tunnel, webhooks stop arriving and
 ## this procedure can no longer be triggered from GitHub. Recovery is the LAN
 ## UI (http://10.42.0.205:9120) or the 15-minute schedule above, which is the

@@ -466,14 +466,45 @@ Container **workloads** still auto-update through Komodo (`auto_update` +
 `poll_for_updates` on each stack). Only the control plane is excluded, and
 only because it's the thing performing the deploys.
 
-## 14. Harden
+## 14. Harden — `KOMODO_UI_WRITE_DISABLED`, and why it's currently OFF
 
 ```
-KOMODO_UI_WRITE_DISABLED=true
+KOMODO_UI_WRITE_DISABLED=false
 ```
 
-Git becomes the only path to change config. Do this **last** — while it's on
-you cannot fix a broken sync from the UI.
+Upstream describes it as:
+
+> "Disables write support on resources in the UI. This protects users that
+> would normally have write privileges during their UI usage, when they intend
+> to fully rely on ResourceSyncs to manage config."
+
+So it greys out the config editors for Stacks, Servers, Procedures, Syncs,
+Repos and the rest, leaving git as the only way config changes. It is a
+guardrail against your own habits — **not** a security control. It is enforced
+in the UI, so it stops accidental clicking, not an API call.
+
+**Left off deliberately**, for three reasons found by running this system:
+
+1. **It contradicts `delete: false`.** The sync is configured never to delete,
+   as a safety net — so retiring a resource *must* be done in the UI. On
+   2026-08-01 the `komodo-core` Stack and `proxlab` Repo had to be removed by
+   hand for exactly this reason. With UI writes off, resources dropped from
+   TOML would strand permanently with no way to clear them.
+2. **The UI is the documented escape hatch.** A commit touching
+   `procedures.toml` deadlocks the sync (see step 12) and the only fix is
+   executing the sync by hand from the UI. Executions aren't config writes so
+   they should survive this flag — but that has not been verified, and finding
+   out while wedged is the wrong time.
+3. **It protects against a failure mode that isn't silent.** The risk is
+   editing a resource in the UI, forgetting, and having a later sync revert
+   it. The sync shows a diff before applying, so that surfaces on its own.
+
+Revisit if anyone else ever gets UI access — guarding against a second person's
+habits is a real use for it, guarding against your own is mostly ceremony.
+
+Note secret Variables did not appear among the guarded components, so adding
+secrets in the UI likely still works with the flag on. Verify before relying on
+it: the secrets model depends on that path.
 
 ---
 

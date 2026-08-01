@@ -18,10 +18,18 @@ reconnects. This is the arrangement Komodo's maintainer uses.
 ## Install
 
 Use the official installer rather than hand-rolling a unit — it generates the
-service file, creates the config directory, and sets up the key material:
+service file, creates the config directory, and sets up the key material.
+
+⚠️ **Download it first; do not pipe curl into python3.** The installer
+escalates privileges, and when stdin is the pipe the password prompt can't read
+the terminal. It then fails with `Failed to download binary… Did you provide a
+valid tag?` — an error that describes nothing like the actual problem and sends
+you hunting for a network or version fault.
 
 ```sh
-curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py | python3
+curl -fsSL -o /tmp/setup-periphery.py \
+  https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py
+sudo python3 /tmp/setup-periphery.py
 ```
 
 Then:
@@ -30,6 +38,42 @@ Then:
 sudo systemctl enable --now periphery
 systemctl status periphery
 ```
+
+## Staying in step with Core
+
+Core and Periphery must run the same version, or Core marks the server yellow
+with a version mismatch. Because they're installed by different mechanisms —
+Core by compose, Periphery by this script — nothing keeps them aligned on its
+own. Both therefore track the **floating major tag `2`**, which is also
+upstream's default, and each has its own updater:
+
+| Component | Updated by | Cadence |
+|---|---|---|
+| Core | Komodo itself — `auto_update` + `poll_for_updates` on the `komodo-core` stack | within `KOMODO_RESOURCE_POLL_INTERVAL` of a release |
+| Periphery | `komodo-periphery-update.timer` in `systemd/` | daily, catching up after boot |
+
+Core auto-updating itself is only safe *because* Periphery is out here in
+systemd: Core can be torn down and replaced while the agent performing that
+work keeps running. This is the same separation described above, now doing a
+second job.
+
+Install the timer on `app-prod`:
+
+```sh
+sudo cp periphery/systemd/komodo-periphery-update.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now komodo-periphery-update.timer
+systemctl list-timers komodo-periphery-update.timer
+```
+
+Check it afterwards with `journalctl -u komodo-periphery-update.service`.
+
+**Known limitation:** the two updaters are independent, so after a release Core
+may be newer than Periphery until the timer next runs — up to a day. That shows
+as a yellow server in the UI. It is a warning, not an outage. If it ever
+matters more than that, the alternative is to move Periphery back into Core's
+compose file, where both read one `${COMPOSE_KOMODO_IMAGE_TAG}` and cannot
+drift — at the cost of Core no longer being able to manage its own stack.
 
 ## The one setting that matters
 

@@ -352,8 +352,33 @@ Only once everything above is proven. Uncomment the `komodo-core` block in
 push, let the sync create it.
 
 Deploying it restarts Core, so the UI disconnects and the log may show a
-failure that actually succeeded. Keep `webhook_enabled = false` and
-`auto_update = false` — never auto-update the thing performing updates.
+failure that actually succeeded. Confirm with `docker ps` on app-prod, not
+from the update log.
+
+This step is what makes Core self-updating: the block sets `auto_update` and
+`poll_for_updates`, so a new `2.x` digest is picked up within one poll
+interval. Safe only because Periphery is a systemd unit outside this stack —
+it keeps running while Core is replaced. `webhook_enabled` stays `false`; the
+`gitops` procedure deliberately doesn't reach this stack.
+
+## 13b. Install the Periphery update timer
+
+Core now updates itself, but Periphery doesn't — different install mechanism,
+no shared version. Without this step the two drift apart on the next release
+and the server goes yellow.
+
+```sh
+sudo cp periphery/systemd/komodo-periphery-update.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now komodo-periphery-update.timer
+systemctl list-timers komodo-periphery-update.timer
+```
+
+`Persistent=true` in the timer matters: app-prod is off overnight, so a
+scheduled small-hours run would never arrive. systemd instead notices the
+missed run and fires it after the next boot.
+
+Both components track the floating `2` tag. See `periphery/README.md`.
 
 ## 14. Harden
 

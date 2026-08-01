@@ -1,0 +1,17 @@
+[Unit]
+Description=Keep Komodo Periphery in step with Core
+Documentation=https://komo.do/docs/setup/connect-servers
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=30m
+
+# ⚠️ REQUIRED, not a nicety. app-prod is powered down overnight, so a calendar
+# time in the small hours would simply never arrive. Persistent=true makes
+# systemd notice the run was missed and fire it shortly after the next boot
+# instead — which is exactly the behaviour wanted here: Periphery is brought
+# up to date once per day the machine is actually switched on.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

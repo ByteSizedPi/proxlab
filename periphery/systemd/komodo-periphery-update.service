@@ -1,0 +1,34 @@
+[Unit]
+Description=Update Komodo Periphery to the latest release
+Documentation=https://komo.do/docs/setup/connect-servers
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+
+# Upstream explicitly supports re-running this installer:
+#   "This script can be run multiple times without issue, and it won't change
+#    existing config after the first run. Just run it again after a Komodo
+#    version release, and it will update the periphery version."
+#
+# ⚠️ Download first, THEN run — do not pipe curl into python3. The installer
+# escalates privileges, and when stdin is the pipe the password prompt cannot
+# read the terminal. It fails with a misleading "Failed to download binary...
+# Did you provide a valid tag?" that points nowhere near the real cause.
+# Under systemd we are already root so there is no prompt, but the two-step
+# form is kept so this file matches the documented manual procedure.
+ExecStart=/usr/bin/bash -c '\
+  set -euo pipefail; \
+  curl -fsSL -o /tmp/setup-periphery.py \
+    https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py; \
+  /usr/bin/python3 /tmp/setup-periphery.py; \
+  rm -f /tmp/setup-periphery.py'
+
+# The installer replaces the binary; restart so the new one is actually loaded.
+# Harmless if the installer already did it.
+ExecStartPost=/usr/bin/systemctl restart periphery
+
+# Don't let a network blip at boot mark this as failed forever.
+Restart=on-failure
+RestartSec=5min

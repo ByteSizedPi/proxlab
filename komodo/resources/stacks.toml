@@ -114,5 +114,20 @@ poll_for_updates = true
 # file_paths = ["compose.yaml"]
 # # No env_file_path: compose.yaml already does `env_file: ./compose.env`,
 # # and Komodo must not overwrite that file.
-# webhook_enabled = false   # keep manual — you want to watch this one deploy
-# auto_update = false       # never auto-update the thing doing the updating
+# webhook_enabled = false   # the gitops procedure doesn't reach this stack
+#
+# # Core updates ITSELF. That sounds reckless and would be, if Periphery were
+# # in this stack — Core would kill the agent mid-deploy. Periphery is a
+# # systemd unit on the host, so it survives Core being torn down and
+# # replaced, finishes the compose command, and Core comes back on the new
+# # image. This is the entire payoff of keeping them separate.
+# #
+# # Pairs with COMPOSE_KOMODO_IMAGE_TAG=2: a new 2.x digest appears upstream,
+# # Komodo notices within one poll interval and redeploys. Note this does NOT
+# # depend on the built-in "Global Auto Update" procedure, which is scheduled
+# # for 03:00 and would never fire on a machine that is switched off then.
+# #
+# # Expect the deploy log to look like a failure — the UI disconnects because
+# # the thing reporting is the thing restarting. Verify with `docker ps`.
+# auto_update = true
+# poll_for_updates = true

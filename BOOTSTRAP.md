@@ -226,8 +226,8 @@ not a failure.
 ## 12. Deploy trigger: webhooks, with polling as the backstop
 
 Webhooks are the primary trigger. Inbound reachability comes from the
-Cloudflare Tunnel in `stacks/cloudflared` — no VPS needed, and it publishes
-only `^/listener/.*`, so the UI stays LAN-only.
+Cloudflare Tunnel in `stacks/platform/cloudflared` — no VPS needed, and it
+publishes only `^/listener/.*`, so the UI stays LAN-only.
 
 **One webhook total**, pointed at the `gitops` procedure — not one per stack.
 See README.md for why. The procedure syncs resources, then batch-deploys only
@@ -359,7 +359,7 @@ Fix: **Syncs → `resources` → Execute** in the UI. Standalone, the sync isn't
 inside the procedure and applies cleanly. Only `procedures.toml` behaves this
 way — stacks, repos, servers and variables all sync fine from inside the run.
 
-⚠️ A push that changes `stacks/cloudflared/` redeploys the tunnel, which kills
+⚠️ A push that changes `stacks/platform/cloudflared/` redeploys the tunnel, which kills
 the connection the triggering webhook arrived over. GitHub logs that delivery
 as **failed** even though the procedure completed — it runs inside Core and
 doesn't care that the caller went away. Confirm against Komodo's update log,

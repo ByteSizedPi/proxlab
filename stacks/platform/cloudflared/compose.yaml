@@ -5,7 +5,7 @@ services:
     command: tunnel --no-autoupdate run
     environment:
       # Injected by Komodo into komodo.env from the CF_TUNNEL_TOKEN secret
-      # Variable. Never appears in this repo. See ../../komodo/resources/stacks.toml.
+      # Variable. Never appears in this repo. See ../../../komodo/resources/stacks.toml.
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}
     extra_hosts:
       # The tunnel's job is to reach Komodo Core, which publishes 9120 on the
@@ -43,7 +43,7 @@ services:
     restart: unless-stopped
 
     # ⚠️ NO HEALTHCHECK — a deliberate, documented exception to the repo-wide
-    # convention in ../../README.md.
+    # convention in ../../../README.md.
     #
     # cloudflare/cloudflared is distroless: no shell, no curl, no wget. There
     # is nothing in the image capable of probing the tunnel, and Docker's

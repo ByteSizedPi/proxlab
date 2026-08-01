@@ -1,6 +1,37 @@
 ## Stacks — the workloads Komodo deploys.
 ##
 ##
+## ── Directory / tag taxonomy ──────────────────────────────────────────────
+##
+## Two independent axes, kept in sync by convention, not by anything Komodo
+## enforces:
+##
+##   directory   stacks/<category>/<name>/   keeps the repo browsable as the
+##               service count grows. Purely cosmetic — Komodo only cares
+##               about the `run_directory` string below, so this could be any
+##               layout. Categories: media, platform, apps.
+##
+##   tags        Komodo's actual grouping mechanism — flat, multi-select
+##               filtering across the whole UI (dashboard, resource lists),
+##               not a folder tree. Every stack gets its category as the
+##               first tag, plus zero or more of these to narrow further:
+##
+##                 media     + arr          acquisition/automation
+##                                           (prowlarr, radarr, sonarr,
+##                                            bazarr, qbittorrent, tdarr)
+##                           + streaming    consumption
+##                                           (jellyfin, plex, seerr)
+##                 platform  + ingress      traefik, cloudflared
+##                           + security     authelia, crowdsec,
+##                                           docker-socket-proxy
+##                           + monitoring   netdata, scrutiny, uptime-kuma,
+##                                           ntfy
+##                 apps      (no secondary tag needed yet — homepage, immich)
+##
+## A stack always carries its category tag even when a secondary tag also
+## applies, so filtering by "media" alone still finds everything media-
+## related regardless of arr vs streaming.
+##
 ## ── The env layering, and why it's ordered this way ──────────────────────
 ##
 ## Komodo passes files to `docker compose` as repeated --env-file flags:
@@ -23,10 +54,16 @@
 ##
 ## For reference, if a future Komodo version tightens this, the equivalent is:
 ##     run_directory = "stacks"
-##     file_paths = ["prowlarr/compose.yaml"]
-##     additional_env_files = ["common.env", "prowlarr/prowlarr.env"]
+##     file_paths = ["media/prowlarr/compose.yaml"]
+##     additional_env_files = ["common.env", "media/prowlarr/prowlarr.env"]
 ## Bind mounts are unaffected either way — compose.yaml uses absolute
 ## ${CONFIG_ROOT} paths, not paths relative to the run directory.
+##
+## ⚠️ The category subdirectory adds a nesting level, so reaching
+## `common.env` from `run_directory` takes TWO `../`, not one — easy to get
+## wrong when copy-pasting a new stack block. `stacks/<category>/<name>` is
+## three segments below the repo root; `common.env` sits at `stacks/`, two
+## segments up from `<name>`.
 
 [[stack]]
 name = "prowlarr"
@@ -37,12 +74,12 @@ server = "app-prod"
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
 branch = "main"
-run_directory = "stacks/prowlarr"
+run_directory = "stacks/media/prowlarr"
 file_paths = ["compose.yaml"]
 
 # --- Environment ---
 env_file_path = "komodo.env"
-additional_env_files = ["../common.env", "prowlarr.env"]
+additional_env_files = ["../../common.env", "prowlarr.env"]
 
 # --- Automation ---
 # No per-stack webhook. Git-driven deploys come from the single "gitops"
@@ -63,7 +100,7 @@ server = "app-prod"
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
 branch = "main"
-run_directory = "stacks/cloudflared"
+run_directory = "stacks/platform/cloudflared"
 file_paths = ["compose.yaml"]
 
 # --- Environment ---
@@ -75,7 +112,7 @@ environment = """
 TUNNEL_TOKEN=[[CF_TUNNEL_TOKEN]]
 """
 env_file_path = "komodo.env"
-additional_env_files = ["../common.env", "cloudflared.env"]
+additional_env_files = ["../../common.env", "cloudflared.env"]
 
 # --- Automation ---
 # Deployed by the "gitops" procedure like everything else — its `*` pattern

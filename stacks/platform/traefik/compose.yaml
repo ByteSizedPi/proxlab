@@ -103,12 +103,26 @@ services:
       # horizon entirely. Do not remove this.
       - "--certificatesresolvers.le.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53"
       #
-      # Staging CA — swap in while testing. Untrusted certs, but the rate
-      # limits are ~50x looser. Production LE will lock you out for a week at
-      # 5 duplicate certs, and there is no way to undo that.
+      # Staging CA, if ever needed:
       #   - "--certificatesresolvers.le.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
-      # After switching back to production you must DELETE acme.json —
-      # it still holds the staging account key and Traefik will keep using it.
+      #
+      # Deliberately NOT used for the first deploy, because the limit that
+      # actually applies to a broken setup is cheap:
+      #
+      #   failed validation      5 per identifier per HOUR, refills 1/12min
+      #   duplicate certificate  5 per 7 days, refills 1/34h
+      #
+      # A DNS-01 that cannot validate burns the FAILED VALIDATION limit, which
+      # recovers in minutes. The 7-day duplicate limit only counts certificates
+      # that were SUCCESSFULLY ISSUED, so it is unreachable while debugging —
+      # you would have to wipe acme.json and re-issue five times to hit it.
+      #
+      # Staging is therefore mostly downside here: two extra deploy cycles, and
+      # a trap where forgetting to delete acme.json when switching back leaves
+      # the staging account key in place, quietly serving untrusted certs.
+      #
+      # ⚠️ If you DO switch to staging at some point, delete acme.json when
+      # switching back. The account key persists and Traefik keeps using it.
 
       # ── Providers ─────────────────────────────────────────────────────────
       # Note the endpoint: the socket proxy service below, never

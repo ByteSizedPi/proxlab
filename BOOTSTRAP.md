@@ -260,6 +260,26 @@ Probing cannot catch this: branch matching happens *after* signature
 validation, so `/run` and `/main` both return `401` to an unsigned request.
 Only a correctly signed delivery, or the docs, distinguish them.
 
+⚠️ **Content type must be `application/json`.** GitHub's webhook form defaults
+to `application/x-www-form-urlencoded`, which sends the payload as
+`payload=%7B%22ref%22...`. Komodo fails on it with:
+
+```
+Failed to parse github request body: expected value at line 1 column 1
+```
+
+...and still returns 2xx, so **GitHub's "Recent Deliveries" shows the delivery
+as successful while nothing ran.** A green tick in GitHub only proves Komodo
+answered, never that it acted. Confirm against Core's logs or a new
+`RunProcedure` entry in the `Update` collection:
+
+```sh
+docker logs komodo-core-1 --since 10m 2>&1 | grep -i webhook
+```
+
+A working delivery logs `Successfully authenticated incoming webhook` **and no
+following WARN**.
+
 The URL shape is `/listener/<AUTH_TYPE>/<RESOURCE_TYPE>/<NAME_OR_ID>/<EXECUTION>`.
 Both a resource name and its Mongo `_id` work in that slot, but **the UI only
 ever generates the ID form** — so what you copy out of Komodo won't look like

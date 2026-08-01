@@ -61,6 +61,14 @@ directory at deploy time, and masks the value in the UI and in deploy logs.
 Git provider tokens are the one exception that *must* live in
 `core.config.toml`; they cannot be set via environment variables.
 
+⚠️ **`komodo/compose.env` on app-prod is the single point of failure.** It is
+gitignored by necessity — it holds the Mongo password Core needs *before* it
+can read any Komodo Variable — so it exists in exactly one place and is in no
+backup. It was destroyed once, on 2026-08-01, by deleting a Komodo Repo
+resource whose `path` pointed at the clone containing it. Recovery from the
+running containers is documented in `BOOTSTRAP.md` step 13, but that only
+works while those containers are alive. Keep a copy off-box.
+
 ## Environment layering
 
 Each stack gets three env files, applied in this order:

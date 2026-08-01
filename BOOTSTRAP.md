@@ -397,6 +397,52 @@ It ends by printing both versions. They must match.
 small-hours run would never arrive. systemd notices the missed run and fires
 it after the next boot instead.
 
+### ⚠️ Deleting a Repo resource deletes the directory it points at
+
+Learned destructively on 2026-08-01. A `proxlab` Repo resource with
+`path = /home/jj/proxlab` was deleted from the UI, and Komodo removed
+**`/home/jj/proxlab` itself** — the entire clone, including the hand-written
+`compose.env` holding the Mongo password, JWT secret, webhook secret and admin
+credentials. None of that is in git, by design.
+
+Deleting a *Stack* resource does not touch containers; deleting a *Repo*
+resource does delete files. Those two behave differently and nothing in the UI
+says so.
+
+Never point a Repo resource at a directory containing anything not in git.
+
+**Recovery, if it happens again:** the running containers still hold the whole
+environment, so act before anything restarts.
+
+```sh
+# confirm core and mongo agree before trusting either
+docker inspect komodo-core-1  --format '{{range .Config.Env}}{{println .}}{{end}}' | grep '^KOMODO_DATABASE_PASSWORD='
+docker inspect komodo-mongo-1 --format '{{range .Config.Env}}{{println .}}{{end}}' | grep '^MONGO_INITDB_ROOT_PASSWORD='
+
+git clone https://github.com/ByteSizedPi/proxlab.git ~/proxlab
+cd ~/proxlab/komodo && umask 077
+{ echo "COMPOSE_KOMODO_IMAGE_TAG=2"
+  echo "COMPOSE_KOMODO_BACKUPS_PATH=/mnt/docker-data/komodo/backups"
+  docker inspect komodo-core-1 --format '{{range .Config.Env}}{{println .}}{{end}}' \
+    | grep -E '^KOMODO_(DATABASE_USERNAME|DATABASE_PASSWORD|HOST|TITLE|LOCAL_AUTH|DISABLE_USER_REGISTRATION|INIT_ADMIN_USERNAME|INIT_ADMIN_PASSWORD|JWT_SECRET|WEBHOOK_SECRET|WEBHOOK_BASE_URL|UI_WRITE_DISABLED|RESOURCE_POLL_INTERVAL)='
+} > compose.env
+chmod 600 compose.env && ln -sfn compose.env .env
+docker compose config --quiet && docker compose ps
+```
+
+`COMPOSE_*` values aren't in the container (compose consumes them before the
+container exists) — take the tag from `docker inspect … {{.Config.Image}}` and
+the backups path from the mount list.
+
+`docker compose ps` listing the running containers is the proof the rebuilt
+directory was adopted rather than orphaned; the project name comes from the
+directory name, so restoring the same path re-attaches it.
+
+**The real lesson:** `compose.env` is the only file in this system that exists
+in exactly one place and is in no backup. Everything else is in git or in
+Mongo (which `COMPOSE_KOMODO_BACKUPS_PATH` snapshots). Worth a copy somewhere
+off-box.
+
 ### Why Core is not a Komodo-managed stack
 
 This was built and removed on the same day, 2026-08-01. Worth recording so it

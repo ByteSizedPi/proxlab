@@ -34,10 +34,28 @@ services:
     # nothing but a login form.
     #
     # Verify from OUTSIDE the LAN after any change:
+    #
     #   curl -so /dev/null -w '%{http_code}\n' https://hooks.jjventer.co.za/
-    #     -> 404  (UI not exposed)
-    #   curl -so /dev/null -w '%{http_code}\n' https://hooks.jjventer.co.za/listener/
-    #     -> NOT 404  (routing works; 405/400 are fine, they come from Komodo)
+    #     -> 404  (UI not exposed — this one is correct)
+    #
+    #   curl -so /dev/null -w '%{http_code}\n' -X POST \
+    #     https://hooks.jjventer.co.za/listener/github/procedure/<ID>/main
+    #     -> 401  (route alive; the unsigned request is correctly rejected)
+    #
+    # ⚠️ Do NOT probe the bare /listener/ path. It returns 404 even when
+    # everything is working — verified 2026-08-01, and the response carries
+    # `server: cloudflare`, so it is Cloudflare's own 404 rather than Komodo's.
+    # The bare path does not match this tunnel's ingress rule. An earlier
+    # version of this comment said "/listener/ -> NOT 404" as the health
+    # check, which reports a healthy pipeline as broken.
+    #
+    # Probe a REAL webhook route instead. Get the id with:
+    #   docker exec komodo-mongo-1 mongosh --quiet -u <user> -p <pass> \
+    #     --authenticationDatabase admin komodo \
+    #     --eval 'print(db.Procedure.findOne({name:"gitops"})._id)'
+    #
+    # ⚠️ Core rate-limits these probes to 5 per 15 seconds per source IP, and
+    # a throttled response looks like a routing failure. Space them out.
     security_opt:
       - no-new-privileges:true
     restart: unless-stopped

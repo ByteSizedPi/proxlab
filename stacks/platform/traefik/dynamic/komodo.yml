@@ -25,10 +25,15 @@
 # expert-matcher.yml hardcoded, and it silently breaks whenever Docker
 # renumbers its networks.
 #
-# ⚠️ The hostname is hardcoded rather than ${ADMIN_DOMAIN}. Traefik's file
-# provider does NOT do environment substitution — a `${...}` here would be
-# matched literally and the router would never fire. If ADMIN_DOMAIN ever
-# changes, this file has to change with it.
+# ⚠️ The hostname is hardcoded rather than ${ADMIN_DOMAIN} (which lives in
+# ../../../common.env). Traefik's file provider does NOT do environment
+# substitution — a `${...}` here would be matched literally and the router
+# would never fire.
+#
+# So this is the ONE place the domain is repeated. Docker labels interpolate
+# it properly; file-provider routes cannot. If ADMIN_DOMAIN ever changes,
+# grep dynamic/*.yml and fix these by hand — nothing will warn you, the
+# router simply stops matching.
 
 http:
   routers:

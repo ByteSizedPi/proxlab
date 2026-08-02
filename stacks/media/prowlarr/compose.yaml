@@ -41,7 +41,9 @@ services:
 
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.admin.jjventer.co.za`)"
+      # ADMIN_DOMAIN comes from ../../common.env, so the domain is defined once
+      # for every stack rather than repeated per service.
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.${ADMIN_DOMAIN}`)"
       # Required because the container exposes more than one port; without it
       # Traefik picks one non-deterministically.
       - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"

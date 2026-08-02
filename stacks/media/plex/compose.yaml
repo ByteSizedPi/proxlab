@@ -1,0 +1,65 @@
+services:
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - VERSION=docker
+      # No PLEX_CLAIM here deliberately — that token is single-use and
+      # expires in minutes, awkward to carry through a committed env file.
+      # Claim the server through its own first-run web setup wizard instead,
+      # at http://<pve-prod-ip>:32400/web the first time it comes up (before
+      # Traefik routing is confirmed working), or via the Traefik route once
+      # it is.
+    volumes:
+      - ${CONFIG_ROOT}/plex:/config:Z
+      - ${DATA_ROOT}:/data:Z
+
+    # No hardware transcode device passthrough — same reasoning as
+    # jellyfin/compose.yaml.
+    #
+    # No `ports:` block. This is a deviation from Plex's own documentation,
+    # which recommends `network_mode: host` for local network discovery
+    # (GDM/DLNA-style auto-detection some clients use). Host mode is
+    # incompatible with joining `ingress`/`media` as normal Docker networks,
+    # which would break Traefik routing and the pattern every other stack in
+    # this repo follows. Bridged + Traefik-routed first; if a specific TV
+    # app can't find the server this way, that's the tradeoff to revisit —
+    # not a reason to preemptively special-case Plex's networking now.
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      # /identity is Plex's own unauthenticated status endpoint.
+      test: ["CMD", "curl", "-f", "http://localhost:32400/identity"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ingress
+      - media
+
+    labels:
+      - "traefik.enable=true"
+      # TEMPORARY: on ADMIN_DOMAIN — see the same note in
+      # jellyfin/compose.yaml, identical reasoning.
+      - "traefik.http.routers.plex.rule=Host(`plex.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.plex.loadbalancer.server.port=32400"
+      # entrypoints/tls/middlewares deliberately omitted — see the comment in
+      # prowlarr/compose.yaml, same reasoning applies here.
+
+networks:
+  ingress:
+    external: true
+  # Created by prowlarr's pre_deploy hook — see prowlarr/compose.yaml and
+  # komodo/resources/stacks.toml. Seerr reaches Plex's API over this.
+  media:
+    external: true

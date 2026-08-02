@@ -1,0 +1,53 @@
+services:
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_ROOT}/bazarr:/config:Z
+      # Same DATA_ROOT, same mount point as sonarr/radarr — required. Bazarr
+      # matches subtitle files against the exact paths Sonarr/Radarr report
+      # over their APIs, so its view of /data has to be identical to theirs.
+      - ${DATA_ROOT}:/data:Z
+
+    # No `ports:` block, same reasoning as prowlarr/compose.yaml — Traefik
+    # reaches it over `ingress`.
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      # No documented /ping-style endpoint like the .NET *arr apps (Bazarr
+      # is Python-based) — root path is the safe fallback, same as
+      # qbittorrent/compose.yaml.
+      test: ["CMD", "curl", "-f", "http://localhost:6767"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ingress
+      - media
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bazarr.rule=Host(`bazarr.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
+      # entrypoints/tls/middlewares deliberately omitted — see the comment in
+      # prowlarr/compose.yaml, same reasoning applies here.
+
+networks:
+  ingress:
+    external: true
+  # Created by prowlarr's pre_deploy hook — see prowlarr/compose.yaml and
+  # komodo/resources/stacks.toml. Bazarr calls the Sonarr/Radarr APIs over
+  # this to get each series/movie's file list and language requirements.
+  media:
+    external: true

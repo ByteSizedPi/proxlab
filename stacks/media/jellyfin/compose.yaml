@@ -1,0 +1,58 @@
+services:
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_ROOT}/jellyfin:/config:Z
+      - ${DATA_ROOT}:/data:Z
+      # RAM-backed transcode scratch space, not disk. Matches jjserver.
+      - /dev/shm:/transcode
+
+    # No hardware transcode device passthrough (/dev/dri etc.) — not
+    # confirmed available on pve-prod's VM, unlike jjserver's bare-metal
+    # GPU. Software transcode until that's verified. See arr-stack-buildout
+    # memory: "transcoding in the background" is Tdarr's job either way,
+    # this only affects live playback transcodes Tdarr didn't pre-handle.
+    #
+    # No `ports:` block, same reasoning as prowlarr/compose.yaml — Traefik
+    # reaches it over `ingress`.
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ingress
+      - media
+
+    labels:
+      - "traefik.enable=true"
+      # TEMPORARY: on ADMIN_DOMAIN like everything else, not the public
+      # jjventer.co.za split it should eventually live on — that cert setup
+      # is still an open todo item (see homelab-bells-whistles-todo memory).
+      # Swap this one line once that exists.
+      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
+      # entrypoints/tls/middlewares deliberately omitted — see the comment in
+      # prowlarr/compose.yaml, same reasoning applies here.
+
+networks:
+  ingress:
+    external: true
+  # Created by prowlarr's pre_deploy hook — see prowlarr/compose.yaml and
+  # komodo/resources/stacks.toml. Seerr reaches Jellyfin's API over this.
+  media:
+    external: true

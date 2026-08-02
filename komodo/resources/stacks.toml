@@ -221,6 +221,116 @@ poll_for_updates = true
 
 
 [[stack]]
+name = "bazarr"
+tags = ["media", "arr"]
+[stack.config]
+server = "app-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/media/bazarr"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "bazarr.env"]
+
+# --- Automation ---
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+
+[[stack]]
+name = "jellyfin"
+tags = ["media", "streaming"]
+[stack.config]
+server = "app-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/media/jellyfin"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "jellyfin.env"]
+
+# --- Automation ---
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+
+[[stack]]
+name = "plex"
+tags = ["media", "streaming"]
+[stack.config]
+server = "app-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/media/plex"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "plex.env"]
+
+# --- Automation ---
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+
+[[stack]]
+name = "tdarr"
+tags = ["media", "arr"]
+[stack.config]
+server = "app-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/media/tdarr"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "tdarr.env"]
+
+# --- Automation ---
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+
+[[stack]]
+name = "seerr"
+tags = ["media", "streaming"]
+[stack.config]
+server = "app-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/media/seerr"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "seerr.env"]
+
+# --- Automation ---
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+
+[[stack]]
 name = "cloudflared"
 tags = ["platform", "ingress"]
 [stack.config]

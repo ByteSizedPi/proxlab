@@ -1,0 +1,66 @@
+services:
+  tdarr:
+    image: ghcr.io/haveagitgat/tdarr:latest
+    container_name: tdarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=002
+      - serverIP=0.0.0.0
+      - serverPort=8266
+      - webUIPort=8265
+      # Single combined server+worker, no separate remote nodes — this is
+      # one machine, matches jjserver's setup.
+      - internalNode=true
+      - nodeName=InternalNode
+      - ffmpegVersion=7
+    volumes:
+      - ${CONFIG_ROOT}/tdarr/server:/app/server:Z
+      - ${CONFIG_ROOT}/tdarr/configs:/app/configs:Z
+      - ${CONFIG_ROOT}/tdarr/logs:/app/logs:Z
+      # Only the library, not the whole DATA_ROOT — Tdarr transcodes
+      # finished media, never touches the torrents/ side. Matches jjserver's
+      # exact mount (/mnt/raid5/media -> /media there).
+      - ${DATA_ROOT}/media:/media:Z
+      # Scratch space during transcode — disk-backed, not /dev/shm like
+      # jellyfin's transcode cache. Video transcode temp files run multiple
+      # GB, too large to assume tmpfs/RAM can absorb safely.
+      - ${CONFIG_ROOT}/tdarr/transcode:/temp:Z
+
+    # No hardware transcode device passthrough — same reasoning as
+    # jellyfin/compose.yaml. This is the whole point of running Tdarr in the
+    # first place (background transcode, see arr-stack-buildout memory), so
+    # software-only will be slow — revisit once GPU passthrough on pve-prod
+    # is confirmed one way or the other.
+    #
+    # No `ports:` block, same reasoning as prowlarr/compose.yaml.
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8265/api/v2/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ingress
+      # No `media` — nothing calls into Tdarr's API today, it works
+      # standalone against the /media mount. Add it if that changes.
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tdarr.rule=Host(`tdarr.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.tdarr.loadbalancer.server.port=8265"
+      # entrypoints/tls/middlewares deliberately omitted — see the comment in
+      # prowlarr/compose.yaml, same reasoning applies here.
+
+networks:
+  ingress:
+    external: true

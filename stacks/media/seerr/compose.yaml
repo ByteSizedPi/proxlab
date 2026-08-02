@@ -1,0 +1,49 @@
+services:
+  seerr:
+    image: ghcr.io/seerr-team/seerr:latest
+    container_name: seerr
+    environment:
+      - TZ=${TZ}
+      - LOG_LEVEL=info
+    volumes:
+      - ${CONFIG_ROOT}/seerr:/app/config:Z
+      # No DATA_ROOT mount — Seerr never touches media files directly, only
+      # the Sonarr/Radarr/Jellyfin/Plex APIs over `media`.
+
+    # No `ports:` block, same reasoning as prowlarr/compose.yaml.
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      # This image has no curl, only wget — confirmed by inspecting jjserver
+      # rather than assuming (its other *arr-adjacent containers all have
+      # curl, this one doesn't).
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5055/api/v1/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ingress
+      - media
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seerr.rule=Host(`seerr.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.seerr.loadbalancer.server.port=5055"
+      # entrypoints/tls/middlewares deliberately omitted — see the comment in
+      # prowlarr/compose.yaml, same reasoning applies here.
+
+networks:
+  ingress:
+    external: true
+  # Created by prowlarr's pre_deploy hook — see prowlarr/compose.yaml and
+  # komodo/resources/stacks.toml. Seerr talks to Sonarr, Radarr, Jellyfin
+  # and Plex over this during its own setup wizard and afterward.
+  media:
+    external: true

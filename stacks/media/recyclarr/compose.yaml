@@ -8,6 +8,12 @@ services:
       # Default is @daily. Explicit here so the schedule is visible without
       # opening the image docs.
       - CRON_SCHEDULE=@daily
+      # Komodo writes these into komodo.env (see stacks.toml), which makes
+      # them available for substitution here — but substitution alone does
+      # not inject them into the container. Both halves are required, same
+      # pattern as cloudflared's TUNNEL_TOKEN.
+      - SONARR_API_KEY=${SONARR_API_KEY}
+      - RADARR_API_KEY=${RADARR_API_KEY}
     volumes:
       # Writable — this is where Recyclarr caches its clone of the
       # TRaSH-Guides and config-templates repos, plus its own logs/state.

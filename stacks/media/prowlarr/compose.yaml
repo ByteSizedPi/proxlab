@@ -38,6 +38,7 @@ services:
         max-file: "3"
     networks:
       - ingress
+      - media
 
     labels:
       - "traefik.enable=true"
@@ -67,4 +68,14 @@ networks:
   # compose projects — see the network notes in
   # ../../platform/traefik/compose.yaml.
   ingress:
+    external: true
+
+  # Service-to-service, east-west, never touches Traefik — Prowlarr calls
+  # FlareSolverr through this to solve Cloudflare-protected indexers. This
+  # stack's own pre_deploy creates it (see komodo/resources/stacks.toml),
+  # same idempotent pattern the traefik stack uses for `ingress`. Prowlarr
+  # owns it because Prowlarr is the first consumer and every future *arr
+  # service (Sonarr, Radarr, qBittorrent) joins the same network to reach
+  # each other.
+  media:
     external: true

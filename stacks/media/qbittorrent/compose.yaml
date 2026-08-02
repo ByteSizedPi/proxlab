@@ -1,0 +1,63 @@
+services:
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - WEBUI_PORT=8080
+    volumes:
+      - ${CONFIG_ROOT}/qbittorrent:/config:Z
+      - ${DATA_ROOT}/torrents:/data/torrents:Z
+
+    # Peer port, published on the host to accept incoming BitTorrent
+    # connections.
+    #
+    # ⚠️ Has no effect end-to-end today: the ISP blocks inbound at the WAN
+    # edge (see homelab-constraints memory) and there is no VPN with port
+    # forwarding in front of this container (deliberately skipped 2026-08-02,
+    # see arr-stack-buildout memory — cost, revisit later). Published anyway
+    # so nothing here needs to change if that ever gets fixed.
+    #
+    # The linuxserver image has no env var for the listening port — after
+    # first login, set Settings > Connection > Port to 6881 by hand in the
+    # WebUI so the app's actual listening port matches this publish.
+    ports:
+      - "6881:6881/tcp"
+      - "6881:6881/udp"
+
+    # No published WebUI port. Same reasoning as prowlarr's compose.yaml —
+    # Traefik reaches it over `ingress`, nothing needs a host port for that.
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ingress
+      - media
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"
+      # entrypoints/tls/middlewares deliberately omitted — see the comment in
+      # prowlarr/compose.yaml, same reasoning applies here.
+
+networks:
+  ingress:
+    external: true
+  # Reserved for when Sonarr/Radarr exist and need to reach qBittorrent's API
+  # directly, same as they'll reach Prowlarr — see prowlarr/compose.yaml.
+  media:
+    external: true

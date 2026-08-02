@@ -90,6 +90,61 @@ webhook_enabled = false
 auto_update = true
 poll_for_updates = true
 
+# --- Pre-deploy: create the shared `media` network ---
+#
+# Same idempotent inspect-or-create pattern the traefik stack uses for
+# `ingress` (see that stack's comment for the full "why"). Prowlarr owns
+# `media` because it's the first consumer — FlareSolverr and qBittorrent join
+# it below, Sonarr/Radarr will too.
+[stack.config.pre_deploy]
+path = ""
+command = "docker network inspect media >/dev/null 2>&1 || docker network create media"
+shell_mode = true
+
+
+[[stack]]
+name = "flaresolverr"
+tags = ["media", "arr"]
+[stack.config]
+server = "app-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/media/flaresolverr"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "flaresolverr.env"]
+
+# --- Automation ---
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+
+[[stack]]
+name = "qbittorrent"
+tags = ["media", "arr"]
+[stack.config]
+server = "app-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/media/qbittorrent"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "qbittorrent.env"]
+
+# --- Automation ---
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
 
 [[stack]]
 name = "cloudflared"

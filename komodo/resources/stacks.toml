@@ -191,6 +191,36 @@ poll_for_updates = true
 
 
 [[stack]]
+name = "recyclarr"
+tags = ["media", "arr"]
+[stack.config]
+server = "app-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/media/recyclarr"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+# SONARR_API_KEY / RADARR_API_KEY are Komodo Variables marked "Secret", set
+# by hand from each app's Settings > General > Security page — never
+# committed. Referenced in recyclarr.yml via `!env_var SONARR_API_KEY` /
+# `!env_var RADARR_API_KEY`, Recyclarr's own env-var substitution syntax.
+environment = """
+SONARR_API_KEY=[[SONARR_API_KEY]]
+RADARR_API_KEY=[[RADARR_API_KEY]]
+"""
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "recyclarr.env"]
+
+# --- Automation ---
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+
+[[stack]]
 name = "cloudflared"
 tags = ["platform", "ingress"]
 [stack.config]

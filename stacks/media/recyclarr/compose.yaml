@@ -1,0 +1,38 @@
+services:
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr:8
+    container_name: recyclarr
+    user: "${PUID}:${PGID}"
+    environment:
+      - TZ=${TZ}
+      # Default is @daily. Explicit here so the schedule is visible without
+      # opening the image docs.
+      - CRON_SCHEDULE=@daily
+    volumes:
+      # Writable — this is where Recyclarr caches its clone of the
+      # TRaSH-Guides and config-templates repos, plus its own logs/state.
+      - ${CONFIG_ROOT}/recyclarr:/config:Z
+      # The actual sync definition, version-controlled and read-only. This
+      # is what makes a change here a `git push`, not a manual edit on the
+      # host — same pattern as every other stack in this repo.
+      - ./recyclarr.yml:/config/recyclarr.yml:ro
+
+    # No `ports:`, no Traefik labels — Recyclarr has no UI, it only talks
+    # OUT to Sonarr/Radarr over `media` on its own schedule.
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - media
+
+networks:
+  # Created by the prowlarr stack's pre_deploy hook — see prowlarr/compose.yaml
+  # and komodo/resources/stacks.toml. Recyclarr reaches Sonarr/Radarr by
+  # container name (http://sonarr:8989, http://radarr:7878) over this.
+  media:
+    external: true

@@ -1,0 +1,51 @@
+services:
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - DOTNET_SYSTEM_NET_DISABLEIPV6=true
+    volumes:
+      - ${CONFIG_ROOT}/sonarr:/config:Z
+      # Same DATA_ROOT as qBittorrent, mounted at the same path — required
+      # for hardlinks/atomic moves between the download and the library
+      # folder. See common.env and arr-stack-buildout memory.
+      - ${DATA_ROOT}:/data:Z
+
+    # No `ports:` block, same reasoning as prowlarr/compose.yaml — Traefik
+    # reaches it over `ingress`, nothing needs a host port for that.
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8989/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ingress
+      - media
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
+      # entrypoints/tls/middlewares deliberately omitted — see the comment in
+      # prowlarr/compose.yaml, same reasoning applies here.
+
+networks:
+  ingress:
+    external: true
+  # Created by prowlarr's pre_deploy hook — see prowlarr/compose.yaml and
+  # komodo/resources/stacks.toml. Sonarr talks to Prowlarr (indexers) and
+  # qBittorrent (sending downloads) over this, never through Traefik.
+  media:
+    external: true

@@ -147,6 +147,50 @@ poll_for_updates = true
 
 
 [[stack]]
+name = "sonarr"
+tags = ["media", "arr"]
+[stack.config]
+server = "app-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/media/sonarr"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "sonarr.env"]
+
+# --- Automation ---
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+
+[[stack]]
+name = "radarr"
+tags = ["media", "arr"]
+[stack.config]
+server = "app-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/media/radarr"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "radarr.env"]
+
+# --- Automation ---
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+
+[[stack]]
 name = "cloudflared"
 tags = ["platform", "ingress"]
 [stack.config]

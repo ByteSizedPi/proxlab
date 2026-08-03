@@ -1,0 +1,51 @@
+# Homepage global settings.
+# Docs: https://gethomepage.dev/configs/settings/
+
+title: jjventer homelab
+description: app-prod service dashboard
+
+# Group ordering is taken from services.yaml top to bottom rather than being
+# re-sorted alphabetically here.
+layout:
+  Media:
+    style: row
+    columns: 4
+    icon: mdi-play-circle
+  Media Management:
+    style: row
+    columns: 4
+    icon: mdi-magnify-scan
+  Downloads:
+    style: row
+    columns: 2
+    icon: mdi-download
+  Platform:
+    style: row
+    columns: 3
+    icon: mdi-server-network
+  # Everything with no web interface. JJ asked for these to be listed rather
+  # than hidden, and separated so it is obvious there is nothing to click.
+  Headless Services:
+    style: row
+    columns: 3
+    icon: mdi-cog-transfer
+
+headerStyle: boxed
+statusStyle: dot
+hideVersion: false
+disableCollapse: false
+
+# Show container CPU and memory under every service that declares
+# `server:` + `container:`. This is what gives the headless services real
+# numbers instead of a bare name.
+showStats: true
+
+theme: dark
+color: slate
+
+target: _blank
+
+quicklaunch:
+  searchDescriptions: true
+  hideInternetSearch: true
+  showSearchSuggestions: false

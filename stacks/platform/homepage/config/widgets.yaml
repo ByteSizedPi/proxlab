@@ -1,0 +1,34 @@
+# Header widgets, shown above the service groups.
+# Docs: https://gethomepage.dev/configs/widgets/
+
+- resources:
+    label: app-prod
+    cpu: true
+    memory: true
+    # These two paths sit on DIFFERENT physical disks, which is the whole
+    # point of watching both:
+    #   /mnt/docker-data  ->  /dev/sda1, the 64 GB VM root (OS, images, appdata)
+    #   /mnt/data         ->  /dev/sdb,  the 1 TB media disk (DATA_ROOT)
+    #
+    # A path is used rather than the mount point because df reports the
+    # FILESYSTEM containing a path. /mnt/docker-data is on the root
+    # filesystem, so it reports the root disk without this container needing
+    # the host root bind-mounted in.
+    #
+    # Root matters more than media: a full root disk stops Docker itself,
+    # while a full media disk only stops downloads.
+    disk:
+      - /mnt/docker-data
+      - /mnt/data
+    expanded: true
+
+- datetime:
+    text_size: xl
+    format:
+      dateStyle: long
+      timeStyle: short
+      hourCycle: h23
+
+- search:
+    provider: duckduckgo
+    target: _blank

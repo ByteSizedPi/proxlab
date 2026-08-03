@@ -1,0 +1,169 @@
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      # Required since v1.0. Homepage refuses requests whose Host header is not
+      # listed, which is what stops a stranger pointing their own DNS name at
+      # this box and reading the dashboard. Must match the Traefik router rule.
+      - HOMEPAGE_ALLOWED_HOSTS=homepage.${ADMIN_DOMAIN}
+      #
+      # ── Secrets ───────────────────────────────────────────────────────────
+      # Homepage substitutes {{HOMEPAGE_VAR_NAME}} in any config/*.yaml with
+      # the value of env var HOMEPAGE_VAR_NAME. That is what keeps every API
+      # key OUT of this repo while the dashboard itself stays committed.
+      #
+      # All of these are Komodo secret Variables — see
+      # komodo/resources/stacks.toml for the list and where each value comes
+      # from. A missing one is not fatal: that widget shows an error and the
+      # rest of the dashboard still renders.
+      - HOMEPAGE_VAR_SONARR_KEY=${SONARR_API_KEY}
+      - HOMEPAGE_VAR_RADARR_KEY=${RADARR_API_KEY}
+      - HOMEPAGE_VAR_PROWLARR_KEY=${PROWLARR_API_KEY}
+      - HOMEPAGE_VAR_BAZARR_KEY=${BAZARR_API_KEY}
+      - HOMEPAGE_VAR_JELLYFIN_KEY=${JELLYFIN_API_KEY}
+      - HOMEPAGE_VAR_PLEX_TOKEN=${PLEX_TOKEN}
+      - HOMEPAGE_VAR_SEERR_KEY=${SEERR_API_KEY}
+      - HOMEPAGE_VAR_QBIT_USER=${QBITTORRENT_USERNAME}
+      - HOMEPAGE_VAR_QBIT_PASS=${QBITTORRENT_PASSWORD}
+      - HOMEPAGE_VAR_KOMODO_KEY=${KOMODO_API_KEY}
+      - HOMEPAGE_VAR_KOMODO_SECRET=${KOMODO_API_SECRET}
+      - HOMEPAGE_VAR_TRAEFIK_USER=${TRAEFIK_DASH_USER}
+      - HOMEPAGE_VAR_TRAEFIK_PASS=${TRAEFIK_DASH_PASS}
+
+    volumes:
+      # ⚠️ A DIRECTORY, never `./config/services.yaml:/app/config/services.yaml`.
+      # A single-file bind mount pins the file's inode at container creation and
+      # git replaces files rather than rewriting them, so the container would
+      # keep serving the old config after a pull with no error anywhere. That
+      # cost half an hour on the recyclarr stack on 2026-08-03 — see
+      # stacks/media/recyclarr/compose.yaml for the full write-up.
+      #
+      # NOT read-only: Homepage writes .next/ build artefacts and a logs/
+      # directory under /app/config on startup.
+      - ./config:/app/config:Z
+
+      # Read-only, and ONLY so the `resources` widget in widgets.yaml can call
+      # df on the two filesystems. df reports the filesystem containing a path,
+      # so mounting these two directories reports both physical disks without
+      # bind-mounting the host root into the dashboard:
+      #   ${CONFIG_ROOT} -> /dev/sda1, the 64 GB VM root
+      #   ${DATA_ROOT}   -> /dev/sdb,  the 1 TB media disk
+      # Homepage never reads their contents.
+      - ${CONFIG_ROOT}:/mnt/docker-data:ro
+      - ${DATA_ROOT}:/mnt/data:ro
+
+    # Reaches Komodo Core, which publishes 9120 on the HOST and is not on any
+    # docker network this container can see. Same pattern as traefik and
+    # cloudflared, and the same reason.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    depends_on:
+      homepage-socket-proxy:
+        condition: service_healthy
+
+    # No `ports:` block, same reasoning as prowlarr/compose.yaml — Traefik
+    # reaches it over `ingress`.
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/healthcheck || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.homepage.rule=Host(`homepage.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.homepage.loadbalancer.server.port=3000"
+      # entrypoints/tls/middlewares deliberately omitted — see the comment in
+      # prowlarr/compose.yaml, same reasoning applies here.
+
+    networks:
+      - ingress
+      # Every service widget calls its target by container name over `media`
+      # (http://sonarr:8989 and friends), never back through Traefik. Going via
+      # Traefik would mean the dashboard breaks whenever the proxy does, and
+      # would put auth in front of its own API calls.
+      - media
+      - docker-api
+
+  # ── Homepage's OWN socket proxy ─────────────────────────────────────────
+  #
+  # Deliberately NOT the traefik stack's socket-proxy. That file carries an
+  # explicit note saying so: one shared proxy accumulates the union of every
+  # consumer's permissions and becomes a single high-value target. This one
+  # grants CONTAINERS and nothing else.
+  #
+  # Correction to that note, which guessed "Homepage: SERVICES/TASKS": those two
+  # are Docker Swarm concepts. app-prod is plain Docker, so what Homepage
+  # actually needs is CONTAINERS, which covers both the container list and the
+  # per-container stats stream behind `showStats`.
+  homepage-socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: homepage-socket-proxy
+
+    # `:ro` is documentation, not the control. Connecting to a unix socket
+    # requires write access, so POST=0 below is what makes this read-only.
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    environment:
+      - CONTAINERS=1
+      # Written out rather than left to default, so a change in image defaults
+      # cannot silently grant something.
+      - EVENTS=1
+      - PING=1
+      - VERSION=1
+      - POST=0
+
+    security_opt:
+      - no-new-privileges:true
+      # ⚠️ REQUIRED ON SELINUX HOSTS. app-prod is Fedora. Without it SELinux
+      # denies this container the docker socket and the failure is silent and
+      # misleading: the container reports healthy, and every request returns
+      # 503 "No server is available to handle this request", which reads like
+      # the docker daemon is down rather than a policy denial. Confirmed on the
+      # traefik stack's copy with a real AVC:
+      #   avc: denied { write } for comm="haproxy" name="docker.sock"
+      - label=disable
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:2375/_ping | grep -q OK"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - docker-api
+
+networks:
+  ingress:
+    external: true
+  media:
+    external: true
+
+  # NOT external, unlike every other network in this repo. Homepage and its
+  # socket proxy are in the same compose project, so compose creates
+  # `homepage_docker-api` for just these two. Nothing else can join it, which
+  # is the point — the docker API is reachable only by the one container that
+  # needs it.
+  docker-api:
+    driver: bridge
+    internal: true

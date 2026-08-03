@@ -1,0 +1,14 @@
+# Docker integration.
+# Docs: https://gethomepage.dev/configs/docker/
+#
+# `app-prod` is the name services.yaml refers to in their `server:` field.
+# It points at this stack's OWN socket proxy, not the traefik stack's — see
+# the reasoning in ../compose.yaml.
+#
+# The proxy grants CONTAINERS only, so Homepage can read the container list
+# and the per-container stats stream. It cannot start, stop or exec anything,
+# because POST=0.
+
+app-prod:
+  host: homepage-socket-proxy
+  port: 2375

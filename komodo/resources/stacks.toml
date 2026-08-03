@@ -400,6 +400,65 @@ poll_for_updates = true
 
 
 [[stack]]
+name = "homepage"
+tags = ["platform"]
+[stack.config]
+server = "app-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/platform/homepage"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+# Homepage needs a read credential for every service it reports on. All of
+# these are Komodo secret Variables. Where each value comes from:
+#
+#   SONARR_API_KEY / RADARR_API_KEY      already exist (recyclarr uses them)
+#   QBITTORRENT_USERNAME / _PASSWORD     already exist (decluttarr uses them)
+#   PROWLARR_API_KEY                     Prowlarr  > Settings > General
+#   BAZARR_API_KEY                       Bazarr    > Settings > General
+#   JELLYFIN_API_KEY                     Jellyfin  > Dashboard > API Keys
+#   PLEX_TOKEN                           Plex Preferences.xml, PlexOnlineToken
+#   SEERR_API_KEY                        Seerr     > Settings > General
+#   KOMODO_API_KEY / KOMODO_API_SECRET   Komodo    > Settings > API Keys
+#   TRAEFIK_DASH_USER / _PASS            the BasicAuth pair on the traefik
+#                                        dashboard router
+#
+# A missing variable is not fatal. That one widget renders an error and the
+# rest of the dashboard still works, so this can be filled in incrementally.
+environment = """
+SONARR_API_KEY=[[SONARR_API_KEY]]
+RADARR_API_KEY=[[RADARR_API_KEY]]
+PROWLARR_API_KEY=[[PROWLARR_API_KEY]]
+BAZARR_API_KEY=[[BAZARR_API_KEY]]
+JELLYFIN_API_KEY=[[JELLYFIN_API_KEY]]
+PLEX_TOKEN=[[PLEX_TOKEN]]
+SEERR_API_KEY=[[SEERR_API_KEY]]
+QBITTORRENT_USERNAME=[[QBITTORRENT_USERNAME]]
+QBITTORRENT_PASSWORD=[[QBITTORRENT_PASSWORD]]
+KOMODO_API_KEY=[[KOMODO_API_KEY]]
+KOMODO_API_SECRET=[[KOMODO_API_SECRET]]
+TRAEFIK_DASH_USER=[[TRAEFIK_DASH_USER]]
+TRAEFIK_DASH_PASS=[[TRAEFIK_DASH_PASS]]
+"""
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "homepage.env"]
+
+# --- Automation ---
+# ⚠️ Same side-car caveat as recyclarr and decluttarr: the dashboard lives in
+# config/*.yaml, and BatchDeployStackIfChanged compares `file_paths` and env
+# files, not arbitrary repo files. A push that only edits config/services.yaml
+# will NOT redeploy. Touch compose.yaml in the same commit, or Deploy the stack
+# by hand. Homepage does hot-reload config changes once the files are actually
+# on disk, so the pull is the only hard part.
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+
+[[stack]]
 name = "cloudflared"
 tags = ["platform", "ingress"]
 [stack.config]

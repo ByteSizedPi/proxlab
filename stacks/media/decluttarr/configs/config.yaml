@@ -64,7 +64,19 @@ jobs:
   remove_stalled:
 
   # Junk inside an otherwise valid release.
+  #
+  # ⚠️ This job turns on "Keep unselected files in .unwanted folder" in
+  # qBittorrent, and it does so even while test_run is true. Observed
+  # 2026-08-03. test_run suppresses removals, it is not a guarantee that
+  # decluttarr changes nothing anywhere.
   remove_bad_files:
+
+  # Stops a file deleted in Jellyfin or Plex from being re-downloaded before
+  # Sonarr's 12h (Radarr's 24h) deletion scan notices. Needs the read-only
+  # ${DATA_ROOT}:/data mount added to compose.yaml at the same time as this;
+  # without it decluttarr logs "does not have access to this path" and the
+  # job silently does nothing.
+  detect_deletions:
 
   # ── Deliberately NOT enabled ──────────────────────────────────────────────
   #

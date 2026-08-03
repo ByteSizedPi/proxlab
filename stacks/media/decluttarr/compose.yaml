@@ -28,6 +28,26 @@ services:
       # Read-only because decluttarr only ever reads this. It keeps no state.
       - ./configs:/app/config:ro
 
+      # ── Media, READ-ONLY, for the detect_deletions job ────────────────────
+      #
+      # Sonarr scans for deletions every 12h and Radarr every 24h. Delete an
+      # episode in Jellyfin or Plex inside that window and the *arr still
+      # thinks it is monitored, so it re-downloads the thing you just deleted.
+      # detect_deletions watches the media folders and refreshes the item so
+      # it gets unmonitored instead. This is the fix for JJ's "I deleted it
+      # and it came back" complaint (see arr-stack-buildout memory).
+      #
+      # The mount path MUST be identical to what Sonarr and Radarr use, hence
+      # ${DATA_ROOT}:/data and not a shortcut to the media subfolder. decluttarr
+      # compares the literal paths the *arr APIs report (/data/media/tv,
+      # /data/media/movies) against what it can see.
+      #
+      # `:ro` is deliberate and load-bearing. decluttarr only needs to know
+      # whether a file still exists. Read-only means a bug in a deletion job
+      # cannot reach a media file, which is the whole reason this mount was
+      # left out when the stack was first written.
+      - ${DATA_ROOT}:/data:ro
+
     # No `ports:` and no Traefik labels — decluttarr has no web UI at all. It
     # only talks OUT to Sonarr, Radarr and qBittorrent on its own timer.
     security_opt:

@@ -5,6 +5,27 @@ services:
     environment:
       - TZ=${TZ}
       - LOG_LEVEL=info
+      # Force IPv4 for outbound DNS. This is the Node equivalent of the
+      # DOTNET_SYSTEM_NET_DISABLEIPV6 already set on prowlarr/sonarr/radarr,
+      # and it is here for the same reason.
+      #
+      # The docker bridge networks have no IPv6 route, but TMDb's image CDN
+      # (image.tmdb.org -> tmdb-image-prod.b-cdn.net) publishes BOTH A and
+      # AAAA records. Node 22 defaults its DNS result order to `verbatim`, so
+      # it tries whatever the resolver returned first. When that is the AAAA,
+      # the connection dies with ENETUNREACH.
+      #
+      # Measured inside the container, 2026-08-03:
+      #   IPv4 -> 200 in 769ms
+      #   IPv6 -> ENETUNREACH in 25ms
+      #
+      # The symptom was a Seerr UI full of broken posters, plus repeated
+      # "[TMDB] Failed to fetch TV show details" and "Failed to proxy image"
+      # in /app/config/logs/seerr-*.log. Requests to Sonarr still worked,
+      # because those go to a container name on the media network and never
+      # touch IPv6 — which is what made it look like a Seerr bug rather than
+      # a network one.
+      - NODE_OPTIONS=--dns-result-order=ipv4first
     volumes:
       - ${CONFIG_ROOT}/seerr:/app/config:Z
       # No DATA_ROOT mount — Seerr never touches media files directly, only

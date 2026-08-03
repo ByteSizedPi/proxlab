@@ -22,13 +22,8 @@
       - /mnt/data
     expanded: true
 
-- datetime:
-    text_size: xl
-    format:
-      dateStyle: long
-      timeStyle: short
-      hourCycle: h23
-
-- search:
-    provider: duckduckgo
-    target: _blank
+# datetime and search were here and are deliberately gone (JJ, 2026-08-03).
+# Three header widgets side by side crowded the top of the page, and neither
+# earned its space: the clock duplicates the one in the OS menu bar, and an
+# internet search box is noise on a dashboard reached only over the tailnet.
+# `resources` stays because a full root disk is the failure that stops Docker.

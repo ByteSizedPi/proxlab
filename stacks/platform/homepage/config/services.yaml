@@ -91,7 +91,12 @@
           type: sonarr
           url: http://sonarr:8989
           key: "{{HOMEPAGE_VAR_SONARR_KEY}}"
-          enableQueue: true
+          # enableQueue deliberately OFF. It renders one row per queued
+          # episode, and a season pack fan-out made this card taller than the
+          # rest of the page combined. Homepage has no option to cap that list.
+          # Without it the widget shows the counts (wanted / queued / series),
+          # which is what a dashboard is for. Click through to Sonarr for the
+          # actual queue.
 
     - Radarr:
         icon: radarr.png
@@ -103,7 +108,7 @@
           type: radarr
           url: http://radarr:7878
           key: "{{HOMEPAGE_VAR_RADARR_KEY}}"
-          enableQueue: true
+          # Same reasoning as Sonarr above: counts, not a queue listing.
 
     - Prowlarr:
         icon: prowlarr.png
@@ -155,7 +160,9 @@
           url: http://qbittorrent:8080
           username: "{{HOMEPAGE_VAR_QBIT_USER}}"
           password: "{{HOMEPAGE_VAR_QBIT_PASS}}"
-          enableLeechProgress: true
+          # enableLeechProgress deliberately OFF, same reason as the *arr
+          # queues: it draws a progress bar per active torrent. The widget
+          # still shows leech / download / seed / upload totals.
 
 - Platform:
     - Traefik:
@@ -164,14 +171,23 @@
         description: Reverse proxy and TLS
         server: app-prod
         container: traefik
-        # The API is deliberately NOT exposed with --api.insecure, so this has
-        # to go through the router, which carries BasicAuth. That is the one
-        # widget here that does not talk to a container name.
-        widget:
-          type: traefik
-          url: https://traefik.admin.jjventer.co.za
-          username: "{{HOMEPAGE_VAR_TRAEFIK_USER}}"
-          password: "{{HOMEPAGE_VAR_TRAEFIK_PASS}}"
+        # ⚠️ WIDGET DISABLED 2026-08-03. It returned 401 on every refresh.
+        #
+        # The API is deliberately NOT exposed with --api.insecure, so it can
+        # only be reached through the dashboard router, which carries
+        # BasicAuth. That middleware stores a BCRYPT HASH:
+        #   traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$2y$05$...
+        # Homepage needs the PLAINTEXT password that hashes to it, and a hash
+        # cannot be reversed. If the plaintext is lost, the fix is to
+        # regenerate the htpasswd pair, not to try to recover it.
+        #
+        # To re-enable: create Komodo Variables TRAEFIK_DASH_USER and
+        # TRAEFIK_DASH_PASS (plaintext), then uncomment.
+        # widget:
+        #   type: traefik
+        #   url: https://traefik.admin.jjventer.co.za
+        #   username: "{{HOMEPAGE_VAR_TRAEFIK_USER}}"
+        #   password: "{{HOMEPAGE_VAR_TRAEFIK_PASS}}"
 
     - Komodo:
         icon: mdi-lambda
@@ -179,16 +195,30 @@
         description: GitOps deploys, this repo
         server: app-prod
         container: komodo-core-1
+        # ⚠️ WIDGET DISABLED 2026-08-03, and this one was doing harm.
+        #
+        # The Komodo Variables KOMODO_API_KEY and KOMODO_API_SECRET were never
+        # created, so Komodo left the placeholders unsubstituted and Homepage
+        # authenticated with the literal string "[[KOMODO_API_KEY]]" on every
+        # refresh. Komodo counts failed logins:
+        #   {"error":"Invalid user credentials | You have 4 attempts remaining"}
+        # and by the time this was noticed it had progressed to HTTP 429.
+        #
+        # An unresolved placeholder is not a harmless blank. It is a wrong
+        # credential presented on a timer against a service that locks out.
+        #
+        # To re-enable: create both Variables (Komodo > Settings > API Keys,
+        # the secret is shown once), then uncomment.
+        #
         # Komodo Core publishes 9120 on the HOST and joins no network this
-        # container can see, hence host.docker.internal. Same reason traefik
-        # and cloudflared need it.
-        widget:
-          type: komodo
-          url: http://host.docker.internal:9120
-          key: "{{HOMEPAGE_VAR_KOMODO_KEY}}"
-          secret: "{{HOMEPAGE_VAR_KOMODO_SECRET}}"
-          showSummary: true
-          showStacks: true
+        # container can see, hence host.docker.internal.
+        # widget:
+        #   type: komodo
+        #   url: http://host.docker.internal:9120
+        #   key: "{{HOMEPAGE_VAR_KOMODO_KEY}}"
+        #   secret: "{{HOMEPAGE_VAR_KOMODO_SECRET}}"
+        #   showSummary: true
+        #   showStacks: true
 
 # ── Everything below has NO web interface ────────────────────────────────
 #

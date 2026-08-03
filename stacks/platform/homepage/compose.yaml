@@ -1,6 +1,10 @@
 services:
   homepage:
     image: ghcr.io/gethomepage/homepage:latest
+    # UI pass 2026-08-03: removed the datetime and search header widgets,
+    # collapsed the Sonarr/Radarr/qBittorrent queue listings to counts, and
+    # disabled the Traefik and Komodo widgets pending credentials. All of
+    # that lives in config/, which does not trigger a redeploy on its own.
     container_name: homepage
     environment:
       - PUID=${PUID}

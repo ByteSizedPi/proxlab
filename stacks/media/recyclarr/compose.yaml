@@ -22,26 +22,45 @@ services:
       # is what makes a change here a `git push`, not a manual edit on the
       # host — same pattern as every other stack in this repo.
       #
-      # ⚠️ A PUSH THAT ONLY TOUCHES recyclarr.yml DOES NOT DEPLOY. Verified
-      # 2026-08-03: commit 6f9ae38 rewrote recyclarr.yml and sat on origin
-      # for 31 minutes across two `gitops` runs while
-      # /etc/komodo/stacks/recyclarr/.../recyclarr.yml kept its old mtime.
+      # ⚠️ A DIRECTORY, NOT `./configs/recyclarr.yml:/config/recyclarr.yml`.
       #
-      # Why: stage 2 of the gitops procedure is BatchDeployStackIfChanged,
-      # and "changed" means the compose file named in this stack's
-      # `file_paths` (see komodo/resources/stacks.toml). A side-car mounted
-      # from the repo is invisible to that check, so Komodo never pulls and
-      # the container keeps reading the previous file forever.
+      # It was the single-file form until 2026-08-03 and that form is a trap.
+      # A file bind mount pins the file's INODE at container creation. Git
+      # replaces a file rather than rewriting it in place, so after Komodo
+      # pulled a new recyclarr.yml the host had the new content while the
+      # container still read the old inode. Measured that day: `grep -c` gave
+      # 1 on the host and 0 inside the container, and Recyclarr cheerfully
+      # synced the previous day's config with no error anywhere.
       #
-      # Two ways out. Touch this compose file in the same commit, which is
-      # what this comment block did. Or redeploy the stack by hand in the
-      # Komodo UI. Then force the sync, because the container only reads
-      # recyclarr.yml on its CRON_SCHEDULE:
-      #   docker exec recyclarr recyclarr sync
+      # Restarting does NOT fix it. The mount is resolved when the container
+      # is created, so it needs a recreate. A directory mount has no such
+      # problem: the directory inode is stable and new files inside it are
+      # seen immediately, so a pull is picked up by the next sync run.
       #
-      # The traefik stack has the same shape (./dynamic:/dynamic:ro), so a
-      # middleware-only or TLS-only edit there needs the same treatment.
-      - ./recyclarr.yml:/config/recyclarr.yml:ro
+      # Recyclarr loads /config/recyclarr.yml AND every *.yml under
+      # /config/configs, so moving the file into configs/ needs no CLI flag.
+      # See `recyclarr sync --help`, the -c option.
+      - ./configs:/config/configs:ro
+
+      # ⚠️ SECOND HALF OF THE SAME TRAP: a push that only touches files under
+      # configs/ still does not DEPLOY. Stage 2 of the gitops procedure is
+      # BatchDeployStackIfChanged, and "changed" is decided from the compose
+      # file named in this stack's `file_paths` (komodo/resources/stacks.toml).
+      # Komodo therefore never pulls, and the host file never changes either.
+      #
+      # Verified 2026-08-03: commit 6f9ae38 sat on origin for 30 minutes
+      # across two gitops runs with the clone untouched. It only moved once a
+      # commit modified this compose file.
+      #
+      # So a config-only change needs one of:
+      #   - any edit to this compose file in the same commit, or
+      #   - a manual Deploy on the recyclarr stack in the Komodo UI.
+      # Then force the sync, since the container otherwise waits for
+      # CRON_SCHEDULE:  docker exec recyclarr recyclarr sync
+      #
+      # The traefik stack mounts ./dynamic the same way. Its file provider
+      # hot-reloads, so it never had the inode half of this problem, but the
+      # deploy half applies there too.
 
     # No `ports:`, no Traefik labels — Recyclarr has no UI, it only talks
     # OUT to Sonarr/Radarr over `media` on its own schedule.

@@ -84,10 +84,11 @@ sonarr:
         - trash_id: 158188097a58d7687dee647e04af0da3  # [Optional] Golden Rule HD
           select:
             - 47435ece6b99a0b477caf360e79ba0bb  # x265 (HD)
+        # No `select:` here. Both formats in this group (HD Streaming Boost,
+        # UHD Streaming Boost) are marked `required` in the guide, and
+        # required formats are always included. Naming them made Recyclarr
+        # warn "Selecting required CF ... is redundant" on every run.
         - trash_id: 85fae4a2294965b75710ef2989c850eb  # [Streaming Services] HD/UHD boost
-          select:
-            - 218e93e5702f44a68ad9e3c6ba87d2f0  # HD Streaming Boost
-            - 43b3cf48cb385cd3eac608ee6bca7f09  # UHD Streaming Boost
         - trash_id: 59c3af66780d08332fdc64e68297098f  # [Unwanted] Unwanted Formats
           select:
             - 15a05bc7c1a36e2b57fd628f8977e2fc  # AV1
@@ -108,9 +109,22 @@ sonarr:
         # a SECOND quality profile without this group, assigned to just
         # those series in Sonarr's UI. Not built yet — do this once JJ has
         # an actual title to assign it to, see arr-stack-buildout memory.
+        #
+        # `select` adds NON-DEFAULT formats from a group. Formats the guide
+        # marks `default: true` come in whether or not they are listed, so
+        # unwanted ones need `exclude`. Deleting them in Sonarr does nothing:
+        # the next sync recreates them (measured 2026-08-03).
         - trash_id: 74aff4168620ed49dcc67e92b2c2a5b4  # [Optional] Language Profiles
           select:
             - 69aa1e159f97d860440b04cd6d590c4f  # Language: Not English
+          exclude:
+            # `Language: Not Original` is a default member of this group and
+            # scores -10000. It rejects a release whose audio is not the
+            # show's ORIGINAL language, which kills an English dub of an
+            # anime — exactly the case JJ wants to keep available through a
+            # second profile. `Language: Not English` alone is the rule he
+            # asked for, so the original-language one is excluded.
+            - ae575f95ab639ba5d15f663bf019e3e8  # Language: Not Original
 
       skip: []
 

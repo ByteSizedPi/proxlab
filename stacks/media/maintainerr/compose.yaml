@@ -1,0 +1,52 @@
+services:
+  maintainerr:
+    image: ghcr.io/maintainerr/maintainerr:latest
+    container_name: maintainerr
+    # Maintainerr has no PUID/PGID handling — it runs as whatever user the
+    # container is given, and /opt/data has to be writable by that uid. Same
+    # numbers as everything else here, just expressed differently.
+    user: "${PUID}:${PGID}"
+    environment:
+      - TZ=${TZ}
+    volumes:
+      # Everything Maintainerr owns lives here: its SQLite database, the rules
+      # and collections. Not a config file — real state, so it must be on a
+      # persistent path and it must survive a container recreate.
+      - ${CONFIG_ROOT}/maintainerr:/opt/data:Z
+
+    # No `ports:` block, same reasoning as prowlarr/compose.yaml — Traefik
+    # reaches it over `ingress`, nothing needs a host port for that.
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      # Upstream ships its own script rather than exposing a /ping endpoint.
+      test: ["CMD", "/opt/app/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ingress
+      # Maintainerr is the one service that talks to nearly everything:
+      # Plex and Jellyfin to read watch state, Radarr and Sonarr to delete the
+      # media record, Seerr to clear the request. All of them are on `media`.
+      - media
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.maintainerr.rule=Host(`maintainerr.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.maintainerr.loadbalancer.server.port=6246"
+      # entrypoints/tls/middlewares deliberately omitted — see the comment in
+      # prowlarr/compose.yaml, same reasoning applies here.
+
+networks:
+  ingress:
+    external: true
+  media:
+    external: true

@@ -330,6 +330,75 @@ auto_update = true
 poll_for_updates = true
 
 
+## ── Phase 3: queue hygiene and library retention ─────────────────────────
+##
+## decluttarr and Maintainerr solve DIFFERENT problems and are easy to
+## conflate. decluttarr looks at the DOWNLOAD QUEUE and drops items that are
+## stalled, failed or no longer wanted. Maintainerr looks at the FINISHED
+## LIBRARY and removes media nobody is going to watch again. Keep both.
+
+[[stack]]
+name = "decluttarr"
+tags = ["media", "arr"]
+[stack.config]
+server = "app-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/media/decluttarr"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+# SONARR_API_KEY / RADARR_API_KEY already exist as Komodo secret Variables —
+# recyclarr uses the same two. QBITTORRENT_USERNAME / QBITTORRENT_PASSWORD are
+# NEW and have to be added by hand in Komodo before the first deploy, from
+# qBittorrent's Options > Web UI page. Read by the `!ENV` tags in
+# stacks/media/decluttarr/configs/config.yaml.
+environment = """
+SONARR_API_KEY=[[SONARR_API_KEY]]
+RADARR_API_KEY=[[RADARR_API_KEY]]
+QBITTORRENT_USERNAME=[[QBITTORRENT_USERNAME]]
+QBITTORRENT_PASSWORD=[[QBITTORRENT_PASSWORD]]
+"""
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "decluttarr.env"]
+
+# --- Automation ---
+# ⚠️ Like recyclarr, this stack keeps its real configuration in a side-car
+# (configs/config.yaml). A push that touches ONLY that file will not redeploy,
+# because BatchDeployStackIfChanged compares `file_paths` and env files, not
+# arbitrary repo files. Edit compose.yaml in the same commit, or Deploy this
+# stack by hand. See stacks/media/recyclarr/compose.yaml for the full story.
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+
+[[stack]]
+name = "maintainerr"
+tags = ["media", "streaming"]
+[stack.config]
+server = "app-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/media/maintainerr"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+# No `environment` block. Maintainerr keeps every credential in its own SQLite
+# database under /opt/data, entered through its UI — nothing to inject.
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "maintainerr.env"]
+
+# --- Automation ---
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+
 [[stack]]
 name = "cloudflared"
 tags = ["platform", "ingress"]

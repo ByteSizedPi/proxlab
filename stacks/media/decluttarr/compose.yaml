@@ -1,0 +1,50 @@
+services:
+  decluttarr:
+    image: ghcr.io/manimatter/decluttarr:latest
+    container_name: decluttarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      # Consumed by the `!ENV` tags in configs/config.yaml, NOT by decluttarr
+      # directly. Both halves are required: Komodo substitutes these into
+      # komodo.env (see komodo/resources/stacks.toml) AND they have to be
+      # injected into the container here. Same pattern as recyclarr and
+      # cloudflared.
+      - SONARR_API_KEY=${SONARR_API_KEY}
+      - RADARR_API_KEY=${RADARR_API_KEY}
+      - QBITTORRENT_USERNAME=${QBITTORRENT_USERNAME}
+      - QBITTORRENT_PASSWORD=${QBITTORRENT_PASSWORD}
+    volumes:
+      # A DIRECTORY, not `./configs/config.yaml:/app/config/config.yaml`.
+      #
+      # Learned the hard way on the recyclarr stack, 2026-08-03: a single-file
+      # bind mount pins that file's inode at container creation, and git
+      # replaces files rather than rewriting them. After Komodo pulls, the host
+      # holds the new config while the container still reads the old inode,
+      # silently, with no error anywhere. See recyclarr/compose.yaml for the
+      # full write-up. A directory inode is stable, so a pull is picked up.
+      #
+      # Read-only because decluttarr only ever reads this. It keeps no state.
+      - ./configs:/app/config:ro
+
+    # No `ports:` and no Traefik labels — decluttarr has no web UI at all. It
+    # only talks OUT to Sonarr, Radarr and qBittorrent on its own timer.
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      # `media` only, for the same reason as recyclarr. Nothing calls into
+      # decluttarr, so it never needs to be reachable through ingress.
+      - media
+
+networks:
+  # Created by the prowlarr stack's pre_deploy hook — see prowlarr/compose.yaml
+  # and komodo/resources/stacks.toml.
+  media:
+    external: true

@@ -1,0 +1,101 @@
+# Decluttarr V2 configuration.
+#
+# V2 moved instances and download clients OUT of environment variables and
+# into this file. The old V1 `SONARR_URL` / `SONARR_API_KEY` env vars no
+# longer configure anything. Source:
+# https://github.com/ManiMatter/decluttarr#upgrading-from-v1-to-v2
+#
+# `!ENV NAME` reads an environment variable, which is how the API keys and the
+# qBittorrent password stay OUT of this repo. The variables are Komodo
+# secrets, injected by compose.yaml. Same split as recyclarr.
+#
+# ⚠️ This file is mounted as part of a DIRECTORY, not as a single file. See the
+# volumes comment in ../compose.yaml before changing that.
+
+general:
+  log_level: INFO
+
+  # ⚠️ START IN TEST MODE. `true` means decluttarr logs every removal it WOULD
+  # make and changes nothing. This tool deletes queue items and torrents, and
+  # the whole point of the *arr rebuild was to stop losing episodes, so it does
+  # not get to delete anything until the log has been read at least once.
+  # Flip to false once the decisions in the log look right.
+  test_run: true
+
+  # Minutes between runs. 10 is the upstream default.
+  timer: 10
+
+  # Every tracker in this setup is public — see the Prowlarr indexer list.
+  # `remove` is the default for both, spelled out so the behaviour is visible
+  # without reading upstream docs.
+  private_tracker_handling: remove
+  public_tracker_handling: remove
+
+  # A torrent tagged "Keep" in qBittorrent is never touched by decluttarr.
+  protected_tag: "Keep"
+
+job_defaults:
+  max_strikes: 3
+  min_days_between_searches: 7
+  max_concurrent_searches: 3
+
+jobs:
+  # Downloads that failed outright, and imports the *arr refused.
+  remove_failed_downloads:
+  remove_failed_imports:
+    message_patterns:
+      - "Not a Custom Format upgrade for existing*"
+      - "Not an upgrade for existing*"
+      - "*Found potentially dangerous file with extension*"
+      - "Invalid video file*"
+      - "No files found are eligible for import*"
+      - "One or more episodes expected in this release were not imported or missing from the release"
+
+  # Stuck in metadata-fetch, or the files vanished underneath the queue item.
+  remove_metadata_missing:
+  remove_missing_files:
+
+  # In the download client but no longer wanted by any *arr.
+  remove_orphans:
+  remove_unmonitored:
+
+  # Stalled with no peers. Three strikes at a 10 minute timer means roughly
+  # 30 minutes of nothing happening before it is dropped.
+  remove_stalled:
+
+  # Junk inside an otherwise valid release.
+  remove_bad_files:
+
+  # ── Deliberately NOT enabled ──────────────────────────────────────────────
+  #
+  # remove_slow:       public trackers are often genuinely slow rather than
+  #                    broken, and a low min_speed would drop downloads that
+  #                    would have finished. Revisit with real numbers once
+  #                    there is download history to look at.
+  # remove_done_seeding: overlaps with Sonarr/Radarr's own "Remove Completed"
+  #                    on the qBittorrent client, which is already on. Two
+  #                    things deleting the same torrent is how you get
+  #                    confusing gaps. Pick one, and it is already picked.
+  # search_missing / search_unmet_cutoff:
+  #                    both fire searches across all 19 public indexers. With
+  #                    an upgrade-until cutoff of WEB 1080p a large part of the
+  #                    library will sit "unmet" forever, so this would hammer
+  #                    the indexers on a loop. Enable only with a deliberate
+  #                    min_days_between_searches.
+
+instances:
+  sonarr:
+    - base_url: "http://sonarr:8989"
+      api_key: !ENV SONARR_API_KEY
+  radarr:
+    - base_url: "http://radarr:7878"
+      api_key: !ENV RADARR_API_KEY
+
+download_clients:
+  qbittorrent:
+    # `name` must match what Sonarr and Radarr call this client in their own
+    # Settings > Download Clients page. Both were added as "qBittorrent".
+    - base_url: "http://qbittorrent:8080"
+      name: "qBittorrent"
+      username: !ENV QBITTORRENT_USERNAME
+      password: !ENV QBITTORRENT_PASSWORD

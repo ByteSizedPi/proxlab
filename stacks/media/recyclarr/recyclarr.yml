@@ -5,11 +5,39 @@
 # by hand afterward. See arr-stack-buildout memory for the full reasoning.
 #
 # yaml-language-server: $schema=https://schemas.recyclarr.dev/v8/config-schema.json
+#
+# ── Scope: what this file overwrites, and what it leaves alone ────────────
+#
+# Recyclarr writes exactly three things on every run, and only for the two
+# profiles named below:
+#   1. Settings > Quality        — the whole size table for the listed type
+#   2. Settings > Custom Formats — the formats listed here, and their scores
+#   3. The quality profile itself — qualities, order, cutoff, scores, and
+#      (Radarr only) the Language field
+#
+# It does NOT touch: root folders, Media Management, naming schemes,
+# download clients, indexers, delay profiles, tags, Connect entries, or any
+# quality profile whose name is not listed here. Configure all of those in
+# each app's UI and Recyclarr will leave them alone.
+#
+# Two consequences worth knowing before editing a profile by hand:
+#   - Editing "WEB-1080p" or "HD Bluray + WEB" in the UI lasts until the next
+#     nightly run. Change this file instead, then push.
+#   - `reset_unmatched_scores: enabled: true` sets to 0 the score of any
+#     custom format inside those two profiles that this file does not list.
+#     To keep a hand-added format scored, add it to this file with its score.
+#     A SECOND profile (the language-exception one, see below) is untouched,
+#     so per-series exceptions are safe to build in the UI.
 
 sonarr:
   web-1080p:
     base_url: http://sonarr:8989
     api_key: !env_var SONARR_API_KEY
+
+    # Recyclarr never deletes a custom format that this file stops listing.
+    # `false` is already the default. It is written out so nobody turns it on
+    # without reading what it does. See the "scope" comment at the top.
+    delete_old_custom_formats: false
 
     quality_definition:
       type: series
@@ -18,6 +46,38 @@ sonarr:
       - trash_id: 72dae194fc92bf828f32cde7744e51a1  # WEB-1080p
         reset_unmatched_scores:
           enabled: true
+
+        # The guide profile enables ONE quality: WEB 1080p. That is strict.
+        # A show with no 1080p WEB release downloads nothing at all, which is
+        # the normal case for older and back-catalogue series. JJ asked for
+        # fallbacks instead (2026-08-03), so the list is overridden here.
+        #
+        # ⚠️ A `qualities` list REPLACES the guide list, it does not merge.
+        # Every quality that must stay enabled has to be repeated below.
+        # Anything absent is disabled, which is how 2160p stays out.
+        #
+        # Order is preference, best first. `until_quality` is still WEB 1080p,
+        # so a 720p or HDTV grab is upgraded as soon as a 1080p WEB release
+        # appears. Quality tier says nothing about whether a release is bad —
+        # the LQ and Upscaled custom formats below score -10000 and block
+        # those at any resolution.
+        qualities:
+          - name: WEB 1080p
+            qualities:
+              - WEBRip-1080p
+              - WEBDL-1080p
+          - name: Bluray-1080p
+          - name: HDTV-1080p
+          - name: WEB 720p
+            qualities:
+              - WEBRip-720p
+              - WEBDL-720p
+          - name: Bluray-720p
+          - name: HDTV-720p
+        upgrade:
+          allowed: true
+          until_quality: WEB 1080p
+          until_score: 10000
 
     custom_format_groups:
       add:
@@ -59,6 +119,9 @@ radarr:
     base_url: http://radarr:7878
     api_key: !env_var RADARR_API_KEY
 
+    # Same reasoning as the Sonarr instance above.
+    delete_old_custom_formats: false
+
     quality_definition:
       type: movie
 
@@ -66,6 +129,33 @@ radarr:
       - trash_id: d1d67249d3890e49bc12e275d989a7e9  # HD Bluray + WEB
         reset_unmatched_scores:
           enabled: true
+
+        # The guide profile enables three qualities: Bluray-1080p, WEB 1080p
+        # and Bluray-720p. WEB 720p is added below (JJ, 2026-08-03) because a
+        # streaming-only title that never got a Bluray has no other fallback.
+        #
+        # ⚠️ A `qualities` list REPLACES the guide list, it does not merge.
+        # Every quality that must stay enabled has to be repeated below.
+        # Anything absent is disabled, which is how 2160p stays out.
+        #
+        # HDTV is deliberately absent, unlike the Sonarr profile. An HDTV
+        # release of a film is a broadcast rip, usually cut for runtime and
+        # content. For a TV episode it is a normal source.
+        qualities:
+          - name: Bluray-1080p
+          - name: WEB 1080p
+            qualities:
+              - WEBRip-1080p
+              - WEBDL-1080p
+          - name: Bluray-720p
+          - name: WEB 720p
+            qualities:
+              - WEBRip-720p
+              - WEBDL-720p
+        upgrade:
+          allowed: true
+          until_quality: Bluray-1080p
+          until_score: 10000
 
     custom_format_groups:
       add:
@@ -88,6 +178,11 @@ radarr:
 
       skip: []
     # Radarr HAS a native per-movie language field, unlike Sonarr — no
-    # custom-format hack needed. Set it by hand in Radarr's UI: Settings >
-    # Profiles > "HD Bluray + WEB" > Language > English. Recyclarr does not
-    # manage this field in the generated template.
+    # custom-format hack needed. Recyclarr DOES sync this field: the guide
+    # profile carries `"language": "Original"` and Recyclarr applies it.
+    # Do not set it by hand in Radarr's UI, the next sync overwrites it.
+    # Recyclarr has no YAML key to override the value either.
+    #
+    # "Original" means the film's own language, not English. An English film
+    # therefore rejects an Italian dub, and a French film still accepts its
+    # French audio. That matches JJ's ask better than a fixed "English".

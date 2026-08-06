@@ -30,6 +30,11 @@
 #
 # ⚠️ The hostname is hardcoded rather than ${ADMIN_DOMAIN}, for the same reason
 # as komodo.yml: Traefik's file provider does NOT do environment substitution.
+#
+# ⚠️ Changing this file does NOT redeploy the traefik stack. Komodo keeps a
+# separate clone per stack and only refreshes one whose compose.yaml changed,
+# so a route edited here stays invisible to Traefik until you deploy the
+# traefik stack by hand. Full explanation in komodo.yml.
 
 http:
   routers:

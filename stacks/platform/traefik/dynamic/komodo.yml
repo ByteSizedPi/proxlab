@@ -34,6 +34,31 @@
 # it properly; file-provider routes cannot. If ADMIN_DOMAIN ever changes,
 # grep dynamic/*.yml and fix these by hand — nothing will warn you, the
 # router simply stops matching.
+#
+# ── ⚠️ EDITING A FILE IN THIS DIRECTORY DOES NOT REDEPLOY THIS STACK ⚠️ ────
+#
+# Komodo keeps a SEPARATE CLONE PER STACK, and Traefik mounts only its own:
+#
+#     /etc/komodo/stacks/traefik/stacks/platform/traefik/dynamic -> /dynamic
+#
+# A commit that touches only `dynamic/*.yml` leaves this stack's compose.yaml
+# unchanged, so Komodo does not refresh the traefik clone. The file is on
+# origin/main and sitting in every OTHER stack's clone, while the one Traefik
+# actually reads stays stale. Pushing is not enough — deploy the traefik stack
+# by hand.
+#
+# The symptom is a 404 on a hostname whose route you can see in the repo,
+# which reads as a broken rule and sends you rewriting a route that was
+# already correct. Cost an hour when adguard.yml was added on 2026-08-06.
+#
+# Check the clone before touching the route:
+#
+#     ssh pve-prod 'docker exec traefik ls /dynamic/'
+#
+# Note this is NOT a file-watching problem. `--providers.file.watch=true` is
+# set (../compose.yaml), so Traefik picks up changes to /dynamic live and
+# needs no restart. What does not happen on its own is the clone refresh that
+# puts the file there.
 
 http:
   routers:

@@ -56,12 +56,36 @@ sonarr:
         # Every quality that must stay enabled has to be repeated below.
         # Anything absent is disabled, which is how 2160p stays out.
         #
-        # Order is preference, best first. `until_quality` is still WEB 1080p,
-        # so a 720p or HDTV grab is upgraded as soon as a 1080p WEB release
-        # appears. Quality tier says nothing about whether a release is bad —
-        # the LQ and Upscaled custom formats below score -10000 and block
-        # those at any resolution.
+        # Order is preference, best first. Quality tier says nothing about
+        # whether a release is bad — the LQ and Upscaled custom formats below
+        # score -10000 and block those at any resolution.
+        #
+        # ── 2160p added 2026-08-06 ────────────────────────────────────────
+        #
+        # JJ's ask: do NOT wait for 4K. Grab the best thing available now and
+        # upgrade later if a 2160p release turns up. Watching the 1080p in the
+        # meantime is fine.
+        #
+        # That is exactly what this does. 2160p sits at the top so it wins when
+        # it exists at grab time, 1080p and 720p stay enabled so a title with no
+        # 4K release still downloads immediately, and `until_quality: WEB 2160p`
+        # keeps the upgrade path open afterwards. Nothing here makes Sonarr hold
+        # out for 4K.
+        #
+        # WEB only, no Bluray-2160p. A 2160p remux is 50-80 GB against 10-25 GB
+        # for a WEB-DL, and on a 6x1.2TB RAID6 array (4.3 TiB usable) remuxes
+        # buy under a hundred titles. WEB-DL also direct plays more reliably —
+        # simpler audio, no dual-layer Dolby Vision — which matters because this
+        # host has NO hardware transcoding (see the note in the Radarr section).
+        # Add `- name: Bluray-2160p` above WEB 2160p if that trade ever changes.
+        #
+        # The x265 (HD) format below scores -10000 but targets 720p/1080p only,
+        # so it does not block 2160p HEVC, which is the normal codec up there.
         qualities:
+          - name: WEB 2160p
+            qualities:
+              - WEBRip-2160p
+              - WEBDL-2160p
           - name: WEB 1080p
             qualities:
               - WEBRip-1080p
@@ -76,7 +100,7 @@ sonarr:
           - name: HDTV-720p
         upgrade:
           allowed: true
-          until_quality: WEB 1080p
+          until_quality: WEB 2160p
           until_score: 10000
 
     custom_format_groups:
@@ -155,7 +179,33 @@ radarr:
         # HDTV is deliberately absent, unlike the Sonarr profile. An HDTV
         # release of a film is a broadcast rip, usually cut for runtime and
         # content. For a TV episode it is a normal source.
+        #
+        # ── 2160p added 2026-08-06 ────────────────────────────────────────
+        #
+        # Same reasoning as the Sonarr profile above: 2160p on top so it wins
+        # when it exists, 1080p and 720p still enabled so nothing waits for a 4K
+        # release that may never come, and `until_quality: WEB 2160p` leaves the
+        # upgrade path open. Radarr never holds out for 4K.
+        #
+        # ⚠️ WHY WEB AND NOT REMUX, AND WHY IT IS NOT JUST ABOUT DISK SPACE ⚠️
+        #
+        # This host has NO hardware transcoding. The only display device in the
+        # R720 is a Matrox G200eR2, which is the BMC console chip — there is no
+        # /dev/dri on pve-prod at all. Software-transcoding 4K HEVC on dual
+        # E5-2670s runs at single-digit fps, so it is not a fallback, it is a
+        # failure. Every 4K file MUST direct play on the client.
+        #
+        # WEB-DL direct plays far more reliably than a remux: simpler audio
+        # (EAC3/AC3 rather than TrueHD Atmos or DTS-HD MA) and no dual-layer
+        # Dolby Vision profile 7. Remuxes are also 50-80 GB against 10-25 GB.
+        #
+        # Add `- name: Bluray-2160p` above WEB 2160p only once a client that
+        # direct plays it is confirmed working.
         qualities:
+          - name: WEB 2160p
+            qualities:
+              - WEBRip-2160p
+              - WEBDL-2160p
           - name: Bluray-1080p
           - name: WEB 1080p
             qualities:
@@ -168,7 +218,7 @@ radarr:
               - WEBDL-720p
         upgrade:
           allowed: true
-          until_quality: Bluray-1080p
+          until_quality: WEB 2160p
           until_score: 10000
 
     custom_format_groups:

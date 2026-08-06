@@ -1,0 +1,71 @@
+==========================================================
+ Network benchmark: before-ax10
+ 2026-08-06T12:12:16+02:00
+==========================================================
+
+### Laptop WiFi link
+
+	SSID: Johan Wifi
+	freq: 2412.0
+	signal: -36 dBm
+	rx bitrate: 144.4 MBit/s MCS 15 short GI
+	tx bitrate: 144.4 MBit/s MCS 15 short GI
+
+  negotiated rates above are PHY rates, not throughput.
+  expect real throughput near half the PHY rate at best.
+
+### Laptop WiFi capability (does not change between runs)
+
+  5 GHz band present: yes
+  6 GHz band present: yes
+  802.11ax (HE) capable: yes
+
+### Visible networks
+
+SSID                        CHAN  FREQ      RATE         SIGNAL 
+Johan Wifi                  1     2412 MHz  270 Mbit/s   84     
+ALHN-E3D2_EXT               2     2417 MHz  270 Mbit/s   44     
+17 Mozart                   11    2462 MHz  195 Mbit/s   37     
+YWadee-Safricom-Fiber-2.4G  1     2412 MHz  130 Mbit/s   20     
+YWadee-Safricom-Fiber-5G    48    5240 MHz  1170 Mbit/s  20     
+YWadee-Safricom-Fiber-2.4G  1     2412 MHz  130 Mbit/s   19     
+
+  networks on 5 GHz: 1
+
+### Wired link on jjserver
+
+  	Speed: 100Mb/s
+  	Duplex: Full
+  	Link detected: yes
+
+  what the router port offers:
+  	Link partner advertised link modes:  10baseT/Half 10baseT/Full
+  	                                     100baseT/Half 100baseT/Full
+  	Link partner advertised pause frame use: Symmetric Receive-only
+
+### Latency
+
+  laptop -> gateway (10.0.0.254):
+    10 packets transmitted, 10 received, 0% packet loss, time 1804ms
+    rtt min/avg/max/mdev = 1.747/15.502/45.159/15.096 ms
+  laptop -> internet (1.1.1.1):
+    10 packets transmitted, 10 received, 0% packet loss, time 1804ms
+    rtt min/avg/max/mdev = 13.050/17.108/24.967/3.586 ms
+
+### Download throughput
+
+  jjserver, wired (the ceiling):
+    run 1:   91.6 Mbps
+    run 2:   91.8 Mbps
+    run 3:   91.2 Mbps
+    wired    average:   91.5 Mbps
+
+  laptop, room WiFi (what a phone or TV sees):
+    run 1:   15.5 Mbps
+    run 2:   15.6 Mbps
+    run 3:   15.1 Mbps
+    wifi     average:   15.4 Mbps
+
+==========================================================
+ Report written to /home/jj/server/docs/network/before-ax10.txt
+==========================================================

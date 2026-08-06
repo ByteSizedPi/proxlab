@@ -1,0 +1,79 @@
+==========================================================
+ Network benchmark: after-ax10
+ 2026-08-06T14:45:37+02:00
+==========================================================
+
+### Laptop WiFi link
+
+	SSID: jjlink
+	freq: 5180.0
+	signal: -46 dBm
+	rx bitrate: 720.6 MBit/s 80MHz HE-MCS 7 HE-NSS 2 HE-GI 0 HE-DCM 0
+	tx bitrate: 960.7 MBit/s 80MHz HE-MCS 9 HE-NSS 2 HE-GI 0 HE-DCM 0
+
+  negotiated rates above are PHY rates, not throughput.
+  expect real throughput near half the PHY rate at best.
+
+### Laptop WiFi capability (does not change between runs)
+
+  5 GHz band present: yes
+  6 GHz band present: yes
+  802.11ax (HE) capable: yes
+
+### Visible networks
+
+SSID                        CHAN  FREQ      RATE         SIGNAL 
+--                          36    5180 MHz  1170 Mbit/s  99     
+--                          5     2432 MHz  270 Mbit/s   97     
+jjlink                      5     2432 MHz  270 Mbit/s   95     
+jjlink                      36    5180 MHz  1170 Mbit/s  74     
+EAP-81412                   2     2417 MHz  135 Mbit/s   54     
+17 Mozart                   11    2462 MHz  195 Mbit/s   42     
+ALHN-E3D2_EXT               2     2417 MHz  270 Mbit/s   40     
+--                          11    2462 MHz  195 Mbit/s   37     
+YWadee-Safricom-Fiber-5G    48    5240 MHz  1170 Mbit/s  30     
+5GHz_Backhaul_SSID613E23    48    5240 MHz  1170 Mbit/s  27     
+17 Mozart_5G                112   5560 MHz  1170 Mbit/s  27     
+YWadee-Safricom-Fiber-2.4G  1     2412 MHz  130 Mbit/s   25     
+YWadee-Safricom-Fiber-5G    48    5240 MHz  1170 Mbit/s  25     
+--                          112   5560 MHz  1170 Mbit/s  25     
+
+  networks on 5 GHz: 7
+
+### Wired link on jjserver
+
+  	Speed: 100Mb/s
+  	Duplex: Full
+  	Link detected: yes
+
+  what the router port offers:
+  	Link partner advertised link modes:  10baseT/Half 10baseT/Full
+  	                                     100baseT/Half 100baseT/Full
+  	Link partner advertised pause frame use: Symmetric Receive-only
+
+### Latency
+
+  laptop -> gateway (192.168.0.1):
+    10 packets transmitted, 10 received, 0% packet loss, time 1807ms
+    rtt min/avg/max/mdev = 1.056/1.610/2.486/0.487 ms
+  laptop -> internet (1.1.1.1):
+    10 packets transmitted, 10 received, 0% packet loss, time 1807ms
+    rtt min/avg/max/mdev = 11.358/13.579/16.681/1.394 ms
+
+### Download throughput
+
+  jjserver, wired (the ceiling):
+    run 1:   91.2 Mbps
+    run 2:   91.5 Mbps
+    run 3:   91.8 Mbps
+    wired    average:   91.5 Mbps
+
+  laptop, room WiFi (what a phone or TV sees):
+    run 1:   90.5 Mbps
+    run 2:   91.6 Mbps
+    run 3:   90.7 Mbps
+    wifi     average:   90.9 Mbps
+
+==========================================================
+ Report written to /home/jj/server/docs/network/after-ax10.txt
+==========================================================

@@ -134,5 +134,5 @@ executions = [
 ##
 ## ⚠️ If a cloudflared change breaks the tunnel, webhooks stop arriving and
 ## this procedure can no longer be triggered from GitHub. Recovery is the LAN
-## UI (http://10.42.0.205:9120) or the 15-minute schedule above, which is the
+## UI (http://10.42.0.11:9120) or the 15-minute schedule above, which is the
 ## other reason that schedule is enabled.

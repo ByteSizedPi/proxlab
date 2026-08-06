@@ -65,7 +65,7 @@ http:
 ##
 ## Reaching Komodo ONLY through Traefik is a circular dependency: if a bad
 ## Traefik config takes the proxy down, the tool you would use to fix Traefik
-## is behind the thing that is broken. http://10.42.0.205:9120 stays as the
+## is behind the thing that is broken. http://10.42.0.11:9120 stays as the
 ## way back in. That is also the recovery path already documented for a broken
 ## cloudflared in procedures.toml.
 ##

@@ -34,7 +34,7 @@ tls:
       # Reject connections that send no SNI, instead of falling back to a
       # default certificate.
       #
-      # ⚠️ The practical effect: reaching a service by IP — https://10.42.0.205
+      # ⚠️ The practical effect: reaching a service by IP — https://10.42.0.11
       # — stops working and fails with a TLS handshake error rather than a
       # certificate warning. That is the intent (a wildcard cert would not
       # validate for an IP anyway), but it is worth knowing before debugging a

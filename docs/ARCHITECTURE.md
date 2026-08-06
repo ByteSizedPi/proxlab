@@ -4,26 +4,79 @@ Working plan and the reasoning behind it. Written 2026-07-30.
 
 ## Current inventory
 
-| Host | Address | Role |
-|---|---|---|
-| `jjserver` | `10.0.0.101` LAN, `100.68.211.32` tailnet | Old always-on server. Being retired as a service host → becomes a NAS. |
-| `pve` | `10.42.0.50` | Proxmox host (Dell PowerEdge) |
-| `pve-prod` | `10.42.0.205` | VM running Docker + Komodo. The new service host. |
-| `adguard` | `10.42.0.192` | DNS + ad blocking |
-| `pve-tailscale-lxc` | `100.78.160.15` | Subnet router for `10.42.0.0/24`, exit node |
-| `jj-laptop` | `100.107.4.99` | Workstation |
+Renumbered 2026-08-06 when the TP-Link Archer AX10 replaced the room extender.
+See "Addressing plan" below for the scheme and why each host sits where it does.
+
+| Host | Address | Tailnet | Role |
+|---|---|---|---|
+| `jjserver` | `10.0.0.101` LAN | `100.68.211.32` | Old always-on server. Being retired as a service host → becomes a NAS. |
+| AX10 | `10.42.0.1` | — | Router. Gateway and DHCP for `10.42.0.0/24`. |
+| `pve` | `10.42.0.10` | `100.65.36.82` | Proxmox host (Dell PowerEdge R720) |
+| `pve-prod` / `app-prod` | `10.42.0.11` | `100.91.183.47` | VM running Docker + Komodo. The service host. |
+| `adguard` | `10.42.0.12` | — | DNS + ad blocking, LXC 100 |
+| `pve-tailscale-lxc` | `10.42.0.13` | `100.78.160.15` | Subnet router for `10.42.0.0/24`, exit node, LXC 101 |
+| `jj-laptop` | DHCP | `100.107.4.99` | Workstation |
 
 Domain: `jjventer.co.za`, registered at Truehost, DNS not yet configured.
 
-**Two subnets already exist and this matters:** the home LAN is `10.0.0.0/24`,
-the Proxmox bridge is `10.42.0.0/24`. LAN clients have no route to the bridge.
+**Two subnets exist and this matters:** the home LAN is `10.0.0.0/24`, the
+Proxmox bridge is `10.42.0.0/24`. LAN clients have no route to the bridge.
 Reachability there comes only from the Tailscale subnet router.
+
+## Addressing plan
+
+```
+10.42.0.1          AX10 - gateway, DHCP server
+10.42.0.2  - .9    network gear (spare)
+10.42.0.10 - .39   infrastructure, static on the host
+10.42.0.40 - .99   future static services
+10.42.0.100 - .199 DHCP dynamic pool
+10.42.0.200 - .254 DHCP reservations
+```
+
+Statics low and contiguous, the dynamic pool high, and no overlap between them.
+Before the renumber, `adguard` at `.192` and the tailscale LXC at `.126` both
+sat inside the DHCP pool. Nothing had collided yet only because both were
+already answering when the router started issuing leases. The next new device
+could have been handed either address, and the failure would have looked random.
+
+**Infrastructure gets a host-level static, not a DHCP reservation.** DHCP and
+DNS cannot depend on each other. `adguard` serves DNS to the network, so it
+cannot wait for a lease to come up, and `pve` must boot without help.
+Reservations are for devices whose config you do not control, such as phones,
+TVs, and printers.
+
+Addresses live in these places, which is where to look when one is wrong:
+
+| Host | Where its address is set |
+|---|---|
+| `pve` | `/etc/network/interfaces`, plus the `pve` entry in `/etc/hosts` |
+| `pve-prod` | `/etc/netplan/50-cloud-init.yaml` |
+| `adguard`, `tailscale` LXCs | `pct config <id>`, on pve. Never inside the container. |
+
+`pve-prod` also carries `/etc/cloud/cloud.cfg.d/99-disable-network-config.cfg`.
+Without it, cloud-init rewrites the netplan file back to DHCP on every boot and
+the static address silently disappears.
+
+## Getting in when the LAN is broken
+
+`pve` and `pve-prod` both run Tailscale directly, not only through the subnet
+router LXC. Reach them by `ssh pve-ts` and `ssh app-prod-ts`, which resolve over
+MagicDNS and do not depend on any LAN address.
+
+This is what makes a re-addressing safe to attempt. Install it *before* changing
+anything, not after.
+
+Neither host uses `--accept-routes`. Both sit on `10.42.0.0/24`, which LXC 101
+advertises, so accepting that route would send their own LAN neighbours through
+the tailnet by way of a container running on themselves.
 
 ## Constraints that shape everything
 
 - **`pve-prod` is not always on.** The PowerEdge is loud, lives in a bedroom,
-  is tethered to the laptop over ethernet, and gets shut down nightly. A
-  permanent home and a new router are months away, blocked on money.
+  and gets shut down nightly. A permanent home is still some way off.
+  The laptop tether is gone as of 2026-08-06: the AX10 is the gateway now,
+  and the laptop is an ordinary DHCP client with no infrastructure role.
 - **The ISP won't do inbound.** No port forwarding, so public services need an
   external ingress regardless.
 - **Hardware is aging.** jjserver's drives are in variable condition; it stays
@@ -48,11 +101,11 @@ decision to get wrong later.
 
 ## DNS: correcting a wrong assumption
 
-The worry was that AdGuard's rewrites (`proxmox.admin...` → `10.42.0.50`)
+The worry was that AdGuard's rewrites (`proxmox.admin...` → `10.42.0.10`)
 mean AdGuard can't also be the LAN ad blocker, because that would "expose
 admin services".
 
-**DNS is not access control.** Resolving a name to `10.42.0.50` grants
+**DNS is not access control.** Resolving a name to `10.42.0.10` grants
 nothing to a client with no route to `10.42.0.0/24` — and LAN clients on
 `10.0.0.0/24` have no such route. What leaks is *information* (internal
 hostnames and private IPs), not access.
@@ -73,27 +126,40 @@ not worth it for an information leak of this size.
 is false. Enable it on the **phone and any remote device** — that's how they
 reach `10.42.0.0/24`.
 
-⚠️ **Never enable it on `jj-laptop`.** The laptop is physically attached to
-`10.42.0.0/24` via `enp0s31f6` and is `10.42.0.1`, the subnet's gateway.
-Accepting the route installs `10.42.0.0/24 dev tailscale0` into Tailscale's
-policy table 52, and rule `5270: lookup 52` is consulted before
-`32766: lookup main` — so the physical route is never used.
+⚠️ **Do not enable it on `jj-laptop` while it is at home.** The laptop is
+directly on `10.42.0.0/24` — now as an ordinary WiFi DHCP client
+(`wlp0s20f3`, currently `10.42.0.145`) rather than as the gateway. Accepting
+the route installs `10.42.0.0/24 dev tailscale0` into Tailscale's policy table
+52, and rule `5270: lookup 52` is consulted before `32766: lookup main`, so the
+physical route is never used.
 
-The symptom is confusing: the Proxmox box keeps LAN connectivity but loses
-all internet. Outbound works (VM → laptop → masquerade → wifi), but the
-laptop returns replies via `tailscale0` instead of `enp0s31f6`, so the NAT
-return path is silently dropped. AdGuard then appears broken too — it
-answers local rewrites instantly but times out on anything needing upstream,
-because its queries leave and the answers never come back.
-
-Rule: **any machine physically on a subnet must not accept a tailnet route
-for that subnet.** Since the PowerEdge is tethered to the laptop, there is
-no case where the laptop is away yet still needs to reach `10.42.0.x`.
+Rule: **any machine physically on a subnet must not accept a tailnet route for
+that subnet.**
 
 ```sh
-sudo tailscale set --accept-routes=false     # on jj-laptop
-ip route get 10.42.0.205                     # must show dev enp0s31f6
+tailscale debug prefs | grep RouteAll        # must be false at home
+ip route get 10.42.0.11                      # must show dev wlp0s20f3
 ```
+
+**When the laptop is away, it mostly does not need the route anyway.** `pve`
+and `pve-prod` are tailnet nodes in their own right since 2026-08-06, so
+`ssh pve-ts` and `ssh app-prod-ts` reach them from anywhere with
+`--accept-routes` still off. Only LAN-only devices — `adguard`, the router
+itself — need the subnet route, and that is the one case worth turning it on
+for, then off again on returning home.
+
+### Historical: why this rule was originally written
+
+Until 2026-08-06 the laptop was the subnet's gateway at `10.42.0.1`, NATing for
+the PowerEdge over `enp0s31f6`. Accepting the route then produced a confusing
+failure: the Proxmox box kept LAN connectivity but lost all internet. Outbound
+worked (VM → laptop → masquerade → wifi), but the laptop returned replies via
+`tailscale0` instead of `enp0s31f6`, so the NAT return path was silently
+dropped. AdGuard appeared broken too, answering local rewrites instantly while
+timing out on anything needing upstream.
+
+That specific failure mode is gone — the laptop no longer NATs for anything.
+The rule survives it, for the simpler reason stated above.
 
 ## Public ingress: VPS as the single front door
 

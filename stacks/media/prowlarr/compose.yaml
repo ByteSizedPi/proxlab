@@ -14,7 +14,7 @@ services:
     #
     # 9696 was published while this was the only service and there was no
     # proxy. Now that Traefik fronts it, publishing the port again would leave
-    # http://10.42.0.205:9696 open as an unauthenticated path that bypasses
+    # http://10.42.0.11:9696 open as an unauthenticated path that bypasses
     # whatever the proxy enforces — today secure-headers and TLS, later
     # Authelia. Traefik reaches the container over the `ingress` network, so
     # nothing needs to be published on the host.

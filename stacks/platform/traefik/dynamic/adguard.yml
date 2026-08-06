@@ -1,0 +1,57 @@
+# Route to AdGuard Home — the second service Traefik fronts that it does NOT
+# discover through Docker labels.
+#
+# ── Why a file-provider route and not labels ─────────────────────────────
+#
+# AdGuard is not a container on this host at all. It runs in LXC 100 on pve,
+# at 10.42.0.12, so there is nothing on pve-prod for Traefik to attach labels
+# to. Same situation as Komodo Core in komodo.yml, different cause: Komodo is
+# a container Traefik deliberately cannot see, AdGuard is not a container here.
+#
+# ── Why this route exists ────────────────────────────────────────────────
+#
+# AdGuard serves plain HTTP on port 80 and has no TLS listener of any kind.
+# Before this route, `adguard.admin.jjventer.co.za` was a specific rewrite in
+# AdGuard pointing straight at 10.42.0.12, which meant it was the one admin
+# service in the estate reachable only over http://. Browsers try HTTPS first,
+# so it looked broken while every other admin name worked.
+#
+# The matching change is in AdGuard: the specific
+# `adguard.admin.jjventer.co.za -> 10.42.0.12` rewrite was DELETED so the name
+# falls through to the `*.admin.jjventer.co.za -> 10.42.0.11` wildcard and
+# arrives here instead. Putting the rewrite back would silently bypass this
+# router and undo the TLS.
+#
+# ⚠️ The upstream is a hardcoded LAN IP, not a hostname. Resolving
+# `adguard.admin...` from inside Traefik would loop straight back through this
+# router. The address is pinned by the addressing plan in docs/ARCHITECTURE.md
+# (infrastructure is static, .10-.39), so it does not drift — but if AdGuard is
+# ever renumbered, this file is one of the places that must change with it.
+#
+# ⚠️ The hostname is hardcoded rather than ${ADMIN_DOMAIN}, for the same reason
+# as komodo.yml: Traefik's file provider does NOT do environment substitution.
+
+http:
+  routers:
+    adguard:
+      rule: "Host(`adguard.admin.jjventer.co.za`)"
+      service: adguard
+      # No entryPoints / tls / middlewares block on purpose: websecure is
+      # asDefault and already carries tls + certresolver + secure-headers.
+      # Same reasoning as komodo.yml.
+      #
+      # No auth middleware either — AdGuard has its own login, and stacking
+      # basicauth in front would mean two prompts for one service.
+
+  services:
+    adguard:
+      loadBalancer:
+        servers:
+          - url: "http://10.42.0.12:80"
+
+## Break-glass path, if Traefik is down: http://10.42.0.12/
+##
+## AdGuard keeps serving its own UI on port 80 regardless of this route, so a
+## broken Traefik config never locks you out of DNS administration. That matters
+## more here than for most services: if DNS itself is misbehaving, the wildcard
+## rewrite that brings you to Traefik is exactly what you cannot rely on.

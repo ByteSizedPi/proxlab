@@ -15,12 +15,10 @@
 general:
   log_level: INFO
 
-  # ⚠️ START IN TEST MODE. `true` means decluttarr logs every removal it WOULD
-  # make and changes nothing. This tool deletes queue items and torrents, and
-  # the whole point of the *arr rebuild was to stop losing episodes, so it does
-  # not get to delete anything until the log has been read at least once.
-  # Flip to false once the decisions in the log look right.
-  test_run: true
+  # Reviewed 2026-08-09: 72h of logs showed detect_deletions correctly
+  # triggering on real Jellyfin/Plex deletions (Oppenheimer, KPop Demon
+  # Hunters) and zero risky candidates from the other jobs. Flipped live.
+  test_run: false
 
   # Minutes between runs. 10 is the upstream default.
   timer: 10

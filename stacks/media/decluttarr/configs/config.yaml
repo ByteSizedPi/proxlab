@@ -101,16 +101,23 @@ jobs:
   # the RSS feed while still relevant — not a systematic retry). Without
   # this, a removed download stays missing forever unless searched by hand.
   #
-  # Deliberately NOT aggressive: uses job_defaults untouched
-  # (max_concurrent_searches: 3, min_days_between_searches: 7), so at most 3
-  # searches run at once and the same title is not re-searched for a week.
+  # Deliberately NOT aggressive: max_concurrent_searches stays at the
+  # job_defaults value of 3, so at most 3 searches run at once.
+  # min_days_between_searches is overridden to 1 (see below) instead of the
+  # job_defaults 7 — JJ's call 2026-08-11 after the 7-day default left three
+  # freshly re-orphaned Common Side Effects episodes stuck until 2026-08-17.
+  # decluttarr's own config schema types this field as whole days
+  # (JobParams.min_days_between_searches: int), so a sub-day value like 0.5
+  # is not available — it would truncate to 0 and disable the gate entirely,
+  # searching on every 10-minute cycle. 1 day is the closest supported value
+  # above "disabled".
   # search_unmet_cutoff is the one left off below — it targets nearly the
   # whole library (anything under the WEB 1080p cutoff), not just zero-file
-  # items, so the same conservative defaults would still mean a constant
-  # background trickle of searches. search_missing only targets items with
-  # no file at all, a set that shrinks as things succeed, so it does not
-  # have that problem.
+  # items, so even a 1-day gate would mean a constant background trickle of
+  # searches. search_missing only targets items with no file at all, a set
+  # that shrinks as things succeed, so it does not have that problem.
   search_missing:
+    min_days_between_searches: 1
 
   # ── Deliberately NOT enabled ──────────────────────────────────────────────
   #

@@ -93,6 +93,25 @@ jobs:
   # job silently does nothing.
   detect_deletions:
 
+  # Self-heal for anything that ends up with zero file — including whatever
+  # remove_orphans / remove_stalled / remove_failed_* remove above. Added
+  # 2026-08-11 after finding NEITHER Sonarr NOR Radarr runs any native
+  # periodic "missing" search (checked both via GET /api/v3/system/task:
+  # only Rss Sync, which catches a release only if it happens to show up in
+  # the RSS feed while still relevant — not a systematic retry). Without
+  # this, a removed download stays missing forever unless searched by hand.
+  #
+  # Deliberately NOT aggressive: uses job_defaults untouched
+  # (max_concurrent_searches: 3, min_days_between_searches: 7), so at most 3
+  # searches run at once and the same title is not re-searched for a week.
+  # search_unmet_cutoff is the one left off below — it targets nearly the
+  # whole library (anything under the WEB 1080p cutoff), not just zero-file
+  # items, so the same conservative defaults would still mean a constant
+  # background trickle of searches. search_missing only targets items with
+  # no file at all, a set that shrinks as things succeed, so it does not
+  # have that problem.
+  search_missing:
+
   # ── Deliberately NOT enabled ──────────────────────────────────────────────
   #
   # remove_slow:       public trackers are often genuinely slow rather than
@@ -103,12 +122,10 @@ jobs:
   #                    on the qBittorrent client, which is already on. Two
   #                    things deleting the same torrent is how you get
   #                    confusing gaps. Pick one, and it is already picked.
-  # search_missing / search_unmet_cutoff:
-  #                    both fire searches across all 19 public indexers. With
-  #                    an upgrade-until cutoff of WEB 1080p a large part of the
-  #                    library will sit "unmet" forever, so this would hammer
-  #                    the indexers on a loop. Enable only with a deliberate
-  #                    min_days_between_searches.
+  # search_unmet_cutoff: fires searches across all 19 public indexers for
+  #                    anything below the WEB 1080p cutoff, which is most of
+  #                    the library. Revisit only with a deliberate, longer
+  #                    min_days_between_searches than the 7-day default.
 
 instances:
   sonarr:

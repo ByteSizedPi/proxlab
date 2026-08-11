@@ -54,7 +54,24 @@ jobs:
   remove_missing_files:
 
   # In the download client but no longer wanted by any *arr.
+  #
+  # ⚠️ remove_orphans ships upstream with NO max_strikes (checked
+  # src/settings/_jobs.py 2026-08-11: every other removal job below gets
+  # job_defaults.max_strikes, this one is built as bare JobParams()). That
+  # means one bad snapshot is a permanent, non-blocklisted deletion with no
+  # chance to recover on the next cycle. pve-prod powers off overnight (see
+  # homelab-constraints memory); every morning decluttarr restarts and its
+  # first 1-2 cycles catch Sonarr/Radarr/qBittorrent still resyncing from
+  # the cold boot, which this job read as "no longer wanted" and deleted
+  # outright. Confirmed 2026-08-11: Cat in the Hat, Tenet, and most of
+  # Common Side Effects season 1 were all removed within the first 20
+  # minutes after a boot-triggered decluttarr restart. Setting max_strikes
+  # here opts this job into the same strike counter remove_stalled already
+  # uses, so a download has to look orphaned for 3 consecutive 10-minute
+  # cycles (~30 min) before it is actually removed, instead of on the very
+  # first look.
   remove_orphans:
+    max_strikes: 3
   remove_unmonitored:
 
   # Stalled with no peers. Three strikes at a 10 minute timer means roughly

@@ -61,6 +61,10 @@ services:
       # The traefik stack mounts ./dynamic the same way. Its file provider
       # hot-reloads, so it never had the inode half of this problem, but the
       # deploy half applies there too.
+      #
+      # 2026-08-14: this line touched on purpose, to force the deploy that
+      # the profile rename in configs/recyclarr.yml needs (see the comment
+      # above). No functional change here.
 
     # No `ports:`, no Traefik labels — Recyclarr has no UI, it only talks
     # OUT to Sonarr/Radarr over `media` on its own schedule.

@@ -44,6 +44,12 @@ sonarr:
 
     quality_profiles:
       - trash_id: 72dae194fc92bf828f32cde7744e51a1  # WEB-1080p
+        # Renamed 2026-08-14 so the name in Seerr's profile picker states the
+        # behavior (starts at 1080p, auto-upgrades to 4K over time) instead of
+        # a resolution that reads as a hard cap. `name:` overrides the guide's
+        # default name; Recyclarr tracks the rename via trash_id so this is
+        # an update to the existing profile, not a new one.
+        name: "1080p, auto-upgrade to 4K"
         reset_unmatched_scores:
           enabled: true
 
@@ -165,6 +171,8 @@ radarr:
 
     quality_profiles:
       - trash_id: d1d67249d3890e49bc12e275d989a7e9  # HD Bluray + WEB
+        # Renamed 2026-08-14, same reasoning as the Sonarr profile above.
+        name: "1080p, auto-upgrade to 4K"
         reset_unmatched_scores:
           enabled: true
 

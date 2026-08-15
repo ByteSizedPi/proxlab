@@ -1,6 +1,6 @@
 # server
 
-Declarative state for `app-prod`, deployed by [Komodo](https://komo.do).
+Declarative state for `pve-prod`, deployed by [Komodo](https://komo.do).
 
 Push to `main` → GitHub webhook → Komodo pulls, diffs, and redeploys. Nothing
 is configured by hand in the UI except secrets.
@@ -11,7 +11,7 @@ is configured by hand in the UI except secrets.
 .
 ├── komodo/                  # the control plane
 │   ├── compose.yaml         #   Core + Mongo (Periphery deliberately absent)
-│   ├── compose.env.example  #   → copy to compose.env on app-prod (gitignored)
+│   ├── compose.env.example  #   → copy to compose.env on pve-prod (gitignored)
 │   ├── core.config.toml.example
 │   ├── systemd/             #   komodo-update.{service,timer} → /etc/systemd/system
 │   └── resources/           #   desired state, read by the Resource Sync
@@ -45,7 +45,7 @@ API keys, passwords and tokens go in one of two places:
 | Where | Stored in | Use when |
 |---|---|---|
 | UI → Settings → Variables, **Secret** toggle on | Mongo | Default. Easy to rotate, no Core restart. |
-| `komodo/core.config.toml` → `[secrets]` | Disk on app-prod | Must survive database loss, or needed before Mongo is up. |
+| `komodo/core.config.toml` → `[secrets]` | Disk on pve-prod | Must survive database loss, or needed before Mongo is up. |
 
 Both are referenced the same way in any compose file:
 
@@ -61,7 +61,7 @@ directory at deploy time, and masks the value in the UI and in deploy logs.
 Git provider tokens are the one exception that *must* live in
 `core.config.toml`; they cannot be set via environment variables.
 
-⚠️ **`komodo/compose.env` on app-prod is the single point of failure.** It is
+⚠️ **`komodo/compose.env` on pve-prod is the single point of failure.** It is
 gitignored by necessity — it holds the Mongo password Core needs *before* it
 can read any Komodo Variable — so it exists in exactly one place and is in no
 backup. It was destroyed once, on 2026-08-01, by deleting a Komodo Repo
@@ -113,7 +113,7 @@ Rules that matter more than the numbers:
   that a PID exists. A wedged process is still a process.
 - **Use `-f` with curl.** Without it curl exits 0 on a 404, so the check
   passes against a server that's answering nothing useful. This bit us on
-  `app-prod`: `curl -sk .../health` printed OK against a 404 for weeks'
+  `pve-prod`: `curl -sk .../health` printed OK against a 404 for weeks'
   worth of false confidence.
 - **Verify the command inside the image before committing it.** These images
   are minimal and differ — Core and Periphery have `curl`, Mongo has
@@ -186,7 +186,7 @@ registry for newer digests and redeploys on its own schedule.
 ## What Komodo does *not* manage
 
 Komodo itself. Core and Periphery are updated by `scripts/update-komodo.sh`,
-run weekly by `komodo/systemd/komodo-update.timer` on app-prod, and updating
+run weekly by `komodo/systemd/komodo-update.timer` on pve-prod, and updating
 both in one pass is what keeps their versions from drifting.
 
 Self-management was built and removed on 2026-08-01. Core's `compose.env`

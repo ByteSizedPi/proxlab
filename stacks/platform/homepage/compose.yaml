@@ -110,7 +110,7 @@ services:
   # grants CONTAINERS and nothing else.
   #
   # Correction to that note, which guessed "Homepage: SERVICES/TASKS": those two
-  # are Docker Swarm concepts. app-prod is plain Docker, so what Homepage
+  # are Docker Swarm concepts. pve-prod is plain Docker, so what Homepage
   # actually needs is CONTAINERS, which covers both the container list and the
   # per-container stats stream behind `showStats`.
   homepage-socket-proxy:
@@ -133,7 +133,7 @@ services:
 
     security_opt:
       - no-new-privileges:true
-      # ⚠️ REQUIRED ON SELINUX HOSTS. app-prod is Fedora. Without it SELinux
+      # ⚠️ REQUIRED ON SELINUX HOSTS. pve-prod is Fedora. Without it SELinux
       # denies this container the docker socket and the failure is silent and
       # misleading: the container reports healthy, and every request returns
       # 503 "No server is available to handle this request", which reads like

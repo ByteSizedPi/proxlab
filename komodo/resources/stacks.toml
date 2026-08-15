@@ -48,7 +48,7 @@
 ## config solely in the committed files. Never define the same key in both.
 ##
 ## ✅ `../common.env` reaches above run_directory, and this was verified
-## working on app-prod 2026-07-30 — Periphery resolved it and the container
+## working on pve-prod 2026-07-30 — Periphery resolved it and the container
 ## came up with PUID/PGID/TZ from common.env and CONFIG_ROOT substituted into
 ## the bind mount. No need for the flatter repo-root form.
 ##
@@ -69,7 +69,7 @@
 name = "prowlarr"
 tags = ["media", "arr"]
 [stack.config]
-server = "app-prod"
+server = "pve-prod"
 
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
@@ -106,7 +106,7 @@ shell_mode = true
 name = "flaresolverr"
 tags = ["media", "arr"]
 [stack.config]
-server = "app-prod"
+server = "pve-prod"
 
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
@@ -128,7 +128,7 @@ poll_for_updates = true
 name = "qbittorrent"
 tags = ["media", "arr"]
 [stack.config]
-server = "app-prod"
+server = "pve-prod"
 
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
@@ -150,7 +150,7 @@ poll_for_updates = true
 name = "sonarr"
 tags = ["media", "arr"]
 [stack.config]
-server = "app-prod"
+server = "pve-prod"
 
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
@@ -172,7 +172,7 @@ poll_for_updates = true
 name = "radarr"
 tags = ["media", "arr"]
 [stack.config]
-server = "app-prod"
+server = "pve-prod"
 
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
@@ -194,7 +194,7 @@ poll_for_updates = true
 name = "recyclarr"
 tags = ["media", "arr"]
 [stack.config]
-server = "app-prod"
+server = "pve-prod"
 
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
@@ -224,7 +224,7 @@ poll_for_updates = true
 name = "bazarr"
 tags = ["media", "arr"]
 [stack.config]
-server = "app-prod"
+server = "pve-prod"
 
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
@@ -246,7 +246,7 @@ poll_for_updates = true
 name = "jellyfin"
 tags = ["media", "streaming"]
 [stack.config]
-server = "app-prod"
+server = "pve-prod"
 
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
@@ -268,7 +268,7 @@ poll_for_updates = true
 name = "plex"
 tags = ["media", "streaming"]
 [stack.config]
-server = "app-prod"
+server = "pve-prod"
 
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
@@ -290,7 +290,7 @@ poll_for_updates = true
 name = "tdarr"
 tags = ["media", "arr"]
 [stack.config]
-server = "app-prod"
+server = "pve-prod"
 
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
@@ -312,7 +312,7 @@ poll_for_updates = true
 name = "seerr"
 tags = ["media", "streaming"]
 [stack.config]
-server = "app-prod"
+server = "pve-prod"
 
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
@@ -341,7 +341,7 @@ poll_for_updates = true
 name = "decluttarr"
 tags = ["media", "arr"]
 [stack.config]
-server = "app-prod"
+server = "pve-prod"
 
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
@@ -379,7 +379,7 @@ poll_for_updates = true
 name = "maintainerr"
 tags = ["media", "streaming"]
 [stack.config]
-server = "app-prod"
+server = "pve-prod"
 
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
@@ -403,7 +403,7 @@ poll_for_updates = true
 name = "homepage"
 tags = ["platform"]
 [stack.config]
-server = "app-prod"
+server = "pve-prod"
 
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
@@ -462,7 +462,7 @@ poll_for_updates = true
 name = "cloudflared"
 tags = ["platform", "ingress"]
 [stack.config]
-server = "app-prod"
+server = "pve-prod"
 
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
@@ -498,7 +498,7 @@ poll_for_updates = true
 name = "traefik"
 tags = ["platform", "ingress"]
 [stack.config]
-server = "app-prod"
+server = "pve-prod"
 
 # --- Source ---
 repo = "ByteSizedPi/proxlab"
@@ -568,10 +568,72 @@ path = ""
 command = "docker network inspect ingress >/dev/null 2>&1 || docker network create ingress"
 shell_mode = true
 
+
+[[stack]]
+name = "immich"
+tags = ["apps"]
+[stack.config]
+server = "pve-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/apps/immich"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+# One secret. Generate once and store as a Komodo Variable with "Secret" on:
+#
+#     openssl rand -base64 36
+#
+# Unlike TRAEFIK_DASHBOARD_AUTH this needs NO `$` doubling — it is consumed as
+# an ordinary environment variable by postgres and immich-server, not
+# substituted into a docker label. Avoid `$` in the generated value anyway;
+# compose still applies substitution to --env-file values.
+#
+# ⚠️ Changing this after first deploy does NOT change the database password.
+# Postgres sets it at initdb time only. A changed value just makes
+# immich-server fail to authenticate against its own database.
+environment = """
+DB_PASSWORD=[[IMMICH_DB_PASSWORD]]
+"""
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "immich.env"]
+
+# --- Automation ---
+webhook_enabled = false
+
+# ⚠️ auto_update is OFF here, unlike every *arr stack, and this is deliberate.
+#
+# Immich runs irreversible schema migrations on version bumps and publishes
+# breaking changes in its release notes regularly. auto_update would apply one
+# at 03:00 with nobody watching and no way back short of a database restore.
+# poll_for_updates stays ON so Komodo still SHOWS that a newer digest exists —
+# the notification is wanted, the unattended deploy is not.
+#
+# Deploy Immich by hand, after reading the release notes.
+auto_update = false
+poll_for_updates = true
+
+# --- Pre-deploy: create the paths compose binds ---
+#
+# Docker creates missing bind-mount sources as root-owned directories, which
+# works but hides typos: a mistyped UPLOAD_LOCATION silently produces an empty
+# directory and a working-looking Immich with no photos in it. Creating them
+# explicitly means a wrong path is a wrong path, visibly.
+#
+# The two External Library paths are NOT created here on purpose. They already
+# hold 166 GB of organised photos, and if they are ever missing the deploy
+# SHOULD fail loudly rather than quietly mount an empty read-only directory.
+[stack.config.pre_deploy]
+path = ""
+command = "mkdir -p /mnt/safe/immich /mnt/docker-data/appdata/immich/postgres"
+shell_mode = true
+
 ## ── Komodo Core is deliberately NOT here ────────────────────────────────
 ##
 ## Core and Periphery are updated by scripts/update-komodo.sh, driven by
-## komodo-update.timer on app-prod. Komodo does not manage Komodo.
+## komodo-update.timer on pve-prod. Komodo does not manage Komodo.
 ##
 ## That was tried, on 2026-08-01, and removed the same day. Core's compose.env
 ## holds the Mongo password, so it can't come from a Komodo Variable (those

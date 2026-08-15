@@ -4,7 +4,7 @@
 ## by name, and the sync fails if the name doesn't resolve yet.
 
 [[server]]
-name = "app-prod"
+name = "pve-prod"
 [server.config]
 ## Periphery runs as a systemd unit on this host (see ../../periphery/).
 ## Because Core and Periphery are on the same machine, this stays on

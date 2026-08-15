@@ -56,7 +56,7 @@ tags = ["platform"]
 # first sync must be run by hand from the UI. See BOOTSTRAP.md step 12.
 webhook_enabled = true
 
-# Backstop for pushes missed while app-prod was powered down overnight: a
+# Backstop for pushes missed while pve-prod was powered down overnight: a
 # webhook fires exactly once and GitHub gives up after a short retry window,
 # so a push during downtime is lost permanently. This re-runs the whole
 # reconcile on a timer, and costs nothing when nothing changed — stage 2
@@ -88,7 +88,7 @@ failure_alert = true
 ##
 ## FIX: Syncs → `resources` → Execute, by hand in the UI. Run standalone the
 ## sync is not inside the procedure, so it applies the update and normal
-## operation resumes. Verified on app-prod 2026-08-01: the identical sync
+## operation resumes. Verified on pve-prod 2026-08-01: the identical sync
 ## failed twice via the procedure, then succeeded immediately run manually.
 ##
 ## Every other resource type is unaffected — stacks, repos, servers and

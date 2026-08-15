@@ -2,7 +2,7 @@
 # Docs: https://gethomepage.dev/configs/settings/
 
 title: jjventer homelab
-description: app-prod service dashboard
+description: pve-prod service dashboard
 
 # Group ordering is taken from services.yaml top to bottom rather than being
 # re-sorted alphabetically here.

@@ -6,7 +6,7 @@ Documentation=https://komo.do/docs/setup/connect-servers
 OnCalendar=weekly
 RandomizedDelaySec=1h
 
-# ⚠️ REQUIRED, not a nicety. app-prod is powered down overnight, so a calendar
+# ⚠️ REQUIRED, not a nicety. pve-prod is powered down overnight, so a calendar
 # time in the small hours would simply never arrive. Persistent=true makes
 # systemd notice the run was missed and fire it after the next boot instead.
 Persistent=true

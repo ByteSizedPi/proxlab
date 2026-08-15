@@ -20,7 +20,7 @@
         icon: jellyfin.png
         href: https://jellyfin.admin.jjventer.co.za
         description: Media server, primary
-        server: app-prod
+        server: pve-prod
         container: jellyfin
         widget:
           type: jellyfin
@@ -35,7 +35,7 @@
         icon: plex.png
         href: https://plex.admin.jjventer.co.za
         description: Media server, for TVs with no Jellyfin client
-        server: app-prod
+        server: pve-prod
         container: plex
         widget:
           type: plex
@@ -46,7 +46,7 @@
         icon: jellyseerr.png
         href: https://seerr.admin.jjventer.co.za
         description: Request management
-        server: app-prod
+        server: pve-prod
         container: seerr
         # No native Homepage widget exists for Seerr, the unified
         # Overseerr/Jellyseerr successor. Its request-count endpoint gives the
@@ -74,7 +74,7 @@
         icon: tdarr.png
         href: https://tdarr.admin.jjventer.co.za
         description: Library health checks, transcoding disabled
-        server: app-prod
+        server: pve-prod
         container: tdarr
         widget:
           type: tdarr
@@ -85,7 +85,7 @@
         icon: sonarr.png
         href: https://sonarr.admin.jjventer.co.za
         description: TV
-        server: app-prod
+        server: pve-prod
         container: sonarr
         widget:
           type: sonarr
@@ -102,7 +102,7 @@
         icon: radarr.png
         href: https://radarr.admin.jjventer.co.za
         description: Movies
-        server: app-prod
+        server: pve-prod
         container: radarr
         widget:
           type: radarr
@@ -114,7 +114,7 @@
         icon: prowlarr.png
         href: https://prowlarr.admin.jjventer.co.za
         description: Indexer manager, 20 public trackers
-        server: app-prod
+        server: pve-prod
         container: prowlarr
         widget:
           type: prowlarr
@@ -125,7 +125,7 @@
         icon: bazarr.png
         href: https://bazarr.admin.jjventer.co.za
         description: Subtitles
-        server: app-prod
+        server: pve-prod
         container: bazarr
         widget:
           type: bazarr
@@ -136,7 +136,7 @@
         icon: maintainerr.png
         href: https://maintainerr.admin.jjventer.co.za
         description: Library retention, no rules configured yet
-        server: app-prod
+        server: pve-prod
         container: maintainerr
         # No native widget. Its API needs no auth, so this lists whatever
         # rule groups exist. Empty today, by design.
@@ -153,7 +153,7 @@
         icon: qbittorrent.png
         href: https://qbittorrent.admin.jjventer.co.za
         description: Torrent client, categories tv and movies
-        server: app-prod
+        server: pve-prod
         container: qbittorrent
         widget:
           type: qbittorrent
@@ -169,7 +169,7 @@
         icon: traefik.png
         href: https://traefik.admin.jjventer.co.za
         description: Reverse proxy and TLS
-        server: app-prod
+        server: pve-prod
         container: traefik
         # ⚠️ WIDGET DISABLED 2026-08-03. It returned 401 on every refresh.
         #
@@ -193,7 +193,7 @@
         icon: mdi-lambda
         href: https://komodo.admin.jjventer.co.za
         description: GitOps deploys, this repo
-        server: app-prod
+        server: pve-prod
         container: komodo-core-1
         # ⚠️ WIDGET DISABLED 2026-08-03, and this one was doing harm.
         #
@@ -230,7 +230,7 @@
     - FlareSolverr:
         icon: mdi-cloud-lock
         description: NO WEB UI. Solves Cloudflare challenges for 5 Prowlarr indexers
-        server: app-prod
+        server: pve-prod
         container: flaresolverr
         # It has no UI but it does answer on / with its status and version.
         widget:
@@ -247,35 +247,35 @@
     - Recyclarr:
         icon: mdi-sync
         description: NO WEB UI. Syncs TRaSH profiles into Sonarr and Radarr, daily
-        server: app-prod
+        server: pve-prod
         container: recyclarr
 
     - Decluttarr:
         icon: mdi-broom
         description: NO WEB UI. Download queue cleanup, currently in TEST MODE
-        server: app-prod
+        server: pve-prod
         container: decluttarr
 
     - Cloudflared:
         icon: cloudflare-zero-trust.png
         description: NO WEB UI. Tunnel publishing the Komodo webhook listener only
-        server: app-prod
+        server: pve-prod
         container: cloudflared
 
     - Socket Proxy (Traefik):
         icon: docker.png
         description: NO WEB UI. Read-only docker API for Traefik discovery
-        server: app-prod
+        server: pve-prod
         container: socket-proxy
 
     - Socket Proxy (Homepage):
         icon: docker.png
         description: NO WEB UI. Read-only docker API for this dashboard, CONTAINERS only
-        server: app-prod
+        server: pve-prod
         container: homepage-socket-proxy
 
     - Komodo MongoDB:
         icon: mongodb.png
         description: NO WEB UI. Komodo Core's database
-        server: app-prod
+        server: pve-prod
         container: komodo-mongo-1

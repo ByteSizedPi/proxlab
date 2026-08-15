@@ -12,7 +12,7 @@ See "Addressing plan" below for the scheme and why each host sits where it does.
 | `jjserver` | `10.0.0.101` LAN | `100.68.211.32` | Old always-on server. Being retired as a service host → becomes a NAS. |
 | AX10 | `10.42.0.1` | — | Router. Gateway and DHCP for `10.42.0.0/24`. |
 | `pve` | `10.42.0.10` | `100.65.36.82` | Proxmox host (Dell PowerEdge R720) |
-| `pve-prod` / `app-prod` | `10.42.0.11` | `100.91.183.47` | VM running Docker + Komodo. The service host. |
+| `pve-prod` | `10.42.0.11` | `100.91.183.47` | VM running Docker + Komodo. The service host. |
 | `adguard` | `10.42.0.12` | — | DNS + ad blocking, LXC 100 |
 | `pve-tailscale-lxc` | `10.42.0.13` | `100.78.160.15` | Subnet router for `10.42.0.0/24`, exit node, LXC 101 |
 | `jj-laptop` | DHCP | `100.107.4.99` | Workstation |
@@ -61,7 +61,7 @@ the static address silently disappears.
 ## Getting in when the LAN is broken
 
 `pve` and `pve-prod` both run Tailscale directly, not only through the subnet
-router LXC. Reach them by `ssh pve-ts` and `ssh app-prod-ts`, which resolve over
+router LXC. Reach them by `ssh pve-ts` and `ssh pve-prod-ts`, which resolve over
 MagicDNS and do not depend on any LAN address.
 
 This is what makes a re-addressing safe to attempt. Install it *before* changing
@@ -143,7 +143,7 @@ ip route get 10.42.0.11                      # must show dev wlp0s20f3
 
 **When the laptop is away, it mostly does not need the route anyway.** `pve`
 and `pve-prod` are tailnet nodes in their own right since 2026-08-06, so
-`ssh pve-ts` and `ssh app-prod-ts` reach them from anywhere with
+`ssh pve-ts` and `ssh pve-prod-ts` reach them from anywhere with
 `--accept-routes` still off. Only LAN-only devices — `adguard`, the router
 itself — need the subnet route, and that is the one case worth turning it on
 for, then off again on returning home.

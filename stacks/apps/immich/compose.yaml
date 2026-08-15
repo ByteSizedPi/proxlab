@@ -1,0 +1,152 @@
+name: immich
+
+services:
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
+    container_name: immich_server
+    volumes:
+      # Immich OWNS this path. Phone uploads, thumbnails and transcodes land
+      # here and Immich organises them by its storage template.
+      - ${UPLOAD_LOCATION}:/data
+
+      # The two External Libraries, READ-ONLY and mounted at the SAME path
+      # inside the container as outside. Two reasons:
+      #   1. `:ro` is a hard guarantee Immich can never move, rename or delete
+      #      a single original. The folder structure on disk stays the source
+      #      of truth, which is the whole point of using External Libraries
+      #      instead of uploading (see docs and the note in immich.env).
+      #   2. Identical paths mean the "Import Path" typed into the Immich UI
+      #      is literally /mnt/safe/photos. On jjserver the host path was
+      #      /mnt/raid5/photos/library but the container saw /mnt/library,
+      #      so every originalPath in the database was in container-space and
+      #      had to be translated by hand to find anything.
+      - /mnt/safe/photos:/mnt/safe/photos:ro
+      - /mnt/safe/photos-raw:/mnt/safe/photos-raw:ro
+
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - DB_HOSTNAME=database
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DATABASE_NAME=${DB_DATABASE_NAME}
+      - REDIS_HOSTNAME=redis
+      - TZ=${TZ}
+    depends_on:
+      redis:
+        condition: service_healthy
+      database:
+        condition: service_healthy
+
+    # ── No `ports:` block. Deliberate. ────────────────────────────────────
+    # Same reasoning as prowlarr: Traefik reaches this over `ingress`, so
+    # publishing 2283 on the host would only create an unauthenticated path
+    # around whatever the proxy enforces.
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      disable: false
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ingress
+      - immich_internal
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.immich.rule=Host(`immich.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.immich.loadbalancer.server.port=2283"
+      # entrypoints / tls / middlewares deliberately omitted — the websecure
+      # entrypoint is asDefault with tls + certresolver already on it. See the
+      # long note in stacks/media/prowlarr/compose.yaml.
+
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
+    container_name: immich_machine_learning
+    volumes:
+      # Named volume, NOT a bind under CONFIG_ROOT. These are downloaded CLIP
+      # and face-recognition models — a few GB, regenerable on demand, and
+      # therefore something the restic backup should never carry.
+      - model-cache:/cache
+    environment:
+      - TZ=${TZ}
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      disable: false
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - immich_internal
+
+  redis:
+    image: docker.io/valkey/valkey:8-bookworm
+    container_name: immich_redis
+    healthcheck:
+      test: redis-cli ping || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - immich_internal
+
+  database:
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
+    container_name: immich_postgres
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_DB: ${DB_DATABASE_NAME}
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+    volumes:
+      # On CONFIG_ROOT (the 64 GB root disk), not /mnt/safe. This is a
+      # database: it wants local storage, and CONFIG_ROOT is already the
+      # "small, backed up" tier by the convention in ../../common.env.
+      - ${CONFIG_ROOT}/immich/postgres:/var/lib/postgresql/data
+    shm_size: 128mb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE_NAME}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - immich_internal
+
+volumes:
+  model-cache:
+
+networks:
+  # Created by the traefik stack's pre_deploy hook. External because it spans
+  # compose projects.
+  ingress:
+    external: true
+
+  # Stack-local. immich-server talks to redis, postgres and the ML container
+  # over this and nothing else needs to reach them. NOT the shared `media`
+  # network — Immich has no relationship with the *arr stack.
+  immich_internal:

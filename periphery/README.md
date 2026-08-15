@@ -1,6 +1,6 @@
 # Periphery — the agent, deliberately outside the Core stack
 
-Periphery is the component that actually runs `docker compose` on `app-prod`.
+Periphery is the component that actually runs `docker compose` on `pve-prod`.
 Komodo Core connects to it over a Noise-authenticated channel on port 8120.
 
 ## Why it isn't a container in `../komodo/compose.yaml`

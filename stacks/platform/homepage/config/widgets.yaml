@@ -2,7 +2,7 @@
 # Docs: https://gethomepage.dev/configs/widgets/
 
 - resources:
-    label: app-prod
+    label: pve-prod
     cpu: true
     memory: true
     # These two paths sit on DIFFERENT physical disks, which is the whole

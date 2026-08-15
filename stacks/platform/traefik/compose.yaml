@@ -326,7 +326,7 @@ services:
 
     security_opt:
       - no-new-privileges:true
-      # ⚠️ REQUIRED ON SELINUX HOSTS (Fedora, RHEL) — app-prod is one.
+      # ⚠️ REQUIRED ON SELINUX HOSTS (Fedora, RHEL) — pve-prod is one.
       #
       # Without it SELinux denies this container access to the docker socket
       # and NOTHING WORKS, but the failure is silent and misleading: haproxy

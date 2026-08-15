@@ -13,7 +13,7 @@
 # by Compose before any container exists, and Compose only reads the shell
 # or --env-file for that. Omit it and Mongo's credentials resolve to empty.
 #
-# ⚠️  Do NOT use this on app-prod. There, Periphery runs as a systemd unit
+# ⚠️  Do NOT use this on pve-prod. There, Periphery runs as a systemd unit
 # outside the stack, because Komodo manages its own Core stack and an agent
 # living inside that stack would kill itself mid-deploy. See ../periphery/.
 #

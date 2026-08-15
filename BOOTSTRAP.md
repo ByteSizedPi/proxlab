@@ -1,11 +1,11 @@
 # Bootstrap runbook
 
-Setup for a **clean** `app-prod`, in order. Rewritten 2026-07-30 to match what
+Setup for a **clean** `pve-prod`, in order. Rewritten 2026-07-30 to match what
 was actually done — an earlier draft described migrating a live Komodo, which
 turned out not to apply.
 
 Paths: the dev copy lives at `/home/jj/server` on the laptop; the prod clone
-is `/home/jj/proxlab` on `app-prod`. Both hold `ByteSizedPi/proxlab`.
+is `/home/jj/proxlab` on `pve-prod`. Both hold `ByteSizedPi/proxlab`.
 
 ---
 
@@ -44,7 +44,7 @@ Cloudflare and let it hand you the DS record.
 ## 3. Confirm a clean slate
 
 ```sh
-ssh app-prod
+ssh pve-prod
 docker ps -a | grep -i komodo || echo "no containers"
 docker volume ls | grep -i komodo || echo "no volumes"
 ```
@@ -192,7 +192,7 @@ UI → Servers → New.
 
 | Field | Value |
 |---|---|
-| Name | `app-prod` — must match exactly |
+| Name | `pve-prod` — must match exactly |
 | Address | `https://host.docker.internal:8120` |
 
 ⚠️ **Not `localhost`.** Core runs in a container, where `localhost` is the
@@ -200,7 +200,7 @@ container itself; Periphery is on the host. `host.docker.internal` resolves via
 the `extra_hosts: host-gateway` entry on the core service in `compose.yaml` —
 the two are coupled, and removing either breaks the connection.
 
-The name must match because `stacks.toml` says `server = "app-prod"` and
+The name must match because `stacks.toml` says `server = "pve-prod"` and
 `servers.toml` creates the same name. A mismatch yields two servers with the
 stack bound to the wrong one.
 
@@ -227,7 +227,7 @@ Create it as a **Custom Token** with exactly two permissions:
 
 | Field | Value |
 | --- | --- |
-| Name | `traefik-acme-dns01-app-prod` |
+| Name | `traefik-acme-dns01-pve-prod` |
 | Permissions | `Zone` → `Zone` → **Read** |
 | | `Zone` → `DNS` → **Edit** |
 | Zone Resources | Include → Specific zone → `jjventer.co.za` |
@@ -419,7 +419,7 @@ only marks it pending for manual confirmation. The procedure uses `RunSync`
 (apply), made safe by `delete: false` and `managed: false` on the sync —
 removing a stack from `stacks.toml` will *not* remove it from Komodo.
 
-**Backstops stay on.** `app-prod` is shut down nightly and a webhook fires
+**Backstops stay on.** `pve-prod` is shut down nightly and a webhook fires
 exactly once: if the box is off, GitHub retries briefly, gives up, and that
 push is lost permanently. Two things cover that — the `gitops` procedure's
 15-minute schedule (which re-runs the same reconcile and no-ops when nothing
@@ -476,7 +476,7 @@ journalctl -u komodo-update.service -b --since "10 min ago" --no-pager
 
 It ends by printing both versions. They must match.
 
-`Persistent=true` matters: app-prod is off overnight, so a scheduled
+`Persistent=true` matters: pve-prod is off overnight, so a scheduled
 small-hours run would never arrive. systemd notices the missed run and fires
 it after the next boot instead.
 

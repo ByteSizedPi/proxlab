@@ -260,3 +260,370 @@ machine's own thermal protection, so use it only with the caveat below.
 broken. With `0Eh` and `0Fh` dead, iDRAC cannot raise the fans if a CPU gets
 hot. Fix the sensors first. Fall back to manual control only if the iDRAC reset
 does not restore them.
+
+---
+
+## pve-prod: GitHub SSH key and host rename (2026-08-07)
+
+### GitHub deploy access
+
+`pve-prod` had no SSH keypair, only `authorized_keys`. Private clones from
+GitHub failed with `Permission denied (publickey)`.
+
+Generated on the host:
+
+```
+ssh-keygen -t ed25519 -N "" -C "jj@app-prod" -f ~/.ssh/id_ed25519
+```
+
+The public key was added to the `ByteSizedPi` GitHub account by hand as an
+Authentication key. Verified with `ssh -T git@github.com` on the host, which
+returns `Hi ByteSizedPi!`.
+
+The key has **no passphrase**, so unattended `git pull` works. Anyone with read
+access to `/home/jj/.ssh/id_ed25519` on `pve-prod` can read every private repo
+on that account.
+
+The key comment still reads `jj@app-prod` because it was generated before the
+rename below. Cosmetic only.
+
+### Host rename: app-prod to pve-prod
+
+The host answered as `app-prod` while `~/.ssh/config` on jj-laptop, the docs,
+and most comments called it `pve-prod`. Three names for one machine. Converged
+on `pve-prod`.
+
+Changed on the host:
+
+```
+sudo hostnamectl set-hostname pve-prod
+sudo sed -i "s/^127\.0\.1\.1.*/127.0.1.1 pve-prod pve-prod/" /etc/hosts
+sudo tailscale set --hostname=pve-prod
+```
+
+`/etc/hosts` was backed up to `/etc/hosts.bak-2026-08-07` first.
+
+The Tailscale rename changes the MagicDNS name from `app-prod.tail2d486a.ts.net`
+to `pve-prod.tail2d486a.ts.net`. On jj-laptop the `app-prod-ts` block in
+`~/.ssh/config` became `pve-prod-ts` with the new HostName. The old name was
+removed from `known_hosts` with `ssh-keygen -R`, and the new one was added after
+confirming both paths present the same ED25519 fingerprint
+`SHA256:02sPbL/9TOJYlLsOC6GVpliSQmvy1wjeQn+fAxnI6yc`.
+
+Also renamed in this repo: the Komodo Server resource name in
+`komodo/resources/servers.toml` and 18 `server =` lines in
+`komodo/resources/stacks.toml`, the Homepage `server:` keys in
+`stacks/platform/homepage/config/`, and every prose reference. 70 occurrences
+across 17 files.
+
+⚠️ **The Komodo Server resource must be renamed in the Komodo UI before this
+repo change is pushed.** The sync matches resources by name. A push with a new
+name creates a *new* Server resource, and the Periphery public key is not part
+of `ServerConfig`, so the new resource would have no key and every stack would
+bind to an unreachable server.
+
+**Still outstanding.** The Cloudflare API token is still labelled
+`traefik-acme-dns01-app-prod` in the Cloudflare dashboard. The label is
+cosmetic and `BOOTSTRAP.md` now says `pve-prod`. Rename it in Cloudflare to
+remove the drift.
+
+---
+
+## `pve`: six 1.2 TB SAS drives added as a RAID6 array (2026-08-14)
+
+### What the controller looks like
+
+`pve` has one PERC H710P Mini, firmware 21.3.5-0002, 1024 MB cache. The
+battery is healthy: `Battery State: Optimal`, 99% charge, `isSOHGood: Yes`.
+Write-back caching is therefore safe on this controller.
+
+`Enable JBOD: No`. The H710P has no passthrough mode, so ZFS on bare disks is
+not available without a crossflash or a separate HBA. All six PCIe slots read
+`Current Usage: Available`, so an HBA can be added later.
+
+### The backplane is ONE enclosure, not two
+
+```
+Number of enclosures on adapter 0 -- 1
+Enclosure 0: Device ID 32, Number of Slots 24, type SES, Status Normal
+```
+
+The front bays look like two groups, but they are one backplane behind one
+expander. **Slot position does not affect which drives can join an array.**
+
+Occupied slots after this change:
+
+| Slots | Drives | Use |
+|---|---|---|
+| 0, 1 | 2 x Seagate ST1800MM0129, 1.8 TB, 10.5k | VD 0, RAID1, 1.636 TB, the OS mirror |
+| 8 to 13 | 6 x Toshiba AL14SEB120NY, 1.2 TB, 10k | VD 1, RAID6, 4.364 TB |
+
+### The drives are DIF formatted and the PERC accepts them anyway
+
+`smartctl` reports this on all six Toshiba drives and on neither Seagate:
+
+```
+Formatted with type 2 protection
+8 bytes of protection information per logical block
+```
+
+The drives carry T10 protection information, so each sector is physically 520
+bytes. The PERC reports `PI Eligibility: No` and still marks every drive
+`Unconfigured(good), Spun Up`. The controller ignores the protection bytes
+rather than refusing the drive. **No `sg_format` reformat was needed.**
+
+Check this first on any future used SAS drive. A controller that refuses DIF
+drives needs `sg_format --format --size=512 --fmtpinfo=0` per drive, which
+takes 2 to 4 hours each and needs an HBA, because the PERC does not expose
+unconfigured drives as `/dev/sg*`.
+
+### One foreign config was cleared
+
+Slot 11 arrived carrying the previous owner's metadata, a single-drive RAID0:
+
+```
+There are 1 foreign configuration(s) on controller 0.
+Foreign configuration 0: DISK GROUP 0, Virtual Drive 0 (Target Id: 1)
+Physical Disk 0: Slot 11, Device Id 11, TOSHIBA ... 87A0A0VLFL0E
+```
+
+Cleared with `megacli -CfgForeign -Clear -a0`. All six then read
+`Foreign State: None`.
+
+### Why RAID6 and not RAID5
+
+All six drives are one cohort:
+
+```
+Manufactured in week 32 of year 2017
+Accumulated power on time: 33341 hours   (33342 on slot 11)
+Accumulated start-stop cycles: 97 to 98
+Elements in grown defect list: 0
+```
+
+They were built in the same week and ran the same 33,341 hours in the same
+array, agreeing to within 21 minutes. Zero grown defects is good, but 33,341
+hours is about 76% of the 44,000-hour rated life of a 10k SAS drive. When one
+wears out, the other five are at the same point in their life, and a RAID5
+rebuild reads all five survivors.
+
+`pve` also shuts down nightly, so a rebuild that does not finish in one day
+resumes across a power cycle and stretches the exposure window into days.
+
+RAID6 costs 1.2 TB against RAID5 and tolerates any two drives failing. The
+media library was 300 GB at the time of this change, so 4.364 TB is 16 times
+the space actually in use. The capacity loss is theoretical and the risk is
+not.
+
+### The array as built
+
+```
+megacli -CfgLdAdd -r6[32:8,32:9,32:10,32:11,32:12,32:13] \
+        WB RA Direct NoCachedBadBBU -strpsz256 -a0
+```
+
+| Setting | Value | Reason |
+|---|---|---|
+| RAID level | 6 | See above |
+| Size | 4.364 TB, `/dev/sdb` | 4 data drives of 1.09 TiB |
+| Strip size | 256 KB | Media is large and sequential. VD 0 uses 64 KB. |
+| Write policy | WriteBack | The BBU is Optimal, so this is safe |
+| Read policy | ReadAhead | Sequential reads dominate |
+| Bad BBU | NoCachedBadBBU | Falls back to write-through if the battery fails |
+| Disk cache | Disk's Default (off) | The BBU protects controller cache, not disk cache |
+
+Background initialization started automatically at a 30% rate. The array is
+usable while it runs. It resumes after a reboot.
+
+### Proxmox storage
+
+```
+pvcreate /dev/sdb
+vgcreate tank /dev/sdb
+lvcreate --type thin-pool -l 100%FREE -n tankdata tank
+lvchange -Zn tank/tankdata
+pvesm add lvmthin tank --vgname tank --thinpool tankdata --content images,rootdir
+```
+
+Storage id `tank`, 4.36 TiB, LVM-thin, chunk size 4.00 MiB.
+
+**Zeroing is disabled (`-Zn`), which is a deliberate change from the Proxmox
+default.** With 4 MiB chunks, zeroing writes 4 MiB of zeros before the first
+write to every chunk, which roughly doubles write amplification while the
+library grows. The pool serves one VM on a single-user host, so the stale-data
+exposure that zeroing prevents does not apply here. Re-enable it with
+`lvchange -Zy tank/tankdata` if the pool ever serves more than VM 110.
+
+The pool is thin, so any virtual disk carved from it must be attached with
+`discard=on` AND the guest must run `fstrim.timer`. Both halves are needed or
+the volume grows forever and deleting media never returns pool space. Same
+lesson as `vm-110-disk-1` on `local-lvm`.
+
+### Change log: packages installed on `pve`, 2026-08-14
+
+```
+apt-get install -y sg3-utils
+curl -sLO https://hwraid.le-vert.net/debian/pool-trixie/megacli/megacli_8.07.14-4+Debian.13.trixie_amd64.deb
+apt-get install -y ./megacli_8.07.14-4+Debian.13.trixie_amd64.deb
+```
+
+`megacli` is the only way to read the PERC's own view of the drives from the
+OS. Proxmox ships no MegaRAID tool, and the `megaraid_sas` driver hides the
+SES enclosure, so `/sys/class/enclosure` is empty and `lsblk` shows only the
+virtual drives. `sg3-utils` provides `sg_format` for the DIF case above, which
+was not needed this time.
+
+To remove: `apt purge megacli sg3-utils`.
+
+### Useful commands
+
+```
+megacli -AdpAllInfo -a0                    # controller, cache, RAID levels
+megacli -AdpBbuCmd -GetBbuStatus -a0       # battery health
+megacli -EncInfo -a0                       # enclosures and slot count
+megacli -PDList -a0                        # every physical drive and its state
+megacli -LDInfo -Lall -a0                  # virtual drives
+megacli -CfgForeign -Scan -a0              # previous owner's metadata
+megacli -LDBI -ShowProg -Lall -a0          # background init progress
+smartctl -x /dev/bus/0 -d megaraid,N       # SMART for physical drive N
+```
+
+`N` is the Device Id from `-PDList`, not the slot number. `smartctl --scan`
+lists the valid ones.
+
+### Final layout on VM 110 after the migration
+
+| Slot | Volume | Size | Guest | Filesystem |
+|---|---|---|---|---|
+| `scsi0` | `local-lvm:vm-110-disk-0` | 64 G | `/` | OS, stays on the 1.6 TB mirror |
+| `scsi2` | `tank:vm-110-disk-1` | 600 G | `/mnt/safe` | ext4, `-i 262144`, 2,457,600 inodes |
+| `scsi3` | `tank:vm-110-disk-2` | 3000 G | `/mnt/data` | ext4, `-T largefile`, 3,072,000 inodes |
+| `unused0` | `local-lvm:vm-110-disk-1` | 1 T | — | pre-migration original, fallback |
+| `unused1` | `tank:vm-110-disk-0` | 3 T | — | the 201M-inode filesystem, fallback |
+
+`CONFIG_ROOT` stays on the 64 G root disk. SQLite databases belong on local
+storage, and the OS mirror is already redundant.
+
+Both fallbacks were kept deliberately. Delete them only after the new
+filesystem has run normally for a day:
+
+```
+qm disk unlink 110 --idlist unused1        # 258 GB back to tank
+qm disk unlink 110 --idlist unused0        # 300 GB back to local-lvm
+```
+
+Verification that gated the swap, all three matching the pre-copy baseline
+exactly: 1,012 files, 310 hardlinked files, 276,853,830,138 bytes, and each
+hardlink pair sharing one inode across `media/` and `torrents/`.
+
+### Trap 1: `qm disk move` silently drops discard passthrough
+
+After `qm disk move 110 scsi1 tank`, the guest reported `fstrim` success while
+the thin volume stayed 100% allocated. 746 GB was stranded.
+
+`qm config 110` said `discard=on` and the thin pool said `Discards: passdown`,
+so both looked correct. The live QEMU blockdev was the problem:
+
+```
+drive-scsi1: {"driver": "zeroinit", "file": {"driver": "raw", "file":
+             {"driver": "host_device", "filename": "/dev/tank/vm-110-disk-0"}}}
+```
+
+Drive-mirror rebuilt the blockdev, left its `zeroinit` filter in place, and
+dropped `"discard": "unmap"`, which the boot-time blockdev had at all three
+levels. A freshly hot-plugged disk (`scsi2`) had the correct clean chain, which
+is how the difference was isolated.
+
+**A `reboot` inside the guest does not fix it.** The guest OS restarts while the
+same QEMU process keeps the same blockdev. Use `qm reboot 110` on `pve`, which
+does a shutdown and start and applies pending changes. After the restart the
+`zeroinit` filter was gone and one `fstrim` returned 746.5 GB.
+
+Check after any disk move:
+
+```
+echo "info block" | qm monitor <vmid> | grep -A4 drive-scsiN   # want no zeroinit
+```
+
+### Trap 2: `resize2fs` scales the inode table, and it is very expensive
+
+Growing `/mnt/data` from 1 TB to 3 TB with `resize2fs` took the inode count
+from 67 million to **201,326,592**, to hold **1,012 files**. At 256 bytes per
+inode that is 51.5 GB of disk reserved for inode tables. Block accounting
+confirmed it: 322 GB of blocks in use against 259 GB of real data.
+
+The default `mke2fs` inode ratio is one inode per 16 KB, which suits a general
+filesystem and is absurd for media. `resize2fs` keeps that ratio when it grows.
+
+The rebuilt filesystem uses `-T largefile` (one inode per 1 MB):
+
+```
+mkfs.ext4 -m 0 -T largefile -E lazy_itable_init=0,lazy_journal_init=0 -L data /dev/sdd
+```
+
+3,072,000 inodes instead of 201,326,592, a 786 MB table instead of 51.5 GB, and
+still 3,000 times more inodes than the library uses.
+
+`/mnt/safe` holds photos rather than video, so it was built with `-i 262144`
+(one inode per 256 KB): 2,457,600 inodes for a 600 GB volume, and 9 GB of
+usable space recovered against the default ratio.
+
+### Trap 3: rebooting during `ext4lazyinit` corrupts the new block groups
+
+The `qm reboot` above landed while `ext4lazyinit` was still initialising the
+block groups that `resize2fs` had just added:
+
+```
+EXT4-fs error (device sdb): ext4_validate_block_bitmap:423: comm ext4lazyinit:
+    bg 20480: bad block bitmap checksum
+    bg 24575: bad block bitmap checksum
+Filesystem state: clean with errors      FS Error count: 2
+```
+
+Both groups were `[INODE_UNINIT, ITABLE_ZEROED]`, so no file data was affected,
+and `Errors behavior: Continue` kept the filesystem read-write. It was still a
+corrupt filesystem.
+
+After an online grow, either let lazy init finish before rebooting, or pass
+`-E lazy_itable_init=0` at `mkfs` time so there is nothing to initialise later.
+The rebuild does the latter.
+
+### Still outstanding
+
+PSU 2 still has no C13 cable. `Power Supply AC lost` has asserted on most days
+through to 14 August 2026, and `PS Redundancy` still reads `No Reading`. Six
+more spinning drives raise the load on the single working supply.
+
+**The Nokia-to-AX10 roof cable is the network bottleneck, and it is not
+fixable.** Diagnosed 2026-08-14 in this order, recorded because the first two
+conclusions were wrong:
+
+1. `ethtool eno1` on jjserver showed 100 Mb/s with the link partner advertising
+   only up to `100baseT/Full`. Six CRC errors in 177 million packets, so the
+   link was electrically clean, which is the signature of a cable with only two
+   working pairs: 100BASE-TX uses two pairs and runs perfectly, 1000BASE-T needs
+   four, fails to train, and the PHY downshifts and stops advertising gigabit.
+2. The Nokia G-240W-J was suspected. **Wrong.** Two different ports gave the
+   same result, and the datasheet gives it 4 x 10/100/1000 Base-T ports.
+3. Replacing jjserver's patch cable fixed *that* link: 100 Mb/s to
+   **1000 Mb/s**, partner now advertising `1000baseT/Full`. Permanent win, and
+   it is the link the restic sync to jjserver will use.
+4. Throughput stayed at 11 MB/s. `tailscaled` at 75% CPU on jjserver's Intel
+   i5-2500 was suspected. **Wrong.** A clean A/B with the transfer stopped gave
+   11.4 MB/s direct over the LAN versus 11.0 MB/s over the tailnet. Tailscale
+   costs 4%.
+5. 11.4 MB/s is 91 Mbit, which is 100BASE-TX line rate. Both measurable ends
+   are gigabit (`jjserver eno1` and `pve nic0`). The only unmeasured hop is the
+   Nokia to the AX10 WAN port, and the Archer AX10 has a gigabit WAN port.
+
+The cable is a single self-installed run through the roof from the main house
+to the bedroom. No wall plates and no patch leads, so there is no cheap segment
+to swap. If it is over the 100 m 1000BASE-T limit, no re-termination helps.
+
+**Consequence beyond the homelab:** every device on `10.42.0.0/24` reaches the
+internet through that cable, so the whole bedroom network is capped near
+94 Mbit regardless of the fibre plan. The main house, wired straight into the
+Nokia, is not.
+
+Lesson for the next time throughput looks wrong: measure each hop, and do not
+trust a CPU figure that is a symptom of pushing traffic rather than a cause.

@@ -87,13 +87,30 @@ if ! cmp -s "$PERIPHERY_CONF" "$PERIPHERY_CONF.pre-update"; then
 fi
 
 # Fail loudly rather than start an unauthenticated agent on every interface.
-for key in 'bind_ip = "172.17.0.1"' 'allowed_ips = \["172.19.0.0/16"\]'; do
-  if ! grep -qE "^${key}$" "$PERIPHERY_CONF"; then
-    echo "ERROR: hardening line missing from $PERIPHERY_CONF: $key" >&2
-    echo "Refusing to restart periphery. Fix the config first." >&2
+#
+# Three independent controls, and all three must survive an installer run:
+#   bind_ip           network:  do not listen on the LAN at all
+#   allowed_ips       network:  only Komodo's own docker network may call in
+#   core_public_keys  identity: cryptographically verify it really is Core
+#
+# core_public_keys replaced `passkeys` on 2026-08-15. Periphery's own config
+# calls passkeys "Deprecated. Legacy v1 compatibility." and the running agent
+# logs a warning recommending the upgrade. Public-key auth is also strictly
+# better: Periphery holds only Core's PUBLIC key, so compromising Periphery
+# leaks nothing that can impersonate Core. A shared passkey does not have that
+# property. Core verifies Periphery in the same way via
+# KOMODO_PERIPHERY_PUBLIC_KEYS in komodo/compose.env.
+for key in 'bind_ip' 'allowed_ips' 'core_public_keys'; do
+  if ! grep -qE "^${key} = ." "$PERIPHERY_CONF"; then
+    echo "ERROR: hardening key missing or empty in $PERIPHERY_CONF: $key" >&2
+    echo "Refusing to restart periphery — it would come back unauthenticated." >&2
     exit 1
   fi
 done
+if grep -qE '^bind_ip = "\[::\]"' "$PERIPHERY_CONF"; then
+  echo "ERROR: bind_ip reset to [::] — periphery would listen on the LAN." >&2
+  exit 1
+fi
 
 systemctl restart periphery
 

@@ -426,12 +426,56 @@ ours, and prints a diff so genuinely new upstream settings stay visible. It
 then refuses to restart Periphery at all if either hardening line is missing.
 Failing loudly beats starting an unauthenticated root-privileged agent.
 
-### Still not done: no passkey
+### Authentication added the same day, via public keys not passkeys
 
-`bind_ip` and `allowed_ips` are network controls, not authentication. Anything
-that gets onto the `komodo_default` network can still call Periphery
-unauthenticated. Setting `passkeys` needs a matching value on the Core side,
-which is a separate change.
+`bind_ip` and `allowed_ips` are network controls. They restrict *who can
+reach* Periphery, not *who it will believe*. Anything landing on
+`komodo_default` could still call it unauthenticated.
+
+A shared `passkey` was tried first and **proved enforced** by deliberately
+setting a wrong one on Core:
+
+```
+WARN CoreLogin{direction="CoreToPeriphery"}:V1PasskeyCoreLoginFlow:
+     Authenticating using Passkeys. Set 'core_public_key'
+     (PERIPHERY_CORE_PUBLIC_KEY) instead to enhance security.
+WARN Core failed to login to connection | Invalid passkey
+```
+
+Periphery's own warning, and its config file, say to use keys instead:
+*"Deprecated. Legacy v1 compatibility. Users should upgrade to private /
+public key authentication."* So passkeys were replaced immediately.
+
+**The final state is mutual public-key authentication.** Each side holds only
+the other's PUBLIC key, so compromising either leaks nothing that could
+impersonate the other — which a shared passkey cannot claim.
+
+```
+/etc/komodo/periphery.config.toml
+    core_public_keys = "MCowBQYDK2VuAyEANMg88T9GLcVr7AyFeupn8d51NS7h/6ttpMHsGWVtyh8="
+
+komodo/compose.env  (gitignored; documented in compose.env.example)
+    KOMODO_PERIPHERY_PUBLIC_KEYS=MCowBQYDK2VuAyEAXP4UT63e+T1wcrm7JJ8vwS1YgCmXl3+5KxO+1N3kCHM=
+```
+
+Both keys are printed at startup and are not secrets:
+
+```
+docker logs komodo-core-1 | grep "Public Key"
+journalctl -u periphery      | grep "Public Key"
+```
+
+The Server resource's `passkey` field was cleared once keys were working.
+
+Verified after: Core startup logs `periphery_public_keys: Some([...])`,
+Periphery logs `core_public_keys: Some([...]), passkeys: None`, one
+established connection, zero auth errors.
+
+`scripts/update-komodo.sh` now guards all three keys — `bind_ip`,
+`allowed_ips` and `core_public_keys` — and separately refuses to start if
+`bind_ip` has been reset to `[::]`.
+
+`/etc/komodo/periphery.config.toml.pre-pubkey` holds the passkey-era file.
 
 Also note `allowed_ips` hardcodes `172.19.0.0/16`, the subnet Docker currently
 assigns to `komodo_default`. If that network is ever recreated with a different
@@ -705,11 +749,66 @@ After an online grow, either let lazy init finish before rebooting, or pass
 `-E lazy_itable_init=0` at `mkfs` time so there is nothing to initialise later.
 The rebuild does the latter.
 
+### 2026-08-15 14:04 — the single-PSU risk finally cost an outage
+
+The host died mid-afternoon on a Saturday, which is not the nightly shutdown.
+It was an abrupt power loss, established from the journal rather than guessed:
+
+```
+boot -1   Sat 12:05:42 -> 14:00:27      last log line, then nothing
+SEL       14:04:05  Power Supply AC lost
+boot  0   14:11:21
+```
+
+No `Stopping`, no `Reached target Shutdown`, no `Powering off`. The journal
+simply stops. That is a cut, not a shutdown. The AX10 router in the same room
+stayed up throughout, so the room had mains — a small router on a switching
+adapter rides through a dip that a PowerEdge on **one** PSU does not.
+
+**Nothing was lost.** The BBU did its job:
+
+```
+BBU        Optimal, 100%, isSOHGood: Yes
+VD0 RAID1  Optimal, Bad Blocks: No
+VD1 RAID6  Optimal, Bad Blocks: No
+/mnt/data  Filesystem state: clean
+/mnt/safe  Filesystem state: clean
+```
+
+Device letters swapped across the reboot (`/mnt/data` moved from `sdd` to
+`sdc`, `/mnt/safe` to `sdb`) and `fstab` handled it silently because it mounts
+by UUID. Worth remembering the next time a disk is added or removed.
+
+#### A red herring worth recording
+
+The SEL also showed two drive bays flapping all afternoon:
+
+```
+13:11 #0xad Deasserted / Asserted   13:24 #0xab ...   13:29 both ...
+13:50 #0xab ...                     14:01 #0xab ...   (7 times in 50 min)
+```
+
+That looks alarming on a RAID6 array which tolerates exactly two failures. It
+is **not** real. MegaRAID's own event log has zero `Removed: PD` events, every
+drive reads `Online, Spun Up`, and `Media Error Count` is 0 across all eight.
+The repeated `Inserted: PD` lines are normal per-boot logging — they appear
+129 times against 134 firmware initialisations.
+
+So the flapping is iDRAC's backplane presence sensor, not the drives. This
+machine has form: both CPU temperature sensors died on 5 August and needed a
+full AC drain to recover. Check MegaRAID before believing the SEL about disks.
+
+(The `Unexpected sense ... Sense: 5/24/00` entries on slots 0 and 1 are an
+INQUIRY with a field the Seagates reject. Harmless, and the origin of their
+`Other Error Count: 2`.)
+
 ### Still outstanding
 
-PSU 2 still has no C13 cable. `Power Supply AC lost` has asserted on most days
-through to 14 August 2026, and `PS Redundancy` still reads `No Reading`. Six
-more spinning drives raise the load on the single working supply.
+**PSU 2 still has no C13 cable, and it has now caused a real outage.**
+`Power Supply AC lost` has asserted on most days since 27 June 2026, and
+`PS Redundancy` still reads `No Reading`. The machine now spins eight drives
+off a single supply. One cable is the fix and it is the cheapest reliability
+improvement available in this build.
 
 **The Nokia-to-AX10 roof cable is the network bottleneck, and it is not
 fixable.** Diagnosed 2026-08-14 in this order, recorded because the first two

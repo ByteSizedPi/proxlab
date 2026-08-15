@@ -54,9 +54,47 @@ log "Updating Periphery"
 # ⚠️ Download, then run. Piping curl into python3 makes stdin the pipe, so the
 # privilege prompt cannot read the terminal and it dies with a misleading
 # "Failed to download binary... Did you provide a valid tag?".
+#
+# ⚠️ The installer REWRITES /etc/komodo/periphery.config.toml with its own
+# defaults. That silently reverts the hardening applied 2026-08-15:
+#
+#     bind_ip     = "172.17.0.1"       listen on the docker bridge only, so
+#                                      the LAN cannot reach 8120 at all
+#     allowed_ips = ["172.19.0.0/16"]  only Komodo's own network may call it
+#     connect_as  = "pve-prod"         must match the Komodo Server resource
+#
+# Periphery is UNAUTHENTICATED by default — no passkeys, no allowed_ips — and
+# it drives Docker as root. Letting the installer reset those three lines
+# re-opens the host to anything on the LAN, and nothing would report it.
+#
+# So: keep our file, let the installer write its own, then put ours back and
+# show the diff. The diff is what surfaces genuinely new upstream defaults
+# instead of hiding them.
+PERIPHERY_CONF=/etc/komodo/periphery.config.toml
+cp -a "$PERIPHERY_CONF" "$PERIPHERY_CONF.pre-update"
+
 curl -fsSL -o /tmp/setup-periphery.py "$INSTALLER_URL"
 python3 /tmp/setup-periphery.py
 rm -f /tmp/setup-periphery.py
+
+if ! cmp -s "$PERIPHERY_CONF" "$PERIPHERY_CONF.pre-update"; then
+  log "Installer changed periphery.config.toml — restoring ours"
+  echo "--- what the installer would have set (ours vs theirs) ---"
+  diff -u "$PERIPHERY_CONF.pre-update" "$PERIPHERY_CONF" || true
+  echo "---------------------------------------------------------"
+  cp -a "$PERIPHERY_CONF.pre-update" "$PERIPHERY_CONF"
+  echo "Restored. Review the diff above for new upstream settings worth adopting."
+fi
+
+# Fail loudly rather than start an unauthenticated agent on every interface.
+for key in 'bind_ip = "172.17.0.1"' 'allowed_ips = \["172.19.0.0/16"\]'; do
+  if ! grep -qE "^${key}$" "$PERIPHERY_CONF"; then
+    echo "ERROR: hardening line missing from $PERIPHERY_CONF: $key" >&2
+    echo "Refusing to restart periphery. Fix the config first." >&2
+    exit 1
+  fi
+done
+
 systemctl restart periphery
 
 log "Restarting Core"

@@ -368,10 +368,76 @@ preserved and all 16 bindings survived. Verified after: one Server named
 `/etc/komodo/periphery.config.toml` backed up to
 `periphery.config.toml.bak-2026-08-15`.
 
-**Open item, unrelated to the rename but found while doing it: Periphery is
-unauthenticated.** It listens on `[::]:8120` with no passkeys and no IP
-allowlist, so anything that can reach that port on `pve-prod` can drive Docker
-on the host as root. Set `passkeys` or `allowed_ips` and restart.
+## Periphery was wide open. Hardened 2026-08-15.
+
+Found while doing the rename above. Periphery drives Docker on `pve-prod` as
+root, and it was reachable by anything on the LAN with no authentication at
+all. Demonstrated rather than assumed — a TCP connection to `10.42.0.11:8120`
+opened from `jj-laptop`.
+
+Its own config states the problem: *"If neither these nor passkeys provided,
+inbound connections will not be authenticated."* Neither was set.
+
+### What the connection actually looks like
+
+```
+Core        172.19.0.3          network komodo_default
+Periphery   listening :8120
+host.docker.internal -> 172.17.0.1   (docker0, via extra_hosts host-gateway)
+established:  172.17.0.1:8120  <-  172.19.0.3
+```
+
+Core reaches Periphery only over the Docker bridge. Nothing legitimate ever
+arrives from the LAN, which is what makes the fix cheap.
+
+### The change
+
+```toml
+bind_ip     = "172.17.0.1"        # was "[::]"
+allowed_ips = ["172.19.0.0/16"]   # was []
+```
+
+`bind_ip` stops Periphery listening on the LAN at all. `allowed_ips` is a
+second, independent layer: it is an application-level check, so a blocked
+caller still completes the TCP handshake and is then refused. Both were
+verified:
+
+```
+jj-laptop -> 10.42.0.11:8120                 CLOSED (was open)
+prowlarr  (172.22.0.2)  -> 401 {"error":"requesting ip 172.22.0.2 not allowed"}
+komodo-core (172.19.0.3) -> 400 (reached the handler, i.e. allowed)
+```
+
+The 400 from Core is a normal API error, which is the point — it proves the
+request got past the IP check rather than being rejected at the door.
+
+`/etc/komodo/periphery.config.toml.pre-hardening` holds the previous file.
+
+### ⚠️ The updater would have silently reverted this
+
+`scripts/update-komodo.sh` runs the upstream `setup-periphery.py`, which
+**rewrites `periphery.config.toml` with its own defaults**. The next
+`komodo-update.timer` run would have reset `bind_ip` to `[::]` and emptied
+`allowed_ips`, re-opening the host to the LAN, and nothing would have reported
+it.
+
+The script now saves the config, lets the installer write its own, restores
+ours, and prints a diff so genuinely new upstream settings stay visible. It
+then refuses to restart Periphery at all if either hardening line is missing.
+Failing loudly beats starting an unauthenticated root-privileged agent.
+
+### Still not done: no passkey
+
+`bind_ip` and `allowed_ips` are network controls, not authentication. Anything
+that gets onto the `komodo_default` network can still call Periphery
+unauthenticated. Setting `passkeys` needs a matching value on the Core side,
+which is a separate change.
+
+Also note `allowed_ips` hardcodes `172.19.0.0/16`, the subnet Docker currently
+assigns to `komodo_default`. If that network is ever recreated with a different
+subnet, Core will be refused and every stack becomes unmanageable. The fix is
+one line in `periphery.config.toml` followed by `systemctl restart periphery`.
+Pinning the subnet in Komodo's own compose would remove the risk.
 
 **Still outstanding.** The Cloudflare API token is still labelled
 `traefik-acme-dns01-app-prod` in the Cloudflare dashboard. The label is

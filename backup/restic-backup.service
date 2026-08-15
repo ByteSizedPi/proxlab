@@ -1,0 +1,24 @@
+[Unit]
+Description=restic backup of /mnt/safe to jjserver and Backblaze B2
+Documentation=file:///home/jj/proxlab/backup/restic-backup.sh
+# Needs the safe area mounted and docker up for the Immich dump. `nofail` is
+# on both mounts in fstab, so a missing disk would otherwise mean backing up
+# an empty directory and silently pruning good snapshots on retention.
+RequiresMountsFor=/mnt/safe /mnt/docker-data
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/restic-backup.sh
+
+# Backing up must never compete with what the box is actually for. restic is
+# CPU-heavy (chunking + encryption) and this host also transcodes.
+Nice=10
+IOSchedulingClass=idle
+CPUSchedulingPolicy=idle
+
+# The first run moves ~180 GB over a 100 Mbit link, which is about 4.5 hours.
+# systemd's default has no timeout, but being explicit stops a hung sftp
+# session holding the lock forever.
+TimeoutStartSec=12h

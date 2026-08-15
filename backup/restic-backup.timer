@@ -1,0 +1,26 @@
+[Unit]
+Description=Daily restic backup
+
+[Timer]
+OnCalendar=daily
+
+# ⚠️ The single most important line in this file.
+#
+# pve-prod is powered off overnight and its uptime is irregular - it has run
+# 12:05-14:00, 14:53-01:13, and 09:50-21:58 on different days. A plain
+# OnCalendar=daily fires at 00:00, which the machine is usually asleep for, so
+# without Persistent the backup would simply never run and nothing would say
+# so. Persistent makes systemd record the last run and fire on the next boot
+# if the window was missed.
+#
+# Same reasoning as the polling-over-webhooks decision in docs/ARCHITECTURE.md:
+# on a box with irregular uptime, "reconcile whenever you wake" beats "fire at
+# an appointed time".
+Persistent=true
+
+# Spread the catch-up run so a boot does not start restic, Komodo's sync and
+# every container at the same instant.
+RandomizedDelaySec=30m
+
+[Install]
+WantedBy=timers.target

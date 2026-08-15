@@ -241,3 +241,42 @@ Deliberately ordered to avoid paying for infrastructure ahead of need.
 services that don't exist, fronting a box that's off half the time. The work
 in steps 1–3 is unaffected by whether the VPS exists, so it costs nothing to
 defer and it keeps the money for hardware.
+
+## Backups: 3-2-1, and what is deliberately not in it
+
+```
+copy 1   /mnt/safe on pve-prod        working data, RAID6
+copy 2   restic repo on jjserver      second machine, second array (md0)
+copy 3   restic repo on Backblaze B2  offsite, EU Central
+```
+
+Implementation is `backup/restic-backup.sh`, run by `restic-backup.timer`.
+
+**Media is excluded on purpose.** `/mnt/data` is ~311 GB of movies and series
+that are re-downloadable. `/mnt/safe` is the irreplaceable half: camera
+originals, photos, documents, laptop backups, app state. Backing up the media
+would multiply the offsite bill by twenty for no benefit. See
+`jjserver-media-stays-put` for the related decision that jjserver's own 920 GB
+library is never migrated either.
+
+**Live databases are dumped, not copied.** A Postgres or Mongo data directory
+copied file-by-file is mid-write and restores are a coin flip. Immich is
+dumped by the script. Komodo already writes dated dumps to
+`/mnt/docker-data/komodo/backups`, so that path is simply included.
+
+**`thumbs/` and `encoded-video/` are excluded.** Immich regenerates both from
+the originals. They were 4.5 GB for this library, which is real money on B2
+and zero value on restore.
+
+**`Persistent=true` on the timer is load-bearing.** pve-prod's uptime is
+irregular, so a plain `OnCalendar=daily` firing at 00:00 would usually be
+missed silently. Same reasoning as choosing polling over webhooks above: on a
+box with irregular uptime, reconcile-on-wake beats fire-at-an-appointed-time.
+
+**The repository password is the single point of failure.** It lives in
+`/etc/restic/password` on pve-prod — the same machine being backed up. A copy
+belongs in a password manager. Encrypted backups with no key are not backups.
+
+B2 region is fixed at account creation and cannot be changed. EU Central
+(Amsterdam) is the right choice from South Africa: same price as US West,
+roughly half the latency.

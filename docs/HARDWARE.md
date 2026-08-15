@@ -322,6 +322,57 @@ name creates a *new* Server resource, and the Periphery public key is not part
 of `ServerConfig`, so the new resource would have no key and every stack would
 bind to an unreachable server.
 
+### RESOLVED 2026-08-15, and the warning above was incomplete
+
+The rename sat uncommitted for eight days and was attempted twice. Both
+attempts produced a *second* Server resource rather than a renamed one, and
+the reason is a setting the warning above does not mention.
+
+**`connect_as` in `/etc/komodo/periphery.config.toml`.** Periphery announces
+itself to Core under that name. It read `connect_as = "app-prod"`. Renaming
+the Server resource in the Komodo UI therefore only ever renamed one half of
+the pair, and Periphery immediately re-registered the old name, recreating it.
+
+State found on 2026-08-15, which is what the double rename produced:
+
+```
+pve-prod  id=6a6b457b...  address=host.docker.internal:8120   stacks bound: 0
+app-prod  id=6a804a36...  address=host.docker.internal:8120   stacks bound: 16
+```
+
+The ObjectIds show `pve-prod` was the OLDER of the two by 15 days, so the
+orphan was the earlier attempt and a later sync from the repo (which still
+said `app-prod` at HEAD) recreated `app-prod` and moved all 16 stacks to it.
+
+Also worth correcting: the warning says the new resource "would have no key".
+Not true here. Periphery has neither `passkeys` nor `allowed_ips` set, so it
+is **unauthenticated** — its own config says *"If neither these nor passkeys
+provided, inbound connections will not be authenticated."* The two resources
+were functionally interchangeable. The real breakage risk was the orphaned
+binding, not authentication.
+
+The fix, in this order:
+
+```
+1. delete the orphan Server resource      (verify 0 stacks bound first)
+2. rename the live resource, keeping _id  (stacks bind by _id, not by name)
+3. connect_as = "pve-prod" in /etc/komodo/periphery.config.toml
+4. systemctl restart periphery
+5. only then push the repo
+```
+
+Steps 1 and 2 were done directly against Mongo so the `_id` was provably
+preserved and all 16 bindings survived. Verified after: one Server named
+`pve-prod`, `_id` unchanged at `6a804a3660437f721694ba6e`, 16 stacks bound.
+
+`/etc/komodo/periphery.config.toml` backed up to
+`periphery.config.toml.bak-2026-08-15`.
+
+**Open item, unrelated to the rename but found while doing it: Periphery is
+unauthenticated.** It listens on `[::]:8120` with no passkeys and no IP
+allowlist, so anything that can reach that port on `pve-prod` can drive Docker
+on the host as root. Set `passkeys` or `allowed_ips` and restart.
+
 **Still outstanding.** The Cloudflare API token is still labelled
 `traefik-acme-dns01-app-prod` in the Cloudflare dashboard. The label is
 cosmetic and `BOOTSTRAP.md` now says `pve-prod`. Rename it in Cloudflare to

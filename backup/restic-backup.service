@@ -12,6 +12,14 @@ Wants=network-online.target
 Type=oneshot
 ExecStart=/usr/local/sbin/restic-backup.sh
 
+# systemd services run with no HOME, so restic cannot find a cache directory
+# and logs "unable to open cache: neither $XDG_CACHE_HOME nor $HOME are
+# defined". It still works, but it then re-fetches index data from the
+# repository on every run instead of reading it locally - which over a
+# 100 Mbit link to jjserver is precisely the wrong trade. Set it explicitly.
+Environment=RESTIC_CACHE_DIR=/var/cache/restic
+CacheDirectory=restic
+
 # Backing up must never compete with what the box is actually for. restic is
 # CPU-heavy (chunking + encryption) and this host also transcodes.
 Nice=10

@@ -126,12 +126,24 @@ not worth it for an information leak of this size.
 is false. Enable it on the **phone and any remote device** — that's how they
 reach `10.42.0.0/24`.
 
-⚠️ **Do not enable it on `jj-laptop` while it is at home.** The laptop is
-directly on `10.42.0.0/24` — now as an ordinary WiFi DHCP client
-(`wlp0s20f3`, currently `10.42.0.145`) rather than as the gateway. Accepting
-the route installs `10.42.0.0/24 dev tailscale0` into Tailscale's policy table
-52, and rule `5270: lookup 52` is consulted before `32766: lookup main`, so the
-physical route is never used.
+⚠️ **Do not enable it on `jj-laptop` while it is on the AX10 network.** There
+the laptop is directly on `10.42.0.0/24` as an ordinary WiFi DHCP client
+(`wlp0s20f3`) rather than as the gateway. Accepting the route installs
+`10.42.0.0/24 dev tailscale0` into Tailscale's policy table 52, and rule
+`5270: lookup 52` is consulted before `32766: lookup main`, so the physical
+route is never used.
+
+**The laptop roams between two SSIDs, and this is easy to misread as a
+fault.** On the AX10 SSID it gets a `10.42.0.x` address and reaches everything
+over the LAN. On the upstream house SSID `17 Mozart` it gets `10.0.0.x` (seen
+at `10.0.0.110`, gateway `10.0.0.254`) and has **no route to `10.42.0.0/24`
+at all** — `ip route show | grep 10.42` returns nothing. Every LAN alias
+(`ssh pve`, `ssh pve-prod`) then hangs, and only `pve-ts` / `pve-prod-ts`
+work.
+
+Observed live on 2026-08-16: `ssh pve-prod` succeeded, then began hanging
+mid-session after a roam, while the host was healthy the whole time (uptime
+10:56). **Check the SSID before diagnosing anything as a server fault.**
 
 Rule: **any machine physically on a subnet must not accept a tailnet route for
 that subnet.**

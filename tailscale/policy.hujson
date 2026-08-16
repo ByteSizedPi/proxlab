@@ -1,0 +1,133 @@
+// Tailnet policy for tail2d486a.ts.net
+//
+// HuJSON (JSON with comments and trailing commas). This is the file behind
+// login.tailscale.com/admin/acls. It is committed here for the same reason
+// komodo/resources/*.toml is: the state should be reviewable in git, not only
+// clickable in someone else's web UI.
+//
+// ⚠️ NOTHING APPLIES THIS AUTOMATICALLY YET. Komodo does not manage Tailscale.
+// Paste it into the admin console, or wire up the GitHub Action described in
+// README.md in this directory. Until then, treat the console as the source of
+// truth and this file as the reviewed copy.
+//
+// ── The model ────────────────────────────────────────────────────────────
+//
+// Personal devices (jj-laptop, the S25) stay OWNED BY THE USER and untagged.
+// Tagging a personal device transfers it to the tag's owner and it stops
+// being "mine" for policy purposes, which is not what you want for a laptop.
+//
+// Machines that act on their own get a tag. A tag is what makes access a
+// property of the ROLE rather than of whoever happened to run `tailscale up`.
+// It also stops key expiry: tagged nodes do not expire, which is what
+// otherwise logs a server out of the tailnet mid-year with no warning.
+
+{
+  // ── Who may apply which tag ────────────────────────────────────────────
+  //
+  // Required before any node can advertise a tag. A node advertising a tag
+  // nobody owns is rejected at `tailscale up`, which reads as an auth failure
+  // rather than a policy error.
+  "tagOwners": {
+    // Hypervisor and NAS. Hosts whose job is to keep other things running.
+    //   pve       10.42.0.10   Proxmox host, out-of-band recovery path
+    //   jjserver  10.0.0.101   old service host, retiring to a NAS role
+    "tag:infra": ["autogroup:admin"],
+
+    // The Docker service host that runs the workloads.
+    //   pve-prod  10.42.0.11
+    "tag:services": ["autogroup:admin"],
+
+    // Subnet router and exit node.
+    //   pve-tailscale-lxc  10.42.0.13, LXC 101 on pve
+    "tag:router": ["autogroup:admin"],
+  },
+
+  // ── Routes approved without a console click ────────────────────────────
+  //
+  // LXC 101 advertises 10.42.0.0/24 plus 0.0.0.0/0 and ::/0 (the exit node).
+  // Those approvals currently live as manual clicks in the console, which
+  // means a rebuild of the LXC silently comes back with no routes until
+  // someone remembers. autoApprovers moves that decision into this file.
+  //
+  // ⚠️ Scoped to tag:router deliberately. A bare "*" here would let ANY
+  // tagged node advertise itself as a route to the whole LAN.
+  "autoApprovers": {
+    "routes": {
+      "10.42.0.0/24": ["tag:router"],
+    },
+    "exitNode": ["tag:router"],
+  },
+
+  // ── Access ─────────────────────────────────────────────────────────────
+  //
+  // `grants` is Tailscale's current syntax and replaces the older `acls`
+  // block. Do not mix the two in one file.
+  //
+  // Default is DENY. Anything not granted below cannot connect, and that is
+  // the whole point of the exercise: today every node can reach every other
+  // node, so a compromised container on pve-prod can open a session to the
+  // laptop. After this, it cannot.
+  "grants": [
+    // 1. My own devices reach everything.
+    //
+    // This is the permissive half, and it should stay permissive — the goal
+    // is not to fence myself out of my own homelab. `dst: ["*"]` covers
+    // tailnet addresses AND the 10.42.0.0/24 addresses reached through the
+    // subnet router.
+    {
+      "src": ["autogroup:member"],
+      "dst": ["*"],
+      "ip": ["*"],
+    },
+
+    // 2. Exit node.
+    //
+    // ⚠️ Grant 1 does NOT cover this. `dst: ["*"]` means every address
+    // inside the tailnet and its routes; leaving the tailnet for the open
+    // internet is a separate destination called autogroup:internet. Omit
+    // this and the exit node silently stops working with no policy error.
+    {
+      "src": ["autogroup:member"],
+      "dst": ["autogroup:internet"],
+      "ip": ["*"],
+    },
+
+    // 3. pve-prod -> jjserver, for restic.
+    //
+    // backup/restic-backup.sh backs up to `sftp:jjserver-backup:` which
+    // resolves to 10.0.0.101 — the LAN address, NOT the tailnet one. So this
+    // grant is not load-bearing today and backups will not break without it.
+    //
+    // It is here so that moving the backup target to
+    // jjserver.tail2d486a.ts.net stays a one-line change. That move is worth
+    // making: the LAN path depends on the AX10 NATing 10.42.0.0/24 out to
+    // 10.0.0.0/24, so backups break the day that addressing changes, and
+    // they break silently.
+    {
+      "src": ["tag:services"],
+      "dst": ["tag:infra"],
+      "ip": ["tcp:22"],
+    },
+  ],
+
+  // ── Deliberately absent ────────────────────────────────────────────────
+  //
+  // No grant lets tag:infra, tag:services or tag:router open a connection to
+  // a personal device, or to each other beyond grant 3. Servers answer; they
+  // do not initiate. Removing that path is most of the value here.
+  //
+  // Tailscale SSH is also absent. It would replace the key-based SSH aliases
+  // in ~/.ssh/config with policy-driven access and per-session audit, which
+  // is a real improvement, but it needs `tailscale up --ssh` on every host
+  // and it changes how you log in. Add it as its own change, not folded into
+  // the tagging rollout:
+  //
+  //   "ssh": [
+  //     {
+  //       "action": "check",          // "accept" for no re-auth prompt
+  //       "src":    ["autogroup:member"],
+  //       "dst":    ["tag:infra", "tag:services", "tag:router"],
+  //       "users":  ["autogroup:nonroot", "root"],
+  //     },
+  //   ],
+}

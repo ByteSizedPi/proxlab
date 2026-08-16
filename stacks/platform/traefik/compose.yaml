@@ -314,12 +314,16 @@ services:
       # defaults to 0 and is denied. POST=0 in particular is what makes this
       # read-only: no container create, start, stop or exec.
       #
-      # ⚠️ Do NOT add permissions here for Homepage/Netdata when those land.
-      # Give each consumer its OWN socket-proxy instance with only the keys it
-      # needs (Homepage: SERVICES/TASKS, Netdata: INFO). One shared proxy ends
-      # up holding the union of every consumer's permissions and becomes a
-      # single high-value target — which is exactly what jjserver's copy has
-      # become, with STATS and VOLUMES enabled for services that no longer run.
+      # ⚠️ Do NOT add permissions here for other consumers.
+      # Give each its OWN socket-proxy instance with only the keys it needs —
+      # confirmed CONTAINERS is the right (and only) key for both landed so
+      # far: Homepage (container list + per-container stats stream behind
+      # `showStats`) and Netdata (container-name resolution for cgroup
+      # charts; the actual CPU/mem numbers come from /sys/fs/cgroup, not this
+      # proxy). One shared proxy ends up holding the union of every
+      # consumer's permissions and becomes a single high-value target —
+      # which is exactly what jjserver's copy has become, with STATS and
+      # VOLUMES enabled for services that no longer run.
 
     networks:
       - docker-api

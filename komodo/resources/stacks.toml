@@ -459,6 +459,40 @@ poll_for_updates = true
 
 
 [[stack]]
+name = "netdata"
+tags = ["platform", "monitoring"]
+[stack.config]
+server = "pve-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/platform/netdata"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+# No secrets. Not claimed to Netdata Cloud — see the comment at the bottom of
+# netdata.env for what adding that later looks like.
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "netdata.env"]
+
+# --- Automation ---
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+# --- Pre-deploy: create Netdata's state directories ---
+#
+# Same reasoning as immich's pre_deploy: Docker creates missing bind-mount
+# sources as root-owned directories on its own, which works but hides a
+# typo'd path as a silently empty directory instead of a loud failure.
+[stack.config.pre_deploy]
+path = ""
+command = "mkdir -p /mnt/docker-data/appdata/netdata/config /mnt/docker-data/appdata/netdata/lib /mnt/docker-data/appdata/netdata/cache"
+shell_mode = true
+
+
+[[stack]]
 name = "cloudflared"
 tags = ["platform", "ingress"]
 [stack.config]

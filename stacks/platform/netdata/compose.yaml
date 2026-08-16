@@ -1,0 +1,156 @@
+services:
+  netdata:
+    # :stable, not :latest. Netdata's own docs say `latest` tracks NIGHTLY
+    # builds on this image, the opposite of every other floating tag in this
+    # repo. auto_update below still picks up stable patch releases.
+    image: netdata/netdata:stable
+    container_name: netdata
+
+    # ── Scoped down from Netdata's own reference compose ────────────────────
+    # The official example uses network_mode: host, pid: host, a direct
+    # /var/run/docker.sock mount and a full `/:/host/root:ro,rslave` bind —
+    # broadest host access of anything in this repo. Every other stack here
+    # avoids docker.sock entirely (see the socket-proxy warning in
+    # traefik/compose.yaml) and never mounts host root, so this stack trades
+    # away two things Netdata can normally show:
+    #   - host network-interface throughput charts (needs network_mode: host)
+    #   - some process-name accuracy in apps.plugin (needs pid: host)
+    # Per-container CPU/memory/IO (the actual ask) and host CPU/memory/disk
+    # space do not need either — /proc and /sys cover host CPU/mem directly,
+    # and disk space comes from the two explicit read-only mounts below,
+    # the same pattern homepage/compose.yaml already uses for its `resources`
+    # widget.
+    cap_add:
+      - SYS_PTRACE
+      - SYS_ADMIN
+
+    environment:
+      # Container-name resolution for cgroup charts (so a chart says
+      # "sonarr" instead of a cgroup hash). Netdata's name-resolver reads
+      # DOCKER_HOST like the Docker CLI does, defaulting to
+      # unix:///var/run/docker.sock — pointed at the socket-proxy below
+      # instead, over TCP, so this container never touches the real socket.
+      - DOCKER_HOST=tcp://netdata-socket-proxy:2375
+
+    volumes:
+      # Netdata's own state. Bind-mounted under CONFIG_ROOT rather than named
+      # Docker volumes, so it is covered by the same restic backup as every
+      # other app's config (see [[backup-scope-configs-only]] in memory) and
+      # survives a `docker compose down` the way named volumes technically
+      # also would, but consistent with the rest of this repo either way.
+      - ${CONFIG_ROOT}/netdata/config:/etc/netdata:Z
+      - ${CONFIG_ROOT}/netdata/lib:/var/lib/netdata:Z
+      - ${CONFIG_ROOT}/netdata/cache:/var/cache/netdata:Z
+
+      # Host CPU/memory/process metrics. Read-only, and Netdata's entrypoint
+      # auto-sets NETDATA_HOST_PREFIX=/host when it finds these two present —
+      # no manual env var needed.
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /etc/os-release:/host/etc/os-release:ro
+      - /etc/localtime:/etc/localtime:ro
+
+      # Disk-space charts for the two disks that matter, same two paths and
+      # same reasoning as homepage/compose.yaml's `resources` widget mounts:
+      # statvfs on a bind-mounted directory reports the REAL underlying
+      # filesystem, so this gives accurate df-equivalent numbers for both
+      # disks without mounting host root.
+      - ${CONFIG_ROOT}:/mnt/docker-data:ro
+      - ${DATA_ROOT}:/mnt/data:ro
+
+    depends_on:
+      netdata-socket-proxy:
+        condition: service_healthy
+
+    # No `ports:` — Traefik reaches it over `ingress`, same as every other
+    # web-UI service in this repo.
+    security_opt:
+      - no-new-privileges:true
+      # SELinux (Fedora host). Same root cause as every other note like this
+      # in the repo: without it, /proc, /sys and the SYS_ADMIN/SYS_PTRACE
+      # capabilities get silently denied instead of cleanly refused.
+      # Inferred from the established pattern (Periphery, socket-proxy), not
+      # yet confirmed against a live Netdata AVC.
+      - label=disable
+
+    # Inferred from Netdata's documented REST API (`/api/v1/info` answers
+    # once the daemon is up), not verified against a running container.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:19999/api/v1/info || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.netdata.rule=Host(`netdata.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.netdata.loadbalancer.server.port=19999"
+      # entrypoints/tls/middlewares deliberately omitted, same reasoning as
+      # every other fronted service — inherited from the entrypoint defaults.
+
+    networks:
+      - ingress
+      - docker-api
+
+  # ── Netdata's OWN socket proxy ────────────────────────────────────────────
+  #
+  # CONTAINERS only: list + inspect, which is what container-name resolution
+  # needs (/containers/json, /containers/<id>/json). Not the STATS or INFO
+  # keys — per-container CPU/mem/IO numbers come from reading /sys/fs/cgroup
+  # directly (via /host/sys above), never through this proxy. A dedicated
+  # instance rather than sharing traefik's or homepage's, for the same reason
+  # both of those already give: one shared proxy accumulates the union of
+  # every consumer's permissions.
+  netdata-socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: netdata-socket-proxy
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    environment:
+      - CONTAINERS=1
+      - EVENTS=1
+      - PING=1
+      - VERSION=1
+      - POST=0
+
+    security_opt:
+      - no-new-privileges:true
+      - label=disable
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:2375/_ping | grep -q OK"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    networks:
+      - docker-api
+
+networks:
+  ingress:
+    external: true
+
+  # Project-local, not external — same reasoning as every other docker-api
+  # network in this repo: nothing outside this compose project can join it,
+  # enforced by compose rather than by remembering.
+  docker-api:
+    driver: bridge
+    internal: true

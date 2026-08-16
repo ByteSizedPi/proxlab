@@ -20,6 +20,27 @@ services:
     # and disk space comes from the two explicit read-only mounts below,
     # the same pattern homepage/compose.yaml already uses for its `resources`
     # widget.
+    #
+    # ── VERIFIED 2026-08-16, first deploy ────────────────────────────────
+    # Works: 675 cgroup charts across 27 containers, each resolved to its
+    # real container name rather than a hash, so the socket-proxy path below
+    # does its job. This is the whole reason the stack exists.
+    #
+    # Known cost, accepted: apps.plugin logs a steady stream of
+    #   errno="13, Permission denied" ... Cannot process /host/proc/<pid>/io
+    # It reads the host process list through /host/proc but cannot open
+    # per-process io/fd, because apps.plugin runs as the `netdata` user and
+    # needs a FILE capability to get there. `no-new-privileges:true` below
+    # blocks any file capability from being applied, so the caps in cap_add
+    # never reach it. Confirmed: NoNewPrivs is 1 on PID 1 in this container.
+    #
+    # Two ways out, neither taken yet:
+    #   - drop `no-new-privileges:true`, which is a real privilege increase
+    #     and undoes the scoping choice this stack was built around
+    #   - set `[plugins] apps = no` in netdata.conf, losing host per-process
+    #     charts but keeping every container chart and silencing the log
+    # Left noisy on purpose until one is chosen deliberately. Container
+    # metrics are unaffected either way — they come from /sys/fs/cgroup.
     cap_add:
       - SYS_PTRACE
       - SYS_ADMIN
@@ -75,14 +96,21 @@ services:
       # yet confirmed against a live Netdata AVC.
       - label=disable
 
-    # Inferred from Netdata's documented REST API (`/api/v1/info` answers
-    # once the daemon is up), not verified against a running container.
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:19999/api/v1/info || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+    # ⚠️ NO `healthcheck:` BLOCK HERE, DELIBERATELY.
+    #
+    # The image already defines one — `/usr/sbin/health.sh`, 60s interval,
+    # 3 retries — and Netdata maintains it against its own API.
+    #
+    # A hand-written `wget -qO- http://localhost:19999/api/v1/info` was tried
+    # here on 2026-08-16 and reported the container UNHEALTHY for 11 straight
+    # checks while Netdata was working perfectly. The image is Debian-based
+    # and ships only curl:
+    #
+    #   /bin/sh: 1: wget: not found
+    #
+    # The wget form is copied from the *arr stacks, which are Alpine-based and
+    # do have busybox wget. It does not transfer. Do not re-add a healthcheck
+    # here — overriding the vendor's is how this broke.
     restart: unless-stopped
     logging:
       driver: json-file

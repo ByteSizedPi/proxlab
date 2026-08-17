@@ -252,3 +252,5 @@ networks:
 # commit touching only that script will not redeploy this stack either. It
 # still has to reach the clone for pre_deploy to run it, so change it in the
 # same commit as this file.
+
+# Deploy trigger for blueprints/20-forward-auth.yaml (side-car rule above).

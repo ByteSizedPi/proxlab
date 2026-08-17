@@ -27,26 +27,64 @@ Checked against the Enterprise features list, 2026-08-17:
 So true device-certificate trust, the thing closest to "SSH knows my key", is
 paid. Everything needed for the actual goal is not.
 
-## The insight: the passkey IS the device identity
+## ⚠️ The passkey plan does not work on this laptop
 
-The instinct is to look for a "trusted device" toggle. There is not one
-outside Enterprise, and looking for it is the wrong frame.
+An earlier version of this document argued that a platform passkey is the
+device identity, so a passkey-only flow gives owned-versus-borrowed asymmetry
+for free, and that no password should be a valid first factor.
 
-A platform passkey is already bound to one device's secure element. It cannot
-be copied off. So "does this device hold the passkey?" is exactly the question
-SSH answers with a key file, and a passkey-only flow answers it the same way:
+That reasoning is sound on macOS, Windows and Android. **It does not hold on
+Linux with Firefox**, which is the primary workstation here.
 
-- **Your devices** hold a platform passkey. Touch ID, Windows Hello, Android
-  biometric. One touch, no username, no password.
-- **A borrowed device** holds nothing. Its only route in is a cross-device
-  (hybrid) passkey: your phone scans a QR code and approves that one session.
-  Nothing is stored on the borrowed machine, because there is nothing to
-  store.
+Verified 2026-08-17:
 
-That asymmetry is the requirement, and it falls out of the design rather than
-needing a feature. **Do not configure a password as a valid first factor.** A
-password is the thing a borrowed device *can* save, and it is what would break
-this.
+- Firefox on Linux supports WebAuthn **only with USB hardware tokens**. There
+  is no platform-authenticator support, and no QR / phone hybrid transport.
+- Chrome and Chromium on Linux do better, but Linux generally still pushes
+  users toward an external security key.
+- `libwebauthn` and `credentialsd` (an XDG portal plus a patched Firefox
+  build, presented at FOSDEM 2026) are the projects fixing this. They are not
+  something to depend on yet.
+
+### PAM fingerprint is not browser WebAuthn
+
+This is the part most worth being clear about, because the two look like the
+same feature and are unrelated.
+
+Swapping `libfprint` for a third-party build gives fingerprint unlock to
+**PAM** — the display manager, `sudo`, `polkit`. PAM and the browser's
+WebAuthn stack share nothing. No browser on Linux can present that fingerprint
+reader as a platform authenticator, so a working fingerprint login to the
+desktop produces exactly zero improvement to a web login.
+
+### What follows
+
+**The password fallback is permanent.** Not a temporary safety measure until a
+second admin exists, but the actual login mechanism on the Linux workstation.
+
+So seamlessness cannot come from passwordless here. It comes from **not being
+asked**: a 30-day session, a 60-day remember-me, MFA suppressed for 24 hours,
+and one cookie shared across every subdomain. The realistic outcome is a
+login roughly once a month, not never.
+
+The passwordless flow is still built and still linked from the login page. It
+is worth keeping because it works on the phone, works in Chrome, and would
+work immediately with a USB security key. It is an option, not the mechanism.
+
+### Keeping the borrowed-device property anyway
+
+Losing "no password to save" costs the clean asymmetry. Two things preserve
+most of it:
+
+- **MFA is still required.** A saved password alone is not enough to log in,
+  because the second factor lives on the phone. A borrowed device can save
+  the half that does not work on its own.
+- **Network binding** terminates a session whose cookie appears from a
+  different network, and `*.admin.jjventer.co.za` only resolves and routes on
+  the LAN and tailnet in the first place.
+
+A USB security key is the one purchase that would restore the original plan
+in full, on Firefox and Linux included.
 
 ## Making it seamless
 

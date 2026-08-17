@@ -1,0 +1,127 @@
+# One forward-auth provider for the whole admin domain.
+#
+# ── ⚠️ INERT UNTIL THE TRAEFIK MIDDLEWARE IS UNCOMMENTED ────────────────
+#
+# Applying this changes nothing on its own. It creates the provider, the
+# application and the outpost binding. No request is intercepted until
+# `authentik@file` is uncommented in ../../traefik/dynamic/middlewares.yml
+# AND the traefik stack is deployed by hand. That ordering is deliberate: an
+# unresolvable middleware fails the whole chain and takes down every route on
+# the entrypoint, so the provider must exist first.
+#
+# ── Why forward_domain and not eleven forward_single providers ──────────
+#
+# forward_single is one provider per service. Eleven providers, eleven
+# applications, eleven outpost bindings, all identical apart from a hostname.
+#
+# forward_domain is one provider for *.admin.jjventer.co.za, with a cookie
+# scoped to the parent domain. One login covers every subdomain, which is the
+# behaviour that was actually wanted, and it is the setting most often got
+# wrong — a per-host cookie makes every service prompt separately, which feels
+# worse than no SSO at all because it looks like it should be working.
+#
+# The cost is that access control is domain-wide: this cannot say "sonarr yes,
+# netdata no". For a single-user homelab that distinction does not exist. If
+# it ever does, move that one service to its own forward_single provider and
+# leave the rest here.
+#
+# ── What is deliberately NOT covered ────────────────────────────────────
+#
+# Because this is domain-wide, it would also catch services that MUST NOT be
+# gated. They are excluded by NOT adding the middleware to their Traefik
+# routers, and skip_path_regex below is a second layer for paths rather than
+# hosts:
+#
+#   ntfy      machine publishers POST with a token and cannot follow an SSO
+#             redirect. Its own deny-all plus per-topic ACLs are the control.
+#   jellyfin  TVs and native clients cannot follow a redirect either, and the
+#             same hostname serves the web UI and the client API.
+#   plex      authenticates against plex.tv accounts; same client problem.
+#   auth      guarding authentik with authentik is a redirect loop.
+#
+# See docs/AUTH.md for the full per-service split.
+
+version: 1
+
+metadata:
+  name: homelab - forward auth for the admin domain
+  labels:
+    blueprints.goauthentik.io/description: |
+      Single forward_domain proxy provider covering *.admin.jjventer.co.za,
+      bound to the embedded outpost. Inert until the Traefik middleware is
+      enabled.
+
+entries:
+  # ── The provider ──────────────────────────────────────────────────────
+  - model: authentik_providers_proxy.proxyprovider
+    id: admin-forward-auth
+    identifiers:
+      name: admin-forward-auth
+    attrs:
+      mode: forward_domain
+
+      # For forward_domain this is the AUTHENTICATION host — where a user is
+      # sent to log in — not the protected service. It must be the authentik
+      # hostname itself.
+      external_host: https://auth.admin.jjventer.co.za
+
+      # ⚠️ THE SETTING THAT MAKES SSO ACTUALLY WORK.
+      # Scoped to the parent domain, so the session cookie is presented to
+      # every *.admin.jjventer.co.za service. Leave it empty and the cookie is
+      # host-only, and every subdomain prompts separately.
+      cookie_domain: admin.jjventer.co.za
+
+      # Implicit consent: no "do you allow this application?" interstitial.
+      # There is one user and the applications are all his own, so an explicit
+      # consent screen is pure friction.
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+
+      # How long the proxy's own token lasts before it revalidates against the
+      # authentik session. This is NOT the login session — that is days=30 on
+      # the user login stage in 10-seamless-auth.yaml. Raised from the 1 hour
+      # default so the revalidation round trip is rarer.
+      access_token_validity: hours=24
+
+      # Paths never intercepted, on any host this middleware is attached to.
+      #
+      # Machine-to-machine API paths that use their own token auth. The *arr
+      # apps talk to each other east-west over the `media` network and so never
+      # pass through Traefik at all, but anything reaching an /api path
+      # north-south (a phone app, a script) would otherwise get an HTML login
+      # page instead of JSON, which reads as a broken API rather than an auth
+      # failure.
+      skip_path_regex: |
+        ^/api/.*
+        ^/ping$
+
+      # Forward the Authorization header through rather than consuming it, so
+      # a service with its own basic-auth or token auth still receives it.
+      intercept_header_auth: false
+
+  # ── The application it is bound to ────────────────────────────────────
+  - model: authentik_core.application
+    id: admin-forward-auth-app
+    identifiers:
+      slug: admin-forward-auth
+    attrs:
+      name: Homelab admin services
+      provider: !KeyOf admin-forward-auth
+      meta_description: |
+        Domain-wide forward auth for *.admin.jjventer.co.za. Attaching the
+        authentik middleware to a Traefik router is what actually gates a
+        service; this application is the policy target for all of them.
+
+  # ── Bind it to the embedded outpost ───────────────────────────────────
+  #
+  # Without this the provider exists but no outpost serves it, and the
+  # middleware gets a 404 from /outpost.goauthentik.io/auth/traefik. Because
+  # an unresolvable middleware fails the whole chain, that 404 would take down
+  # every route on the entrypoint rather than just the guarded one.
+  - model: authentik_outposts.outpost
+    identifiers:
+      name: authentik Embedded Outpost
+    attrs:
+      type: proxy
+      providers:
+        - !KeyOf admin-forward-auth

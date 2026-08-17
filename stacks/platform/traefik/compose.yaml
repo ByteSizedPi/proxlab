@@ -210,7 +210,19 @@ services:
       - "traefik.http.routers.dashboard.rule=Host(`traefik.${ADMIN_DOMAIN}`)"
       - "traefik.http.routers.dashboard.entrypoints=websecure"
       - "traefik.http.routers.dashboard.service=api@internal"
-      - "traefik.http.routers.dashboard.middlewares=dashboard-auth@docker"
+      # ── Authentik, replacing the basicauth that used to be here ──────────
+      #
+      # Gate-only tier: the dashboard has no login of its own, so the authentik
+      # session gives true auto-login. It also retires the single nastiest trap
+      # in this repo — the bcrypt hash below had to have every `$` doubled in
+      # the Komodo Variable, and getting that wrong rejected every password
+      # while logging one buried "variable is not set" line.
+      #
+      # ⚠️ If Authentik is down, the dashboard is unreachable. That is an
+      # acceptable trade here (the dashboard is diagnostic, not load-bearing)
+      # but it is the reason this middleware is NOT on the websecure
+      # entrypoint, where it would take every route down with it.
+      - "traefik.http.routers.dashboard.middlewares=authentik@file"
 
       # BasicAuth defined here rather than in dynamic/middlewares.yml, because
       # the htpasswd hash is a credential and dynamic/ is committed to git.
@@ -241,7 +253,12 @@ services:
       #
       # This applies to ANY secret containing `$`. Cloudflare API tokens are
       # alphanumeric so CF_DNS_API_TOKEN is unaffected.
-      - "traefik.http.middlewares.dashboard-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH}"
+      # ⚠️ RETIRED 2026-08-17, replaced by authentik@file on the router above.
+      # Left commented rather than deleted because the `$` doubling rule below
+      # still applies to ANY future secret interpolated into a label, and this
+      # is the worked example. TRAEFIK_DASHBOARD_AUTH can be deleted from
+      # Komodo Variables once you are happy with the Authentik login.
+      # - "traefik.http.middlewares.dashboard-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH}"
       #
       # ⚠️ Swap to Authelia when it lands: replace the middleware reference
       # above with `authelia@file` and delete this basicauth label. The

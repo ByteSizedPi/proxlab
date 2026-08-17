@@ -122,6 +122,19 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.netdata.rule=Host(`netdata.${ADMIN_DOMAIN}`)"
       - "traefik.http.services.netdata.loadbalancer.server.port=19999"
+      #
+      # ── Authentik forward auth ───────────────────────────────────────────
+      # Gate-only tier: this service has no login of its own, so the authentik
+      # session alone gives true auto-login with nothing to configure inside
+      # the app. Contrast the *arr apps, which show their own Forms login on
+      # top unless AuthenticationMethod is switched to External.
+      #
+      # On THIS ROUTER, never on the websecure entrypoint: an unresolvable
+      # middleware fails the whole chain, so on the entrypoint one broken
+      # Authentik takes down every route. Here it can only break this service.
+      # Covered by the single forward_domain provider, so no new provider is
+      # needed. See docs/AUTH.md.
+      - "traefik.http.routers.netdata.middlewares=authentik@file"
       # entrypoints/tls/middlewares deliberately omitted, same reasoning as
       # every other fronted service — inherited from the entrypoint defaults.
 

@@ -38,6 +38,20 @@
 #      ../traefik/dynamic/middlewares.yml.
 #   3. Add `middlewares=authentik@file` to the target service's router.
 #
+# ── ⚠️ EDITING blueprints/ ALONE DOES NOT REDEPLOY THIS STACK ───────────
+#
+# Same side-car trap already documented on recyclarr, decluttarr and
+# homepage. BatchDeployStackIfChanged compares `file_paths` (compose.yaml)
+# and the env files, NOT arbitrary repo files. A commit touching only
+# blueprints/*.yaml leaves this stack's compose.yaml unchanged, so Komodo
+# never refreshes the clone, so the worker never sees the new file, so the
+# blueprint silently does not apply. Nothing reports an error, because from
+# Komodo's point of view there was nothing to do.
+#
+# Walked into it on 2026-08-17 despite it being written down three times
+# elsewhere in this repo. Touch this file in the same commit as a blueprint
+# change, or deploy the stack by hand afterwards.
+#
 # ⚠️ Step 2 needs a MANUAL traefik deploy. Komodo keeps a separate clone per
 # stack and only refreshes one whose own files changed, so editing
 # dynamic/*.yml leaves Traefik reading a stale copy. The full explanation is

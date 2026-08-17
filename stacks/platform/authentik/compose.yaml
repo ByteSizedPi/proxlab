@@ -247,3 +247,8 @@ networks:
   authentik-db:
     driver: bridge
     internal: true
+
+# ⚠️ check-secrets.sh is a side-car too: it is not in `file_paths`, so a
+# commit touching only that script will not redeploy this stack either. It
+# still has to reach the clone for pre_deploy to run it, so change it in the
+# same commit as this file.

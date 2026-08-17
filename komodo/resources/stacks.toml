@@ -565,9 +565,24 @@ poll_for_updates = true
 # The mkdir half is ordinary: Docker would create the missing bind sources as
 # root-owned directories, and a mistyped path would silently become an empty
 # directory rather than an error.
+# ⚠️ THE GUARD LIVES IN A SCRIPT, AND THAT IS NOT COSMETIC.
+#
+# It was inline here first, and it silently stopped the stack deploying.
+# Komodo's variable syntax is [[NAME]]; the guard has to search for a literal
+# double square bracket to spot an unresolved placeholder, so the command
+# contained that sequence itself — and Komodo interpolates pre_deploy commands
+# before running them. The guard was mangled by the exact mechanism it exists
+# to check.
+#
+# The failure gave nothing to go on. Core logged "Successfully authenticated
+# incoming webhook" with no run after it, Periphery logged nothing at all, and
+# the stack just stayed at its previous commit while pushes looked fine.
+#
+# check-secrets.sh builds the bracket pair from octal escapes, so the sequence
+# never appears in anything Komodo interpolates. Do not inline it again.
 [stack.config.pre_deploy]
 path = ""
-command = "f=/etc/komodo/stacks/authentik/stacks/platform/authentik/komodo.env; if grep -q '\\[\\[' \"$f\" 2>/dev/null; then echo 'ABORT: Komodo Variables AUTHENTIK_SECRET_KEY and/or AUTHENTIK_PG_PASS do not exist. Create them (Settings > Variables, mark Secret) before deploying. See stacks/platform/authentik/authentik.env.'; exit 1; fi; mkdir -p /mnt/docker-data/appdata/authentik/postgres /mnt/docker-data/appdata/authentik/media /mnt/docker-data/appdata/authentik/certs /mnt/docker-data/appdata/authentik/custom-templates"
+command = "sh check-secrets.sh komodo.env && mkdir -p /mnt/docker-data/appdata/authentik/postgres /mnt/docker-data/appdata/authentik/media /mnt/docker-data/appdata/authentik/certs /mnt/docker-data/appdata/authentik/custom-templates"
 shell_mode = true
 
 

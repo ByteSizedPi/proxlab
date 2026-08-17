@@ -90,8 +90,29 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.homepage.rule=Host(`homepage.${ADMIN_DOMAIN}`)"
       - "traefik.http.services.homepage.loadbalancer.server.port=3000"
-      # entrypoints/tls/middlewares deliberately omitted — see the comment in
+      # entrypoints/tls deliberately omitted — see the comment in
       # prowlarr/compose.yaml, same reasoning applies here.
+      #
+      # ── Authentik forward auth: homepage is the PILOT ────────────────────
+      #
+      # First service gated, chosen because it has no login of its own to
+      # double up with, nothing else calls its API, and breaking it costs
+      # nothing.
+      #
+      # Named on THIS ROUTER rather than on the websecure entrypoint. That is
+      # the safety property: an unresolvable middleware fails the whole chain,
+      # so on the entrypoint a broken Authentik takes down every route in the
+      # estate. Here it can only break homepage.
+      #
+      # `@file` because the middleware is defined in traefik's dynamic config,
+      # not by a docker label. Provider suffixes are not interchangeable —
+      # `authentik@docker` would not resolve and this router would 404.
+      #
+      # ⚠️ The middleware covers *.admin.jjventer.co.za via one forward_domain
+      # provider with a parent-domain cookie, so adding this label to another
+      # service needs no new provider. Do NOT add it to ntfy, jellyfin, plex or
+      # auth itself — see docs/AUTH.md for why each one breaks.
+      - "traefik.http.routers.homepage.middlewares=authentik@file"
 
     networks:
       - ingress

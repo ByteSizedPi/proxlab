@@ -407,3 +407,8 @@ networks:
   # Traefik is unaffected: it still has connectivity via `ingress`.
   docker-api:
     internal: true
+
+# Deploy trigger: dynamic/middlewares.yml gained the `authentik` forwardAuth
+# middleware. Editing dynamic/*.yml alone does NOT refresh Traefik's clone
+# (see dynamic/komodo.yml), so this file must change in the same commit or
+# Traefik keeps serving the old config and `authentik@file` appears missing.

@@ -544,13 +544,30 @@ webhook_enabled = false
 auto_update = false
 poll_for_updates = true
 
-# --- Pre-deploy: create the paths compose binds ---
-# Postgres in particular: Docker would create a missing source as a root-owned
-# directory, and postgres then fails initdb with a permissions error that
-# reads like a corrupt volume rather than a wrong path.
+# --- Pre-deploy: refuse to deploy with unresolved secrets, then mkdir ---
+#
+# ⚠️ THE GUARD IS THE IMPORTANT HALF. DO NOT REMOVE IT.
+#
+# When a Komodo Variable does not exist, Komodo does NOT fail and does NOT
+# write an empty value — it writes the placeholder through literally:
+#
+#     AUTHENTIK_PG_PASS=[[AUTHENTIK_PG_PASS]]
+#
+# That is a perfectly valid non-empty string, so compose's `${VAR:?}` guard
+# never fires and postgres initialises the database USING THE PLACEHOLDER AS
+# THE PASSWORD. Postgres sets the superuser password at initdb time only, so
+# the moment the real Variable is added the server and worker can no longer
+# authenticate, and the only fix is deleting the data directory and starting
+# again. Observed on this stack 2026-08-17, before any container had started.
+#
+# Failing loudly here costs one red deploy. The alternative costs a database.
+#
+# The mkdir half is ordinary: Docker would create the missing bind sources as
+# root-owned directories, and a mistyped path would silently become an empty
+# directory rather than an error.
 [stack.config.pre_deploy]
 path = ""
-command = "mkdir -p /mnt/docker-data/appdata/authentik/postgres /mnt/docker-data/appdata/authentik/media /mnt/docker-data/appdata/authentik/certs /mnt/docker-data/appdata/authentik/custom-templates"
+command = "f=/etc/komodo/stacks/authentik/stacks/platform/authentik/komodo.env; if grep -q '\\[\\[' \"$f\" 2>/dev/null; then echo 'ABORT: Komodo Variables AUTHENTIK_SECRET_KEY and/or AUTHENTIK_PG_PASS do not exist. Create them (Settings > Variables, mark Secret) before deploying. See stacks/platform/authentik/authentik.env.'; exit 1; fi; mkdir -p /mnt/docker-data/appdata/authentik/postgres /mnt/docker-data/appdata/authentik/media /mnt/docker-data/appdata/authentik/certs /mnt/docker-data/appdata/authentik/custom-templates"
 shell_mode = true
 
 

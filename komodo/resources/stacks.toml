@@ -459,6 +459,102 @@ poll_for_updates = true
 
 
 [[stack]]
+name = "ntfy"
+tags = ["platform", "monitoring"]
+[stack.config]
+server = "pve-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/platform/ntfy"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+# No secrets in the container. ntfy's users live in its own auth.db, created
+# by hand after first deploy — see the commands in ntfy.env. The publisher
+# password becomes a Komodo Variable only when Netdata is wired up to it.
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "ntfy.env"]
+
+# --- Automation ---
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+# --- Pre-deploy: create the state directory ---
+# Holds cache.db, auth.db and attachments/. Created explicitly so a mistyped
+# path fails loudly instead of producing an empty root-owned directory and an
+# ntfy that silently loses every user on redeploy.
+[stack.config.pre_deploy]
+path = ""
+command = "mkdir -p /mnt/docker-data/appdata/ntfy"
+shell_mode = true
+
+
+[[stack]]
+name = "authentik"
+tags = ["platform", "security"]
+[stack.config]
+server = "pve-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/platform/authentik"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+# Two secrets, both Komodo Variables with "Secret" enabled. Create BOTH before
+# the first deploy or the stack will not start:
+#
+#   AUTHENTIK_SECRET_KEY   openssl rand -base64 60 | tr -d '\n'
+#                          Signs sessions and tokens. Rotating it later logs
+#                          everyone out and invalidates issued tokens.
+#
+#   AUTHENTIK_PG_PASS      openssl rand -base64 36
+#                          ⚠️ Postgres sets this at initdb time ONLY.
+#                          Changing it after the first deploy does not change
+#                          the database password, it just stops the server and
+#                          worker authenticating. Same trap as immich.
+#
+# Avoid `$` in both values. Compose applies variable substitution to the
+# values it reads from --env-file, so a `$` is eaten on the way through —
+# the mechanism that mangled TRAEFIK_DASHBOARD_AUTH. base64 output can contain
+# `+` and `/` but never `$`, so the commands above are safe as written.
+environment = """
+AUTHENTIK_SECRET_KEY=[[AUTHENTIK_SECRET_KEY]]
+AUTHENTIK_PG_PASS=[[AUTHENTIK_PG_PASS]]
+"""
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "authentik.env"]
+
+# --- Automation ---
+webhook_enabled = false
+
+# ⚠️ auto_update is OFF, matching immich rather than the *arr stacks.
+#
+# Authentik runs database migrations on version bumps and publishes breaking
+# changes between date-versioned releases. An unattended 03:00 update to the
+# thing that controls login can lock you out of everything behind it, with the
+# recovery path also behind it. poll_for_updates stays ON so Komodo still
+# reports that a newer version exists.
+#
+# Deploy Authentik by hand, after reading the release notes.
+auto_update = false
+poll_for_updates = true
+
+# --- Pre-deploy: create the paths compose binds ---
+# Postgres in particular: Docker would create a missing source as a root-owned
+# directory, and postgres then fails initdb with a permissions error that
+# reads like a corrupt volume rather than a wrong path.
+[stack.config.pre_deploy]
+path = ""
+command = "mkdir -p /mnt/docker-data/appdata/authentik/postgres /mnt/docker-data/appdata/authentik/media /mnt/docker-data/appdata/authentik/certs /mnt/docker-data/appdata/authentik/custom-templates"
+shell_mode = true
+
+
+[[stack]]
 name = "netdata"
 tags = ["platform", "monitoring"]
 [stack.config]

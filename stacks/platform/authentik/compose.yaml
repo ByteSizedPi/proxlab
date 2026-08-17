@@ -1,0 +1,197 @@
+# Authentik — identity provider for the whole estate.
+#
+# Chosen over Authelia deliberately: Authelia does forward-auth only, which is
+# a door lock. Authentik also speaks OIDC, so apps that support it (Immich,
+# Seerr, Grafana) get a real login with your identity attached, not just a
+# gate in front of an anonymous request. That is worth the extra setup.
+#
+# ── Differences from the upstream compose.yml, and why ───────────────────
+#
+# Taken from https://docs.goauthentik.io/compose.yml (2026.5.6) with three
+# changes:
+#
+#   1. NO /var/run/docker.sock ON THE WORKER. Upstream mounts it so Authentik
+#      can manage Docker-based outposts. This deployment uses the EMBEDDED
+#      outpost, reached by Traefik over HTTP, so that capability is unused.
+#      Mounting the socket would hand a web-facing service root-equivalent
+#      control of the host for a feature that is not switched on. Every other
+#      stack here that needs the Docker API goes through its own socket-proxy;
+#      this one does not need the API at all.
+#
+#   2. NO PUBLISHED PORTS. Upstream publishes 9000/9443 on the host. Traefik
+#      reaches both services over `ingress` instead, same as every other
+#      service in this repo.
+#
+#   3. Bind mounts under ${CONFIG_ROOT} rather than a named `database` volume
+#      and ./data, so Authentik's state sits with every other app's state and
+#      is picked up by the same restic backup.
+#
+# ── ⚠️ THIS STACK ALONE DOES NOT PROTECT ANYTHING ───────────────────────
+#
+# Deploying this gets you Authentik running at auth.${ADMIN_DOMAIN} and
+# nothing else. Putting a service behind it is three further steps, in order:
+#
+#   1. In the Authentik UI: create a Proxy Provider (forward auth, single
+#      application), then an Application bound to it, then add that
+#      application to the `authentik Embedded Outpost`.
+#   2. Uncomment the `authentik` middleware in
+#      ../traefik/dynamic/middlewares.yml.
+#   3. Add `middlewares=authentik@file` to the target service's router.
+#
+# ⚠️ Step 2 needs a MANUAL traefik deploy. Komodo keeps a separate clone per
+# stack and only refreshes one whose own files changed, so editing
+# dynamic/*.yml leaves Traefik reading a stale copy. The full explanation is
+# at the top of ../traefik/dynamic/komodo.yml. Getting this wrong looks like a
+# middleware that does not exist, and an unresolvable middleware takes down
+# EVERY route through the entrypoint, not just the guarded one.
+
+services:
+  authentik-postgresql:
+    image: docker.io/library/postgres:16-alpine
+    container_name: authentik-postgresql
+
+    environment:
+      - POSTGRES_DB=authentik
+      - POSTGRES_USER=authentik
+      # ⚠️ Set at initdb time ONLY. Changing this Komodo Variable after the
+      # first deploy does NOT change the database password — it just makes
+      # the server and worker fail to authenticate against their own
+      # database. Same trap as immich's DB_PASSWORD.
+      - POSTGRES_PASSWORD=${AUTHENTIK_PG_PASS}
+
+    volumes:
+      - ${CONFIG_ROOT}/authentik/postgres:/var/lib/postgresql/data:Z
+
+    # Upstream's healthcheck, kept as-is. The $$ is escaped so compose passes
+    # the variable through to the shell inside the container instead of
+    # substituting it here.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - authentik-db
+
+  authentik-server:
+    image: ghcr.io/goauthentik/server:2026.5.6
+    container_name: authentik-server
+    command: server
+
+    # 512mb, per upstream. Authentik's Python workers use shared memory and
+    # the Docker default of 64mb is not enough.
+    shm_size: 512mb
+
+    environment:
+      - AUTHENTIK_POSTGRESQL__HOST=authentik-postgresql
+      - AUTHENTIK_POSTGRESQL__NAME=authentik
+      - AUTHENTIK_POSTGRESQL__USER=authentik
+      - AUTHENTIK_POSTGRESQL__PASSWORD=${AUTHENTIK_PG_PASS}
+      # Signs sessions and tokens. Generate once and never rotate casually —
+      # changing it invalidates every active session and every issued token.
+      - AUTHENTIK_SECRET_KEY=${AUTHENTIK_SECRET_KEY}
+      # Traefik terminates TLS, so Authentik itself serves plain HTTP on 9000.
+      - AUTHENTIK_DISABLE_STARTUP_ANALYTICS=true
+      - AUTHENTIK_ERROR_REPORTING__ENABLED=false
+
+    volumes:
+      - ${CONFIG_ROOT}/authentik/media:/media:Z
+      - ${CONFIG_ROOT}/authentik/custom-templates:/templates:Z
+
+    depends_on:
+      authentik-postgresql:
+        condition: service_healthy
+
+    # ⚠️ NO healthcheck BLOCK. The image already defines one, verified:
+    #   docker inspect ghcr.io/goauthentik/server:2026.5.6 \
+    #     -f '{{json .Config.Healthcheck}}'
+    #   -> {"Test":["CMD","ak","healthcheck"],"Interval":30s,"Timeout":30s,
+    #       "StartPeriod":60s,"Retries":3}
+    # Overriding a vendor healthcheck is what broke the netdata stack on
+    # 2026-08-16. Do not add one here.
+
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.authentik.rule=Host(`auth.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.authentik.loadbalancer.server.port=9000"
+      # ⚠️ NEVER put the authentik middleware on THIS router. Authentik is
+      # what answers the auth challenge; guarding it with itself is a
+      # redirect loop that locks you out of the login page.
+
+    networks:
+      - ingress
+      - authentik-db
+      # So the embedded outpost is reachable at http://authentik-server:9000
+      # from Traefik, and so OIDC clients elsewhere can reach it directly.
+      - media
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:2026.5.6
+    container_name: authentik-worker
+    command: worker
+    shm_size: 512mb
+
+    environment:
+      - AUTHENTIK_POSTGRESQL__HOST=authentik-postgresql
+      - AUTHENTIK_POSTGRESQL__NAME=authentik
+      - AUTHENTIK_POSTGRESQL__USER=authentik
+      - AUTHENTIK_POSTGRESQL__PASSWORD=${AUTHENTIK_PG_PASS}
+      - AUTHENTIK_SECRET_KEY=${AUTHENTIK_SECRET_KEY}
+      - AUTHENTIK_DISABLE_STARTUP_ANALYTICS=true
+      - AUTHENTIK_ERROR_REPORTING__ENABLED=false
+
+    volumes:
+      - ${CONFIG_ROOT}/authentik/media:/media:Z
+      - ${CONFIG_ROOT}/authentik/certs:/certs:Z
+      - ${CONFIG_ROOT}/authentik/custom-templates:/templates:Z
+
+    depends_on:
+      authentik-postgresql:
+        condition: service_healthy
+
+    # ⚠️ Upstream sets `user: root` here, needed only for the docker.sock
+    # mount that this deployment does not have. Left at the image default.
+
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - authentik-db
+      - media
+
+networks:
+  ingress:
+    external: true
+  media:
+    external: true
+
+  # Project-local and internal, so only the three services in this stack can
+  # reach the database. Same reasoning as the docker-api networks elsewhere in
+  # this repo: enforced by compose, not by remembering.
+  authentik-db:
+    driver: bridge
+    internal: true

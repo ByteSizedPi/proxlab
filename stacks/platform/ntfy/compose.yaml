@@ -1,0 +1,109 @@
+services:
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    container_name: ntfy
+    command: serve
+
+    # ── Configured by environment, not by server.yml ──────────────────────
+    #
+    # ntfy reads every setting from NTFY_<OPTION> as well as from
+    # /etc/ntfy/server.yml. Environment is used here deliberately: a
+    # server.yml would have to be a SINGLE-FILE bind mount, and this repo has
+    # already been bitten by that once. git replaces files rather than
+    # rewriting them, so a single-file mount pins the old inode and the
+    # container keeps serving stale config after a pull, with no error
+    # anywhere. See stacks/media/recyclarr/compose.yaml for the write-up.
+    environment:
+      - TZ=${TZ}
+
+      # Must match the Traefik router rule below. ntfy builds subscription
+      # links, attachment URLs and the web app's own API calls from this, so a
+      # wrong value produces a UI that loads and then cannot subscribe.
+      - NTFY_BASE_URL=https://ntfy.${ADMIN_DOMAIN}
+
+      # Container-internal. Traefik reaches it over `ingress`, so nothing is
+      # published to the host.
+      - NTFY_LISTEN_HTTP=:80
+
+      # ⚠️ Required behind a reverse proxy. Without it every request appears
+      # to come from Traefik's container IP, so ntfy's per-visitor rate limits
+      # apply to ALL traffic as though it were one client. The symptom is
+      # random 429s once more than one device subscribes.
+      - NTFY_BEHIND_PROXY=true
+
+      # State. All three live under the one bind mount below.
+      - NTFY_CACHE_FILE=/var/lib/ntfy/cache.db
+      - NTFY_AUTH_FILE=/var/lib/ntfy/auth.db
+      - NTFY_ATTACHMENT_CACHE_DIR=/var/lib/ntfy/attachments
+
+      # ⚠️ THIS IS THE ACCESS CONTROL. Default is read-write for anonymous
+      # users, which on a server reachable by anything on 10.42.0.0/24 means
+      # any device can publish to, and read, every topic. deny-all inverts
+      # that: nothing works until a user is created and granted a topic.
+      #
+      # Consequence to expect: immediately after first deploy the web UI
+      # loads and every action returns 403. That is correct, not broken. See
+      # ntfy.env for the user-creation commands.
+      - NTFY_AUTH_DEFAULT_ACCESS=deny-all
+
+      # Serves the login form in the web app. Without it there is no way to
+      # authenticate from a browser and only the CLI/API work.
+      - NTFY_ENABLE_LOGIN=true
+
+    volumes:
+      # A DIRECTORY, holding cache.db, auth.db and attachments/. Outside the
+      # repo because it is state, not config, and Komodo re-clones the repo on
+      # every deploy. Losing auth.db means recreating every user and ACL.
+      - ${CONFIG_ROOT}/ntfy:/var/lib/ntfy:Z
+
+    # ── ⚠️ NO healthcheck BLOCK, AND THIS ONE IS FORCED ──────────────────
+    #
+    # The image defines no healthcheck of its own, AND ships no HTTP client:
+    #
+    #   docker inspect binwiederhier/ntfy:latest -f '{{json .Config.Healthcheck}}'
+    #     -> null
+    #   command -v curl wget nc
+    #     -> (nothing)
+    #
+    # So there is no way to probe /v1/health from inside the container. The
+    # netdata stack learned the expensive half of this lesson on 2026-08-16:
+    # a healthcheck written from the docs rather than from the image reported
+    # a perfectly healthy container as unhealthy for 11 consecutive checks.
+    # Verify the image, or write no healthcheck. Do not guess.
+    #
+    # Nothing depends_on ntfy, so the absence costs nothing here.
+    restart: unless-stopped
+
+    security_opt:
+      - no-new-privileges:true
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ntfy.rule=Host(`ntfy.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.ntfy.loadbalancer.server.port=80"
+      # entrypoints/tls/middlewares omitted on purpose — websecure is
+      # asDefault and already carries tls, certresolver and secure-headers.
+      #
+      # ⚠️ Do NOT put the Authentik forward-auth middleware in front of this
+      # router when Authentik lands. Publishers are machines (Netdata, Komodo,
+      # Proxmox) sending POSTs with a token, and they cannot complete an
+      # interactive SSO redirect. ntfy's own deny-all + per-topic ACLs above
+      # ARE the access control here.
+
+    networks:
+      - ingress
+      # So Netdata and other in-cluster publishers can POST to http://ntfy
+      # directly, without leaving the host and coming back through Traefik.
+      - media
+
+networks:
+  ingress:
+    external: true
+  media:
+    external: true

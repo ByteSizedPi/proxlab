@@ -1,0 +1,138 @@
+# Seamless login on owned devices.
+#
+# Applied automatically by the authentik worker, which discovers every file
+# under /blueprints and re-applies it on change. This directory is mounted
+# there by ../compose.yaml, so this file IS the configuration — do not also
+# edit these values in the UI, or the next apply will overwrite them.
+#
+# ── What this fixes ─────────────────────────────────────────────────────
+#
+# Measured on the running instance 2026-08-17, before this file existed:
+#
+#   default-authentication-login       session_duration   = seconds=0
+#                                      remember_me_offset = seconds=0
+#                                      network_binding    = no_binding
+#   default-authentication-mfa-validation
+#                                      last_auth_threshold = seconds=0
+#   default-authentication-identification
+#                                      passwordless_flow  = None
+#
+# `session_duration: seconds=0` means the session dies when the browser
+# closes. Combined with `last_auth_threshold: seconds=0`, that is a full
+# username + password + MFA cycle every single browser restart. Maximum
+# friction, which is the opposite of the goal.
+#
+# ── ⚠️ THE PASSWORD PATH IS DELIBERATELY LEFT INTACT ────────────────────
+#
+# This blueprint ADDS a passwordless flow and links it from the login page.
+# It does NOT remove the password login. That is on purpose: akadmin is the
+# only administrator, and a passkey-only flow that fails on one device would
+# lock you out of authentik with no way back in except the database.
+#
+# Once you have confirmed the passkey works on every device you own, removing
+# the password fallback is what completes the "a borrowed device cannot save
+# credentials" property. Do it deliberately, with a second admin account
+# already enrolled. See docs/AUTH.md.
+
+version: 1
+
+metadata:
+  name: homelab - seamless auth
+  labels:
+    blueprints.goauthentik.io/description: |
+      Long sessions, network-bound, MFA not re-asked within 24h, and a
+      WebAuthn-first passwordless flow linked from the login page.
+
+entries:
+  # ── 1. Sessions that survive a browser restart ────────────────────────
+  #
+  # 30 days, extended to 60 by the "stay signed in" box, which appears only
+  # because remember_me_offset is now non-zero.
+  #
+  # network_binding: bind_asn_network terminates the session if the cookie is
+  # replayed from a different network. This is what enforces "an external
+  # device does not keep access". bind_asn_network_ip would be stricter but
+  # breaks on any DHCP lease change, which on a home network means logging in
+  # again for no security gain.
+  #
+  # geoip_binding is left at no_binding: it needs a GeoIP database that is not
+  # shipped here, and the network binding already covers the realistic case.
+  - model: authentik_stages_user_login.userloginstage
+    identifiers:
+      name: default-authentication-login
+    attrs:
+      session_duration: days=30
+      remember_me_offset: days=60
+      network_binding: bind_asn_network
+      geoip_binding: no_binding
+
+  # ── 2. Stop re-asking for MFA every time ──────────────────────────────
+  #
+  # Skips validation when a compatible device was used successfully in the
+  # last 24 hours.
+  #
+  # device_classes is deliberately NOT narrowed to webauthn here. This is the
+  # stage in the PASSWORD flow, and narrowing it would strand any future user
+  # who has TOTP but no passkey. The passwordless flow below is the one that
+  # is webauthn-only.
+  - model: authentik_stages_authenticator_validate.authenticatorvalidatestage
+    identifiers:
+      name: default-authentication-mfa-validation
+    attrs:
+      last_auth_threshold: hours=24
+
+  # ── 3. A WebAuthn-first stage, for the passwordless flow only ─────────
+  #
+  # webauthn is the only accepted class, so this stage identifies the user
+  # FROM the passkey. No username typed, no password.
+  - model: authentik_stages_authenticator_validate.authenticatorvalidatestage
+    id: passwordless-validate
+    identifiers:
+      name: homelab-passwordless-validate
+    attrs:
+      device_classes:
+        - webauthn
+      # Nothing to fall back to in a passwordless flow: a user with no passkey
+      # simply cannot use this path and must use the password login instead.
+      not_configured_action: deny
+      last_auth_threshold: seconds=0
+
+  # ── 4. The passwordless flow itself ───────────────────────────────────
+  - model: authentik_flows.flow
+    id: passwordless-flow
+    identifiers:
+      slug: homelab-passwordless
+    attrs:
+      name: homelab-passwordless
+      title: Unlock with your device
+      designation: authentication
+      # No identification stage, so no username is ever asked for.
+      authentication: require_unauthenticated
+
+  # Stage 1 of that flow: prove possession of the passkey.
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf passwordless-flow
+      stage: !KeyOf passwordless-validate
+      order: 10
+    attrs:
+      evaluate_on_plan: false
+
+  # Stage 2: create the session, reusing the same login stage tuned above so
+  # the 30-day duration and network binding apply here too.
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf passwordless-flow
+      stage: !Find [authentik_stages_user_login.userloginstage, [name, default-authentication-login]]
+      order: 20
+
+  # ── 5. Link it from the normal login page ─────────────────────────────
+  #
+  # Adds the "Use a security key" option to the identification stage. The
+  # password path stays exactly as it was; this is an additional route in,
+  # not a replacement. See the warning at the top of this file.
+  - model: authentik_stages_identification.identificationstage
+    identifiers:
+      name: default-authentication-identification
+    attrs:
+      passwordless_flow: !KeyOf passwordless-flow

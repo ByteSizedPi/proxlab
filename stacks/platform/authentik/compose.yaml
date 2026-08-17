@@ -127,6 +127,15 @@ services:
     volumes:
       - ${CONFIG_ROOT}/authentik/media:/media:Z
       - ${CONFIG_ROOT}/authentik/custom-templates:/templates:Z
+      # Declarative configuration, applied by the worker on change. Mounted as
+      # a SUBDIRECTORY of /blueprints so it sits alongside the 28 built-in
+      # blueprints rather than shadowing them — mounting over /blueprints
+      # itself would hide the defaults and break the flows that depend on them.
+      #
+      # From the repo, not CONFIG_ROOT, because this is configuration under
+      # review rather than state. Values set here win over the UI: the worker
+      # re-applies the file whenever it changes.
+      - ./blueprints:/blueprints/custom:ro,Z
 
     depends_on:
       authentik-postgresql:
@@ -183,6 +192,15 @@ services:
       - ${CONFIG_ROOT}/authentik/media:/media:Z
       - ${CONFIG_ROOT}/authentik/certs:/certs:Z
       - ${CONFIG_ROOT}/authentik/custom-templates:/templates:Z
+      # Declarative configuration, applied by the worker on change. Mounted as
+      # a SUBDIRECTORY of /blueprints so it sits alongside the 28 built-in
+      # blueprints rather than shadowing them — mounting over /blueprints
+      # itself would hide the defaults and break the flows that depend on them.
+      #
+      # From the repo, not CONFIG_ROOT, because this is configuration under
+      # review rather than state. Values set here win over the UI: the worker
+      # re-applies the file whenever it changes.
+      - ./blueprints:/blueprints/custom:ro,Z
 
     depends_on:
       authentik-postgresql:

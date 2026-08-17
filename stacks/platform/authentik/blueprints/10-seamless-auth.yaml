@@ -131,8 +131,32 @@ entries:
   # Adds the "Use a security key" option to the identification stage. The
   # password path stays exactly as it was; this is an additional route in,
   # not a replacement. See the warning at the top of this file.
+  #
+  # ⚠️ TWO NON-OBVIOUS THINGS HERE, BOTH FOUND BY THE IMPORT FAILING.
+  #
+  # 1. `user_fields` MUST be repeated even though it is not being changed.
+  #    A blueprint entry runs the model's FULL serializer, not a partial
+  #    update, so any field left out is treated as empty. Omitting it fails
+  #    validation with:
+  #      "When no user fields are selected, at least one source must be
+  #       selected"
+  #    which reads like a missing OAuth source rather than a field you
+  #    silently blanked. The current value is ['email', 'username'].
+  #
+  # 2. `!Find`, not `!KeyOf`. !KeyOf resolves an entry reference and works in
+  #    `identifiers` (see the flow stage bindings above), but it fails inside
+  #    `attrs` for a foreign key here. !Find resolves by querying instead and
+  #    returns the UUID the serializer wants.
+  #
+  # enable_remember_me additionally shows the "remember me" box on the
+  # identification page itself, which is a separate control from the login
+  # stage's remember_me_offset.
   - model: authentik_stages_identification.identificationstage
     identifiers:
       name: default-authentication-identification
     attrs:
-      passwordless_flow: !KeyOf passwordless-flow
+      user_fields:
+        - email
+        - username
+      passwordless_flow: !Find [authentik_flows.flow, [slug, homelab-passwordless]]
+      enable_remember_me: true

@@ -44,6 +44,26 @@
 # at the top of ../traefik/dynamic/komodo.yml. Getting this wrong looks like a
 # middleware that does not exist, and an unresolvable middleware takes down
 # EVERY route through the entrypoint, not just the guarded one.
+#
+# ── ⚠️ WHY THE KOMODO VARIABLES MUST EXIST BEFORE THE FIRST DEPLOY ──────
+#
+# This stack was deployed once on 2026-08-17 with neither Variable created,
+# on the assumption that a missing secret would fail the deploy. It does not.
+# Komodo neither fails nor writes an empty value — it passes the placeholder
+# through literally, so komodo.env contained:
+#
+#     AUTHENTIK_PG_PASS=[[AUTHENTIK_PG_PASS]]
+#
+# A valid non-empty string. Compose's ${VAR:?} guard therefore never fires.
+# All three containers came up HEALTHY, Authentik signed sessions with a key
+# that is guessable from this repo, and postgres initialised its database
+# using the placeholder as the superuser password. Because postgres applies
+# POSTGRES_PASSWORD at initdb time only, adding the real Variable afterwards
+# does not repair it — recovery was deleting the data directory.
+#
+# A healthy container is not evidence that the secrets resolved. The guard in
+# komodo/resources/stacks.toml pre_deploy now blocks this case; do not remove
+# it, and do not assume a missing secret will announce itself.
 
 services:
   authentik-postgresql:

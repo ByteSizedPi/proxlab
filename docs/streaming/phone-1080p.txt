@@ -1,0 +1,43 @@
+==========================================================
+ Jellyfin stream benchmark: phone-1080p
+ 2026-08-19T17:41:37+02:00
+==========================================================
+
+### Client
+
+  device        Johan's S25 FE
+  app           Jellyfin for Android 2.7.1
+  remote addr   172.22.0.8
+
+### Source file
+
+  title         Cliff's Edge
+  path          /data/media/tv/Common Side Effects (2025) {tvdb-436198}/Season 01/Common Side Effects (2025) - S01E09 - Cliffs Edge [AMZN][WEBDL-1080p][EAC3 5.1][h264]-FLUX.mkv
+  container     mkv
+  video         h264 1920x1080 High SDR
+  source rate   10.3 Mbit/s at 23.976 fps
+
+### Verdict
+
+  play method   DirectPlay
+  reason        n/a — no transcode
+
+### Transcode performance (first 20s excluded)
+
+  not transcoding — no encoder to measure
+
+### Server load (first 20s excluded)
+
+  container cpu mean 13.2%   peak 40.1%
+
+### Network
+
+  mean tx       10.9 Mbit/s over 175 s
+
+### Playback health
+
+  samples       84
+  stalled       0 samples (position did not advance while playing)
+
+  samples: docs/streaming/phone-1080p.tsv
+  session: docs/streaming/phone-1080p.session.json

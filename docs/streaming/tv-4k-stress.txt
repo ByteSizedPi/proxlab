@@ -1,0 +1,43 @@
+==========================================================
+ Jellyfin stream benchmark: tv-4k-stress
+ 2026-08-19T17:41:37+02:00
+==========================================================
+
+### Client
+
+  device        Samsung Smart TV
+  app           Jellyfin for Tizen 1.1.0
+  remote addr   172.22.0.8
+
+### Source file
+
+  title         Radio
+  path          /data/media/tv/Silo (2023) {tvdb-403245}/Season 03/Silo (2023) - S03E07 - Radio [ATVP][WEBDL-2160p][EAC3 Atmos 5.1][DV HDR10Plus][h265]-playWEB.mkv
+  container     mkv
+  video         hevc 3840x1606 Main 10 HDR
+  source rate   24.8 Mbit/s at 23.976 fps
+
+### Verdict
+
+  play method   DirectPlay
+  reason        n/a — no transcode
+
+### Transcode performance (first 20s excluded)
+
+  not transcoding — no encoder to measure
+
+### Server load (first 20s excluded)
+
+  container cpu mean 17.1%   peak 35.7%
+
+### Network
+
+  mean tx       26.0 Mbit/s over 179 s
+
+### Playback health
+
+  samples       84
+  stalled       0 samples (position did not advance while playing)
+
+  samples: docs/streaming/tv-4k-stress.tsv
+  session: docs/streaming/tv-4k-stress.session.json

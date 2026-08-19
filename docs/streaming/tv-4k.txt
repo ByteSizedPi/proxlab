@@ -1,0 +1,48 @@
+==========================================================
+ Jellyfin stream benchmark: tv-4k
+ 2026-08-19T17:41:37+02:00
+==========================================================
+
+### Client
+
+  device        Samsung Smart TV
+  app           Jellyfin for Tizen 1.1.0
+  remote addr   172.22.0.8
+
+### Source file
+
+  title         Who Are You?
+  path          /data/media/tv/Silo (2023) {tvdb-403245}/Season 03/Silo (2023) - S03E01 - Who Are You [ATVP][WEBDL-2160p][EAC3 Atmos 5.1][h265]-TheBlackKing.mkv
+  container     mkv
+  video         hevc 3840x1606 Main SDR
+  source rate   10.0 Mbit/s at 23.976 fps
+
+### Verdict
+
+  play method   Transcode
+  reason        SecondaryAudioNotSupported
+  output codec  hevc
+  actually      REMUX ONLY. Video and audio are both copied.
+              No re-encoding happened, so the cpu figure below is muxing, not encoding.
+
+### Transcode performance (first 20s excluded)
+
+  encode fps    mean 632.0   min 632.0   max 632.0
+  output rate   17.5 Mbit/s
+  realtime      26.36x  — but the video is copied, so this is mux throughput, not encode speed
+
+### Server load (first 20s excluded)
+
+  container cpu mean 31.5%   peak 78.6%
+
+### Network
+
+  mean tx       10.4 Mbit/s over 179 s
+
+### Playback health
+
+  samples       74
+  stalled       0 samples (position did not advance while playing)
+
+  samples: docs/streaming/tv-4k.tsv
+  session: docs/streaming/tv-4k.session.json

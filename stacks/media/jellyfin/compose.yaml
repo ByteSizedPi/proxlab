@@ -38,6 +38,35 @@ services:
       - ingress
       - media
 
+    # ── Real client addresses, configured in Jellyfin, not here ──────────
+    #
+    # Traefik sets X-Forwarded-For correctly, but Jellyfin ignores it unless
+    # the proxy is trusted. Until 2026-08-19 every session logged
+    # `IP address: 172.22.0.8` — the Traefik container — so no access log
+    # could tell the TV from the phone.
+    #
+    # Fixed in Jellyfin's own network config, which lives in the /config
+    # volume and is NOT part of this repo:
+    #
+    #   KnownProxies        = ["traefik"]
+    #   LocalNetworkSubnets = ["10.0.0.0/24", "10.42.0.0/24",
+    #                          "100.64.0.0/10", "172.22.0.0/16"]
+    #
+    # Set via POST /System/Configuration/network, then a container restart.
+    # Verified afterwards: a session from the laptop reports 10.42.0.145.
+    #
+    # ⚠️ LocalNetworkSubnets is not optional once KnownProxies is set. With it
+    # empty, Jellyfin auto-detects local subnets from its OWN interfaces, which
+    # inside the container are only the 172.x docker networks. The moment it
+    # starts seeing real 10.x client addresses it would classify every LAN
+    # client as REMOTE. Harmless today because both RemoteClientBitrateLimit
+    # values are 0, but it would silently cap playback the day one is set.
+    #
+    # ⚠️ `traefik` is a hostname resolved on the `ingress` network at config
+    # load. If the Traefik container is recreated with a new address while
+    # Jellyfin keeps running, trust breaks until Jellyfin restarts. A container
+    # IP was rejected here for the same reason, in reverse.
+
     labels:
       - "traefik.enable=true"
       # TEMPORARY: on ADMIN_DOMAIN like everything else, not the public

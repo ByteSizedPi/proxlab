@@ -1,0 +1,43 @@
+==========================================================
+ Jellyfin stream benchmark: phone-4k
+ 2026-08-19T17:41:37+02:00
+==========================================================
+
+### Client
+
+  device        Johan's S25 FE
+  app           Jellyfin for Android 2.7.1
+  remote addr   172.22.0.8
+
+### Source file
+
+  title         Who Are You?
+  path          /data/media/tv/Silo (2023) {tvdb-403245}/Season 03/Silo (2023) - S03E01 - Who Are You [ATVP][WEBDL-2160p][EAC3 Atmos 5.1][h265]-TheBlackKing.mkv
+  container     mkv
+  video         hevc 3840x1606 Main SDR
+  source rate   10.0 Mbit/s at 23.976 fps
+
+### Verdict
+
+  play method   DirectPlay
+  reason        n/a — no transcode
+
+### Transcode performance (first 20s excluded)
+
+  not transcoding — no encoder to measure
+
+### Server load (first 20s excluded)
+
+  container cpu mean 11.8%   peak 41.4%
+
+### Network
+
+  mean tx       11.2 Mbit/s over 167 s
+
+### Playback health
+
+  samples       86
+  stalled       0 samples (position did not advance while playing)
+
+  samples: docs/streaming/phone-4k.tsv
+  session: docs/streaming/phone-4k.session.json

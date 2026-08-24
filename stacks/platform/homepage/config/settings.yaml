@@ -7,6 +7,13 @@ description: pve-prod service dashboard
 # Group ordering is taken from services.yaml top to bottom rather than being
 # re-sorted alphabetically here.
 layout:
+  # FIRST, and a bookmark group rather than a service group. `iconsOnly` works
+  # on bookmark groups only, which is why the top strip lives in
+  # bookmarks.yaml. `header: false` drops the "Quick Links" title, so the row
+  # reads as a strip of icons rather than a section.
+  Quick Links:
+    iconsOnly: true
+    header: false
   Media:
     style: row
     columns: 4

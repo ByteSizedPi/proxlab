@@ -1,0 +1,57 @@
+# Homepage bookmarks.
+# Docs: https://gethomepage.dev/configs/bookmarks/
+#
+# WHY THIS FILE EXISTS
+#
+# JJ asked for a row of the most-used links at the top of the dashboard, as
+# icons only. Homepage cannot do that with services: `iconsOnly` applies to
+# BOOKMARK groups only. So the top strip is bookmarks that point at the same
+# hrefs as the service cards further down.
+#
+# It is also NOT a "recently used" row, and cannot be. Homepage records no
+# clicks and has no dynamic panel. This list is static and hand-ordered, so
+# put the link you open every day first and delete the ones you never touch.
+#
+# ⚠️ The group name must differ from every group name in services.yaml. The
+# docs are explicit: "Using the same name for a service and bookmark group can
+# cause unexpected behavior like a bookmark group being hidden."
+#
+# The `- icon:` list nesting below is required, not a typo. A bookmark name
+# takes a LIST of one mapping.
+#
+# Icon names resolve against the dashboard-icons CDN, same as services.yaml.
+# `description` is what the hover tooltip shows once the labels are gone.
+
+- Quick Links:
+    - Jellyfin:
+        - icon: jellyfin.png
+          href: https://jellyfin.admin.jjventer.co.za
+          description: Watch something
+    - Seerr:
+        - icon: jellyseerr.png
+          href: https://seerr.admin.jjventer.co.za
+          description: Request something
+    - Sonarr:
+        - icon: sonarr.png
+          href: https://sonarr.admin.jjventer.co.za
+          description: TV
+    - Radarr:
+        - icon: radarr.png
+          href: https://radarr.admin.jjventer.co.za
+          description: Movies
+    - qBittorrent:
+        - icon: qbittorrent.png
+          href: https://qbittorrent.admin.jjventer.co.za
+          description: Download queue
+    - Prowlarr:
+        - icon: prowlarr.png
+          href: https://prowlarr.admin.jjventer.co.za
+          description: Indexers
+    - Komodo:
+        - icon: mdi-lambda
+          href: https://komodo.admin.jjventer.co.za
+          description: Deploys
+    - Traefik:
+        - icon: traefik.png
+          href: https://traefik.admin.jjventer.co.za
+          description: Proxy and TLS

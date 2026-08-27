@@ -1,0 +1,82 @@
+# Route to the Proxmox web UI — the third service Traefik fronts that it does
+# NOT discover through Docker labels.
+#
+# Same shape as adguard.yml, same cause: `pve` is the hypervisor at
+# 10.42.0.10, not a container on pve-prod, so there is nothing here for
+# Traefik to attach labels to.
+#
+# ── Why this route exists ────────────────────────────────────────────────
+#
+# Until 2026-08-27 `proxmox.admin.jjventer.co.za` was a specific rewrite in
+# AdGuard pointing straight at the host, which made it the one admin name that
+# bypassed Traefik entirely. It therefore served Proxmox's own self-signed
+# certificate and produced a browser warning on every visit, while every other
+# admin name had a valid Let's Encrypt certificate.
+#
+# The matching change is in AdGuard: the specific
+# `proxmox.admin.jjventer.co.za` rewrite was DELETED so the name falls through
+# to the `*.admin.jjventer.co.za` wildcard and arrives here instead. Putting
+# the rewrite back would silently bypass this router and undo the TLS.
+#
+# ⚠️ ORDER MATTERS. Deploy the traefik stack BEFORE deleting the rewrite. The
+# other way round leaves proxmox.admin answering 404 from Traefik until the
+# deploy lands.
+#
+# ── Why insecureSkipVerify is correct here and not lazy ──────────────────
+#
+# Proxmox serves HTTPS on 8006 with a self-signed certificate it generates
+# itself. Traefik must therefore either trust that certificate or skip
+# verification. Skipping is the honest choice: the hop is Traefik on
+# 10.42.0.11 to pve on 10.42.0.10, one switch apart on a subnet with no other
+# tenants, and the alternative is pinning a certificate that Proxmox
+# regenerates on its own schedule. What the browser sees is unaffected — that
+# leg is the wildcard certificate, fully validated.
+#
+# ⚠️ scheme MUST be https and port MUST be 8006. Proxmox does not serve plain
+# HTTP on 8006; a http:// upstream here fails the handshake and Traefik
+# reports a 502 with nothing useful in the log.
+#
+# ⚠️ The upstream is a hardcoded LAN IP, and the hostname is hardcoded rather
+# than ${ADMIN_DOMAIN}. Traefik's file provider does NOT do environment
+# substitution. Same two constraints as adguard.yml and komodo.yml.
+#
+# ⚠️ Changing this file does NOT redeploy the traefik stack. Komodo only
+# refreshes a stack whose compose.yaml changed, so a route edited here stays
+# invisible to Traefik until you deploy the traefik stack by hand. Full
+# explanation in komodo.yml.
+
+http:
+  routers:
+    proxmox:
+      rule: "Host(`proxmox.admin.jjventer.co.za`)"
+      service: proxmox
+      # No entryPoints / tls / middlewares block on purpose: websecure is
+      # asDefault and already carries tls + certresolver + secure-headers.
+      #
+      # No auth middleware either — Proxmox has its own login and its own
+      # two-factor. Stacking authentik in front would mean two prompts for one
+      # service, and it would break the API token path that anything
+      # automating Proxmox uses. Same call as adguard.yml.
+
+  services:
+    proxmox:
+      loadBalancer:
+        servers:
+          - url: "https://10.42.0.10:8006"
+        serversTransport: proxmox-selfsigned
+        # Proxmox pins a console session to the node that issued the ticket.
+        # Irrelevant with one server in the pool, and stated here so that
+        # adding a second node later is a deliberate decision rather than an
+        # intermittent "console disconnects" bug.
+        passHostHeader: true
+
+  serversTransports:
+    proxmox-selfsigned:
+      insecureSkipVerify: true
+
+## Break-glass path, if Traefik is down: https://10.42.0.10:8006/
+##
+## Proxmox keeps serving its own UI on 8006 regardless of this route, so a
+## broken Traefik config never locks you out of the hypervisor. That matters
+## here more than for most services: pve is the recovery path for everything
+## else, including the VM that runs Traefik.

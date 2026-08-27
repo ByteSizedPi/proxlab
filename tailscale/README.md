@@ -12,7 +12,7 @@ GitHub Action at the bottom of this file.
 | `pve` | `100.65.36.82` | `10.42.0.10` | Proxmox host | `tag:infra` |
 | `pve-prod` | `100.91.183.47` | `10.42.0.11` | Docker service host | `tag:services` |
 | `pve-tailscale-lxc` | `100.78.160.15` | `10.42.0.13` | subnet router, exit node | `tag:router` |
-| `adguard` | _pending_ | `10.42.0.12` | DNS, split-DNS target | `tag:infra` |
+| `adguard` | `100.66.112.68` | `10.42.0.12` | DNS, split-DNS target | `tag:infra` |
 | `jjserver` | `100.68.211.32` | `10.0.0.101` | old service host, NAS | `tag:infra` |
 | `jj-laptop` | `100.107.4.99` | roams | personal | none, stays user-owned |
 | `johans-s25-fe` | `100.103.148.59` | roams | personal | none, stays user-owned |
@@ -156,6 +156,13 @@ tailscale up --authkey=tskey-auth-... --advertise-tags=tag:services --accept-rou
 
 # 3. jjserver.
 tailscale up --authkey=tskey-auth-... --advertise-tags=tag:infra --accept-routes=false
+
+# 3b. adguard, LXC 100, from pve. Do this one BEFORE pve, so that if it comes
+#     back wrong you still have a working shell on the hypervisor to fix it.
+#     ⚠️ If this node drops off the tailnet, split DNS has no server and every
+#     *.admin name stops resolving for off-LAN devices. Verify immediately:
+#        dig @<adguard tailnet ip> komodo.admin.jjventer.co.za +short
+pct exec 100 -- tailscale up --authkey=tskey-auth-... --advertise-tags=tag:infra --accept-routes=false
 
 # 4. pve last. Do this one from the Proxmox web console, not over SSH — it is
 #    the recovery path for everything above, so it is the one node you do not

@@ -28,9 +28,11 @@
   // nobody owns is rejected at `tailscale up`, which reads as an auth failure
   // rather than a policy error.
   "tagOwners": {
-    // Hypervisor and NAS. Hosts whose job is to keep other things running.
+    // Hypervisor, NAS and DNS. Hosts whose job is to keep other things
+    // running.
     //   pve       10.42.0.10   Proxmox host, out-of-band recovery path
     //   jjserver  10.0.0.101   old service host, retiring to a NAS role
+    //   adguard   10.42.0.12   LXC 100, DNS and the split-DNS target
     "tag:infra": ["autogroup:admin"],
 
     // The Docker service host that runs the workloads.
@@ -116,11 +118,26 @@
   // a personal device, or to each other beyond grant 3. Servers answer; they
   // do not initiate. Removing that path is most of the value here.
   //
-  // Tailscale SSH is also absent. It would replace the key-based SSH aliases
-  // in ~/.ssh/config with policy-driven access and per-session audit, which
-  // is a real improvement, but it needs `tailscale up --ssh` on every host
-  // and it changes how you log in. Add it as its own change, not folded into
-  // the tagging rollout:
+  // Tailscale SSH is also absent, and that has a live consequence.
+  //
+  // ⚠️ LXC 101 already runs with `RunSSH: true` and advertises 3 SSH host
+  // keys. It is the ONLY node in the tailnet that does, and nothing in this
+  // repo asked for it — the community install script turned it on. Today it
+  // works because the console policy is still allow-all. The moment this
+  // file is applied, Tailscale SSH to LXC 101 stops, because a deny-by-
+  // default policy with no `ssh` block denies it.
+  //
+  // Decide before Phase 1, not after:
+  //   a. Turn it off, so every node matches:  tailscale set --ssh=false
+  //   b. Turn it on everywhere and uncomment the block below.
+  // Option (a) is the default recommendation. Key-based SSH via the
+  // ~/.ssh/config aliases already works, and `pct exec` from pve reaches the
+  // container without any SSH at all.
+  //
+  // The block itself would replace the key-based aliases with policy-driven
+  // access and per-session audit, which is a real improvement, but it needs
+  // `tailscale up --ssh` on every host and it changes how you log in. Add it
+  // as its own change, not folded into the tagging rollout:
   //
   //   "ssh": [
   //     {

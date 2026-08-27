@@ -12,6 +12,7 @@ GitHub Action at the bottom of this file.
 | `pve` | `100.65.36.82` | `10.42.0.10` | Proxmox host | `tag:infra` |
 | `pve-prod` | `100.91.183.47` | `10.42.0.11` | Docker service host | `tag:services` |
 | `pve-tailscale-lxc` | `100.78.160.15` | `10.42.0.13` | subnet router, exit node | `tag:router` |
+| `adguard` | _pending_ | `10.42.0.12` | DNS, split-DNS target | `tag:infra` |
 | `jjserver` | `100.68.211.32` | `10.0.0.101` | old service host, NAS | `tag:infra` |
 | `jj-laptop` | `100.107.4.99` | roams | personal | none, stays user-owned |
 | `johans-s25-fe` | `100.103.148.59` | roams | personal | none, stays user-owned |
@@ -19,17 +20,23 @@ GitHub Action at the bottom of this file.
 Already configured and **not** changed by this policy:
 
 - MagicDNS is on tailnet-wide, suffix `tail2d486a.ts.net`.
-- Split DNS already routes `admin.jjventer.co.za` to AdGuard at `10.42.0.12`,
-  and `jj.home` to jjserver. Note the AdGuard entry points at a LAN address,
-  so a device only resolves admin names if it also accepts the
-  `10.42.0.0/24` route.
+- Split DNS routes `admin.jjventer.co.za` to AdGuard and `jj.home` to
+  jjserver. **Both entries must name a tailnet address, never a LAN one.**
+  A LAN address here means a device can only resolve those names while it
+  also carries the `10.42.0.0/24` route, which reintroduces the
+  `--accept-routes` collision. Changed 2026-08-27.
 - LXC 101 advertises `10.42.0.0/24`, `0.0.0.0/0` and `::/0`.
 
 ## Why three Tailscale nodes and not one
 
 It looks like sprawl and it is not. The rule is: install Tailscale directly
 on hosts you administer, and use a subnet router only for things that cannot
-run it themselves (the AdGuard LXC, the AX10, TVs, printers).
+run it themselves (the AX10, TVs, printers).
+
+⚠️ The AdGuard LXC was on that "cannot" list until 2026-08-27, and it did not
+belong there. An unprivileged Proxmox LXC runs Tailscale fine once
+`/dev/net/tun` is bound in. Nothing had added the device. Before assuming a
+container cannot join the tailnet, check whether anyone ever tried.
 
 Each node has a job the others cannot do:
 
@@ -44,6 +51,59 @@ This was load-bearing on 2026-08-16: `jj-laptop` roamed onto the upstream
 `17 Mozart` network, lost every route to `10.42.0.0/24`, and `ssh pve-prod-ts`
 kept working because `pve-prod` is a tailnet node in its own right. Collapsing
 to a single subnet router would have meant no access at all.
+
+## Adding the AdGuard LXC to the tailnet
+
+Done on 2026-08-27. Recorded because the same three steps apply to any other
+unprivileged LXC that needs to join.
+
+⚠️ Step 1 restarts LXC 100, so the household loses DNS for a few seconds. Do
+it when nobody is mid-stream.
+
+```sh
+# 1. On pve. Bind the tun device in, then restart the container.
+cat >> /etc/pve/lxc/100.conf <<'EOF'
+lxc.cgroup2.devices.allow: c 10:200 rwm
+lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file
+EOF
+# `pct reboot`, not `pct restart` — the latter does not exist and the error
+# arrives AFTER the append has already run, so re-running duplicates the lines.
+pct reboot 100
+pct exec 100 -- test -e /dev/net/tun && echo tun-present
+
+# 2. ⚠️ FIRST fix the container's own resolver, or the install cannot even
+#    resolve tailscale.com. LXC 100 had no `nameserver` of its own, so
+#    Proxmox copied pve's /etc/resolv.conf, which names MagicDNS at
+#    100.100.100.100 — an address the container cannot reach until it is
+#    already on the tailnet. A latent fault: apt inside LXC 100 was broken
+#    the same way, long before any of this.
+#
+#    `pct set` only takes effect at next start, so write the live file too.
+pct set 100 --nameserver "127.0.0.1 9.9.9.9"
+pct exec 100 -- sh -c 'printf "nameserver 127.0.0.1\nnameserver 9.9.9.9\n" > /etc/resolv.conf'
+pct exec 100 -- getent hosts tailscale.com
+
+# 3. Install and join. This prints a URL — open it and approve the machine.
+#    No auth key needed, and no tag: no node in this tailnet carries one yet.
+pct exec 100 -- sh -c 'curl -fsSL https://tailscale.com/install.sh | sh'
+# setsid so the login keeps waiting after pct exec returns.
+pct exec 100 -- sh -c 'setsid sh -c "tailscale up --hostname=adguard --accept-routes=false > /tmp/tsup.log 2>&1" < /dev/null &'
+sleep 12 && pct exec 100 -- cat /tmp/tsup.log
+
+# 4. Read the address it was given.
+pct exec 100 -- tailscale ip -4
+```
+
+Then, in the admin console, change **DNS → Split DNS** for
+`admin.jjventer.co.za` from `10.42.0.12` to that address, and set AdGuard's
+rewrites (see docs/ARCHITECTURE.md, "Naming scheme").
+
+Disable Tailscale key expiry on this node in the console. An expired key on
+the resolver takes DNS down for every device that is not on the LAN, and the
+symptom looks nothing like an expired key.
+
+Rollback: `pct exec 100 -- tailscale down`, point split DNS back at
+`10.42.0.12`, and put the AdGuard rewrites back to `10.42.0.11`.
 
 ## Rollout order
 

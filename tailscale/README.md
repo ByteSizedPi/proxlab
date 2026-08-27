@@ -66,7 +66,9 @@ cat >> /etc/pve/lxc/100.conf <<'EOF'
 lxc.cgroup2.devices.allow: c 10:200 rwm
 lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file
 EOF
-pct restart 100
+# `pct reboot`, not `pct restart` — the latter does not exist and the error
+# arrives AFTER the append has already run, so re-running duplicates the lines.
+pct reboot 100
 pct exec 100 -- test -e /dev/net/tun && echo tun-present
 
 # 2. Install and join. This prints a URL — open it and approve the machine.

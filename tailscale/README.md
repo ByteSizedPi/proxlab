@@ -71,12 +71,26 @@ EOF
 pct reboot 100
 pct exec 100 -- test -e /dev/net/tun && echo tun-present
 
-# 2. Install and join. This prints a URL — open it and approve the machine.
+# 2. ⚠️ FIRST fix the container's own resolver, or the install cannot even
+#    resolve tailscale.com. LXC 100 had no `nameserver` of its own, so
+#    Proxmox copied pve's /etc/resolv.conf, which names MagicDNS at
+#    100.100.100.100 — an address the container cannot reach until it is
+#    already on the tailnet. A latent fault: apt inside LXC 100 was broken
+#    the same way, long before any of this.
+#
+#    `pct set` only takes effect at next start, so write the live file too.
+pct set 100 --nameserver "127.0.0.1 9.9.9.9"
+pct exec 100 -- sh -c 'printf "nameserver 127.0.0.1\nnameserver 9.9.9.9\n" > /etc/resolv.conf'
+pct exec 100 -- getent hosts tailscale.com
+
+# 3. Install and join. This prints a URL — open it and approve the machine.
 #    No auth key needed, and no tag: no node in this tailnet carries one yet.
 pct exec 100 -- sh -c 'curl -fsSL https://tailscale.com/install.sh | sh'
-pct exec 100 -- tailscale up --hostname=adguard --accept-routes=false
+# setsid so the login keeps waiting after pct exec returns.
+pct exec 100 -- sh -c 'setsid sh -c "tailscale up --hostname=adguard --accept-routes=false > /tmp/tsup.log 2>&1" < /dev/null &'
+sleep 12 && pct exec 100 -- cat /tmp/tsup.log
 
-# 3. Read the address it was given.
+# 4. Read the address it was given.
 pct exec 100 -- tailscale ip -4
 ```
 

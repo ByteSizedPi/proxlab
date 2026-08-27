@@ -70,6 +70,12 @@ services:
       # easy to hit while iterating on a stack.
       - "--entrypoints.websecure.http.tls.domains[0].main=${ADMIN_DOMAIN}"
       - "--entrypoints.websecure.http.tls.domains[0].sans=*.${ADMIN_DOMAIN}"
+      # Second wildcard, for the LAN-reachable zone. A separate certificate
+      # rather than a SAN on the first, because the two zones are different
+      # registrable names under jjventer.co.za and Traefik orders one cert per
+      # `domains[n]` entry. Same DNS-01 resolver, same Cloudflare token.
+      - "--entrypoints.websecure.http.tls.domains[1].main=${HOME_DOMAIN}"
+      - "--entrypoints.websecure.http.tls.domains[1].sans=*.${HOME_DOMAIN}"
       # Applied to every router on this entrypoint.
       #
       # ⚠️ Middlewares named here must EXIST or every route through this

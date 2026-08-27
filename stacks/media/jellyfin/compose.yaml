@@ -69,11 +69,21 @@ services:
 
     labels:
       - "traefik.enable=true"
-      # TEMPORARY: on ADMIN_DOMAIN like everything else, not the public
-      # jjventer.co.za split it should eventually live on — that cert setup
-      # is still an open todo item (see homelab-bells-whistles-todo memory).
-      # Swap this one line once that exists.
+      # Jellyfin is the one service published in BOTH zones, and the reasons
+      # differ per zone. See stacks/common.env for the split.
+      #
+      #   admin -> pve-prod's tailnet address. Watching from outside the house.
+      #   home  -> pve-prod's LAN address. The TV cannot run Tailscale, and a
+      #            high-bitrate remux should not pay WireGuard's encryption
+      #            cost and 1280-byte MTU to cross a single LAN hop.
+      #
+      # Still NOT the public jjventer.co.za zone. That needs the VPS, which is
+      # deferred until pve-prod is always on (see docs/ARCHITECTURE.md).
       - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${ADMIN_DOMAIN}`)"
+      # A second router on the same container needs an explicit `.service`,
+      # because naming a service below stops Traefik inferring one per router.
+      - "traefik.http.routers.jellyfin-home.rule=Host(`jellyfin.${HOME_DOMAIN}`)"
+      - "traefik.http.routers.jellyfin-home.service=jellyfin"
       - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
       # entrypoints/tls/middlewares deliberately omitted — see the comment in
       # prowlarr/compose.yaml, same reasoning applies here.

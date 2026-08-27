@@ -87,17 +87,53 @@ people, and it changes the deploy mechanism (see "Komodo" below).
 
 ## Naming scheme
 
-```
-*.admin.jjventer.co.za    infrastructure, tailnet only, never in public DNS
-                          proxmox, adguard, komodo, *arr, anything only I use
+Revised 2026-08-27. Three zones, split on **how a client reaches the host**
+rather than on how much the service is trusted.
 
-*.jjventer.co.za          public services, resolves to the VPS
-                          jellyfin, and whatever else gets shared
+```
+*.admin.jjventer.co.za    -> 100.91.183.47   pve-prod's TAILNET address
+                          infrastructure. proxmox, adguard, komodo, *arr.
+                          Any device on the tailnet, from anywhere.
+                          Never in public DNS.
+
+*.home.jjventer.co.za     -> 10.42.0.11      pve-prod's LAN address
+                          things a device WITHOUT Tailscale must reach.
+                          The TV, a console, a guest laptop.
+                          Only reachable from the AX10 SSID.
+
+*.jjventer.co.za          -> the VPS
+                          public services. Still deferred, see below.
 ```
 
-Splitting on the `admin.` label rather than per-service means the boundary is
-structural: a name either has it or it doesn't, and there's no per-service
-decision to get wrong later.
+Splitting on the label rather than per-service keeps the boundary structural:
+a name either carries `admin.` or `home.` or neither, and there is no
+per-service decision to get wrong later.
+
+### Why the admin zone points at a tailnet address
+
+`pve-prod` runs Tailscale in its own right. Until 2026-08-27 the admin names
+still resolved to `10.42.0.11`, its LAN address, which forced every client to
+carry the `10.42.0.0/24` subnet route. That route then collided with the
+physical path on `jj-laptop` (see the `--accept-routes` section below), and
+the workaround was to toggle a flag per SSID.
+
+Addressing a Tailscale host by its tailnet address removes the collision. The
+rule this encodes: **a host that runs Tailscale is addressed by its tailnet
+address. The subnet router exists only for devices that cannot run Tailscale.**
+
+The `100.x` address is an identity, not a detour. Two peers on the same LAN
+connect directly over that LAN. Confirm with `tailscale ping pve-prod`, which
+reports `direct` at home and `DERP` only when a network blocks direct UDP.
+
+### Why Jellyfin has a name in both zones
+
+It is the one service with a real claim on each. The TV cannot run Tailscale,
+so it needs the `home` name. Watching from outside the house needs the `admin`
+name. A high-bitrate remux on the LAN should also not pay WireGuard's
+encryption cost and 1280-byte MTU to cross a single hop.
+
+Do not copy this pattern by default. Every other service belongs in exactly
+one zone.
 
 ## DNS: correcting a wrong assumption
 
@@ -114,17 +150,48 @@ And if the network were flat, removing the rewrites would protect nothing
 anyway — anyone could port-scan the subnet. The control is the network
 boundary and Tailscale ACLs, never the absence of a DNS record.
 
-So: keep AdGuard as the LAN ad blocker, keep the rewrites. Optionally add
-Tailscale split-DNS (`admin.jjventer.co.za` → AdGuard) so tailnet clients
-resolve admin names wherever they are. AdGuard rewrites are global rather
-than per-client, so genuinely hiding the names would need a second resolver —
-not worth it for an information leak of this size.
+So: keep AdGuard as the LAN ad blocker, keep the rewrites. AdGuard rewrites
+are global rather than per-client, so genuinely hiding the names would need a
+second resolver — not worth it for an information leak of this size.
 
-### `--accept-routes` — on for remote devices, OFF for the laptop
+### AdGuard must be a tailnet node, not just a LAN address
+
+Tailscale split DNS sends `admin.jjventer.co.za` to AdGuard. Until 2026-08-27
+it named `10.42.0.12`, a LAN address, so a client could only resolve admin
+names if it also carried the `10.42.0.0/24` route. The resolver had exactly
+the problem the services had.
+
+LXC 100 now runs Tailscale, and split DNS names its tailnet address instead.
+AdGuard already binds `0.0.0.0:53`, so it serves on `tailscale0` with no
+AdGuard-side change.
+
+The container is unprivileged, so it needs `/dev/net/tun` bound in. The two
+lines are the same ones LXC 101 has carried since it was built:
+
+```
+lxc.cgroup2.devices.allow: c 10:200 rwm
+lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file
+```
+
+Userspace networking mode is not an option here. It does not serve UDP at the
+tailnet address, and DNS is UDP.
+
+### `--accept-routes` — OFF everywhere, as of 2026-08-27
 
 `tailscale status` warns that peers advertise routes while `--accept-routes`
-is false. Enable it on the **phone and any remote device** — that's how they
-reach `10.42.0.0/24`.
+is false. Ignore the warning. Leave the flag off on every device.
+
+Once the admin zone resolves to `100.91.183.47` and split DNS points at
+AdGuard's tailnet address, no client needs the `10.42.0.0/24` route to reach
+a service. The route stays advertised for the handful of boxes that cannot
+run Tailscale and have no name in either zone: the AX10 web UI at
+`10.42.0.1`, TVs, printers. Turn the flag on for that rare case, then off
+again.
+
+The rest of this section records why the flag was a problem, because the same
+collision returns the moment a name points at a LAN address again.
+
+#### The old rule, kept for the reasoning
 
 ⚠️ **Do not enable it on `jj-laptop` while it is on the AX10 network.** There
 the laptop is directly on `10.42.0.0/24` as an ordinary WiFi DHCP client
@@ -148,17 +215,31 @@ mid-session after a roam, while the host was healthy the whole time (uptime
 Rule: **any machine physically on a subnet must not accept a tailnet route for
 that subnet.**
 
+#### The phantom `10.42.0.0/24` on jj-laptop
+
+Found on 2026-08-27, and it made the failure above much harder to read. The
+NetworkManager profile `pe-share` on `enp0s31f6` was still **activated** in
+`ipv4.method: shared` mode with no cable attached. Shared mode defaults to
+`10.42.0.1/24`, so the laptop held the AX10's gateway address and kept a
+`linkdown` route for the whole subnet in the main table.
+
+Packets for `10.42.0.x` left a dead interface. DNS queries hung indefinitely
+instead of failing. Fixed with `nmcli connection down pe-share`;
+`connection.autoconnect` was already `no`. The profile is kept, not deleted,
+because it is the tether recovery path if the AX10 fails.
+
+Check for it with `ip route show table main | grep linkdown`.
+
 ```sh
-tailscale debug prefs | grep RouteAll        # must be false at home
-ip route get 10.42.0.11                      # must show dev wlp0s20f3
+tailscale debug prefs | grep RouteAll        # false, everywhere, always
+ip route show table main | grep linkdown     # must return nothing
 ```
 
-**When the laptop is away, it mostly does not need the route anyway.** `pve`
-and `pve-prod` are tailnet nodes in their own right since 2026-08-06, so
-`ssh pve-ts` and `ssh pve-prod-ts` reach them from anywhere with
-`--accept-routes` still off. Only LAN-only devices — `adguard`, the router
-itself — need the subnet route, and that is the one case worth turning it on
-for, then off again on returning home.
+**Nothing the laptop uses daily needs the route.** `pve`, `pve-prod`,
+`jjserver` and `adguard` are all tailnet nodes in their own right, so
+`ssh pve-ts`, `ssh pve-prod-ts` and every `*.admin` name work from anywhere
+with `--accept-routes` off. The AX10 web UI at `10.42.0.1` is the only
+remaining reason to turn it on, and it is worth turning off again after.
 
 ### Historical: why this rule was originally written
 

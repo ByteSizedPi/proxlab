@@ -120,21 +120,23 @@
   //
   // Tailscale SSH is also absent, and that has a live consequence.
   //
-  // ⚠️ LXC 101 already runs with `RunSSH: true` and advertises 3 SSH host
-  // keys. It is the ONLY node in the tailnet that does, and nothing in this
-  // repo asked for it — the community install script turned it on. Today it
-  // works because the console policy is still allow-all. The moment this
-  // file is applied, Tailscale SSH to LXC 101 stops, because a deny-by-
-  // default policy with no `ssh` block denies it.
+  // Found on 2026-08-27 while reviewing the live tailnet: LXC 101 was running
+  // with `RunSSH: true` and advertising 3 SSH host keys. It was the ONLY node
+  // that did, and nothing in this repo asked for it — the community install
+  // script turned it on. It worked only because the console policy is still
+  // allow-all, and applying this file would have stopped it with no obvious
+  // cause.
   //
-  // Decide before Phase 1, not after:
-  //   a. Turn it off, so every node matches:  tailscale set --ssh=false
-  //   b. Turn it on everywhere and uncomment the block below.
-  // Option (a) is the default recommendation. Key-based SSH via the
-  // ~/.ssh/config aliases already works, and `pct exec` from pve reaches the
-  // container without any SSH at all.
+  // Turned off, so every node matches:
   //
-  // The block itself would replace the key-based aliases with policy-driven
+  //   pct exec 101 -- tailscale set --ssh=false --accept-risk=lose-ssh
+  //
+  // ⚠️ `tailscale set` was the right verb. `tailscale up` would have reset
+  // AdvertiseRoutes and AdvertiseExitNode, silently withdrawing the subnet
+  // route and the exit node. Verified after the change: 0.0.0.0/0, ::/0 and
+  // 10.42.0.0/24 all still advertised.
+  //
+  // The block below would replace the key-based aliases with policy-driven
   // access and per-session audit, which is a real improvement, but it needs
   // `tailscale up --ssh` on every host and it changes how you log in. Add it
   // as its own change, not folded into the tagging rollout:

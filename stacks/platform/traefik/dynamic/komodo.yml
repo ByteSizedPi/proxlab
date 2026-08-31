@@ -42,14 +42,44 @@
 #     /etc/komodo/stacks/traefik/stacks/platform/traefik/dynamic -> /dynamic
 #
 # A commit that touches only `dynamic/*.yml` leaves this stack's compose.yaml
-# unchanged, so Komodo does not refresh the traefik clone. The file is on
-# origin/main and sitting in every OTHER stack's clone, while the one Traefik
-# actually reads stays stale. Pushing is not enough — deploy the traefik stack
-# by hand.
+# unchanged. Komodo then does not recreate the traefik container, and it also
+# did not refresh the traefik clone. The file is on origin/main while the one
+# Traefik actually reads stays stale. Pushing is not enough — deploy the
+# traefik stack by hand.
+#
+# ── What was measured on 2026-08-31, including the part that does not fit ──
+#
+# proxmox.yml was committed in b0c90a1 on 27 August and pushed the same day.
+# Four days later the traefik clone was still at 44a9488, the commit BEFORE
+# it, and proxmox.yml was absent from /dynamic. That is the behaviour this
+# warning describes.
+#
+# Then an unrelated commit to stacks/media/seerr/compose.yaml was pushed. The
+# gitops run that followed left:
+#
+#     traefik clone  -> 3986a6b   (pulled, proxmox.yml now present)
+#     traefik container -> Up 2 hours   (NOT recreated)
+#     seerr clone    -> 3986a6b   (pulled)
+#     seerr container -> Up 4 minutes   (recreated)
+#
+# So `BatchDeployStackIfChanged` refreshed the traefik CLONE without
+# recreating the traefik CONTAINER. Traefik's file watcher then loaded the
+# route on its own, and proxmox.admin started working with no deploy.
+#
+# ⚠️ These two observations conflict and the cause is NOT known. The push on
+# 27 August changed no stack's compose.yaml anywhere; the push on 31 August
+# changed one. A plausible reading is that the batch step only pulls clones on
+# a run that has at least one stack to redeploy, so a dynamic-only push
+# refreshes nothing at all. That reading is a guess. It has not been tested.
+#
+# Until someone tests it, treat the rule as: a dynamic/ edit reaches Traefik
+# ONLY when you deploy the traefik stack by hand. A later push may or may not
+# carry it across, and the failure mode is silent in both directions.
 #
 # The symptom is a 404 on a hostname whose route you can see in the repo,
 # which reads as a broken rule and sends you rewriting a route that was
-# already correct. Cost an hour when adguard.yml was added on 2026-08-06.
+# already correct. Cost an hour when adguard.yml was added on 2026-08-06, and
+# cost proxmox.yml four days of being live in git and absent in production.
 #
 # Check the clone before touching the route:
 #

@@ -146,14 +146,21 @@ reason about later, so add one only when a real non-tailnet person needs it.
 
 ## DNS: correcting a wrong assumption
 
-The worry was that AdGuard's rewrites (`proxmox.admin...` → `10.42.0.10`)
-mean AdGuard can't also be the LAN ad blocker, because that would "expose
-admin services".
+The worry was that AdGuard's rewrites (`*.home.jjventer.co.za` →
+`10.42.0.11`) mean AdGuard can't also be the LAN ad blocker, because that
+would "expose admin services".
 
 **DNS is not access control.** Resolving a name to `10.42.0.10` grants
-nothing to a client with no route to `10.42.0.0/24` — and LAN clients on
-`10.0.0.0/24` have no such route. What leaks is *information* (internal
-hostnames and private IPs), not access.
+nothing to a client with no route to `10.42.0.0/24`, which is every client
+outside the house. What leaks is *information* (internal hostnames and
+private IPs), not access.
+
+⚠️ An earlier version of this paragraph said LAN clients sit on
+`10.0.0.0/24` and therefore have no route either. That is wrong. Measured
+2026-08-31: the AX10 hands out `10.42.0.0/24` and `jj-laptop` holds
+`10.42.0.145`. LAN clients are on the same subnet as the services and can
+reach them directly. The argument above survives the correction, because it
+only ever depended on clients *outside* the house.
 
 And if the network were flat, removing the rewrites would protect nothing
 anyway — anyone could port-scan the subnet. The control is the network
@@ -162,6 +169,49 @@ boundary and Tailscale ACLs, never the absence of a DNS record.
 So: keep AdGuard as the LAN ad blocker, keep the rewrites. AdGuard rewrites
 are global rather than per-client, so genuinely hiding the names would need a
 second resolver — not worth it for an information leak of this size.
+
+### ⚠️ The AX10 hands out two DNS servers, and the home zone needs one
+
+Found 2026-08-31 while testing `seerr.home.jjventer.co.za`.
+
+DHCP on the AX10 advertises **both** resolvers:
+
+```
+Link 3 (wlp0s20f3): 10.42.0.12 10.42.0.1
+```
+
+`10.42.0.12` is AdGuard and answers the home zone. `10.42.0.1` is the AX10
+itself and returns an empty answer for every `*.home.jjventer.co.za` name.
+systemd-resolved picks one server per link and stays with it, so the outcome
+is a coin flip made at association time. On `jj-laptop` it picked the router:
+
+```
+$ dig +short @10.42.0.12 seerr.home.jjventer.co.za
+10.42.0.11
+$ dig +short @10.42.0.1  seerr.home.jjventer.co.za
+            (empty)
+$ getent hosts seerr.home.jjventer.co.za
+            NXDOMAIN
+```
+
+The admin zone hides the fault. Tailscale installs a routing domain
+(`~admin.jjventer.co.za`) on `tailscale0`, which forces admin lookups to
+AdGuard's tailnet address no matter what the wifi link does. The home zone has
+no such override on purpose — it must resolve on the LAN — so it takes the
+full weight of the wrong choice.
+
+**Fix, on the AX10 admin UI at `http://10.42.0.1`:** set the DHCP DNS server
+list to `10.42.0.12` **only**. Remove the router's own address.
+
+This is the same change that makes ad blocking work for the whole house. Any
+client that picks `10.42.0.1` today bypasses AdGuard entirely, so the filter
+lists are being applied to an unknown subset of devices.
+
+Keep a second entry out of the list rather than adding a public resolver as a
+fallback. A fallback resolver reintroduces exactly this failure: it answers
+fast, it answers wrong for both private zones, and it silently disables
+filtering. If AdGuard is down the correct symptom is "no DNS", which is
+diagnosable, not "half the names resolve".
 
 ### AdGuard must be a tailnet node, not just a LAN address
 

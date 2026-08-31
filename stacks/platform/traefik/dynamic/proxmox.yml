@@ -18,9 +18,17 @@
 # to the `*.admin.jjventer.co.za` wildcard and arrives here instead. Putting
 # the rewrite back would silently bypass this router and undo the TLS.
 #
-# ⚠️ ORDER MATTERS. Deploy the traefik stack BEFORE deleting the rewrite. The
-# other way round leaves proxmox.admin answering 404 from Traefik until the
-# deploy lands.
+# Both halves went live 2026-08-31. Verified from jj-laptop:
+#
+#   dig +short @10.42.0.12 proxmox.admin.jjventer.co.za  -> 100.91.183.47
+#   curl -o /dev/null -w '%{http_code} %{ssl_verify_result}'
+#     https://proxmox.admin.jjventer.co.za/              -> 200 0
+#   openssl s_client ... | openssl x509 -subject
+#     -> CN=admin.jjventer.co.za, Let's Encrypt, notAfter Oct 30 2026
+#
+# ⚠️ ORDER MATTERS. Get this file onto pve-prod BEFORE deleting the rewrite.
+# The other way round leaves proxmox.admin answering 404 from Traefik until
+# the file lands.
 #
 # ── Why insecureSkipVerify is correct here and not lazy ──────────────────
 #
@@ -41,9 +49,20 @@
 # substitution. Same two constraints as adguard.yml and komodo.yml.
 #
 # ⚠️ Changing this file does NOT redeploy the traefik stack. Komodo only
-# refreshes a stack whose compose.yaml changed, so a route edited here stays
-# invisible to Traefik until you deploy the traefik stack by hand. Full
-# explanation in komodo.yml.
+# recreates a stack whose compose.yaml changed. Full explanation in komodo.yml.
+#
+# A redeploy is not always what this file needs, though. See komodo.yml for
+# what was measured on 2026-08-31 and what remains unexplained.
+#
+# The short version: this route was committed in b0c90a1 on 27 August, was
+# pushed the same day, and did NOT reach pve-prod. It landed on 31 August when
+# an unrelated seerr commit was pushed. Four days invisible, with the file
+# sitting correct in git the whole time, and no error anywhere.
+#
+# Do not rely on a later push carrying a dynamic/ edit across. Deploy the
+# traefik stack by hand and then check:
+#
+#     ssh pve-prod 'docker exec traefik ls /dynamic/'
 
 http:
   routers:

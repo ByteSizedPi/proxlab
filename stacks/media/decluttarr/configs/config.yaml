@@ -41,12 +41,45 @@ jobs:
   # Downloads that failed outright, and imports the *arr refused.
   remove_failed_downloads:
   remove_failed_imports:
+    # ⚠️ These patterns are matched against statusMessages[].MESSAGES only,
+    # never against statusMessages[].TITLE. Read from the source in the
+    # running container, 2026-08-31, src/jobs/remove_failed_imports.py:
+    #
+    #     messages = [
+    #         msg
+    #         for status_message in status_messages
+    #         for msg in status_message.get("messages", [])
+    #         if not patterns or any(fnmatch.fnmatch(msg, p) for p in patterns)
+    #     ]
+    #
+    # That makes the last pattern below DEAD. Sonarr puts that sentence in the
+    # `title` of a status message whose `messages` array is EMPTY, so fnmatch
+    # never sees it. It is kept only because it costs nothing and documents the
+    # trap. Do not add more patterns by copying text out of the Sonarr UI —
+    # the UI shows titles and messages together, the API does not.
+    #
+    # Found the hard way: Arrested Development S05 sat at importBlocked from
+    # 2026-08-24 to 2026-08-31, seven days, with decluttarr running every 10
+    # minutes and never touching it. 14 of the 16 files in the pack had been
+    # deselected in qBittorrent (cause never established), so only E07 and E14
+    # imported and 110 GB of .!qB partials sat in .unwanted.
+    #
+    # The only text Sonarr actually put in a `messages` array was
+    # "Episode file already imported at 08/24/2026 15:11:00", which matched
+    # nothing here. The pattern below is what makes this case removable.
+    #
+    # Scope of that new pattern is narrower than it looks. The job only
+    # considers items that are ALREADY status=completed AND
+    # trackedDownloadStatus=warning AND trackedDownloadState in
+    # {importPending, importFailed, importBlocked}. A healthy upgrade that
+    # imports cleanly never reaches warning state, so it cannot be caught.
     message_patterns:
       - "Not a Custom Format upgrade for existing*"
       - "Not an upgrade for existing*"
       - "*Found potentially dangerous file with extension*"
       - "Invalid video file*"
       - "No files found are eligible for import*"
+      - "Episode file already imported at*"
       - "One or more episodes expected in this release were not imported or missing from the release"
 
   # Stuck in metadata-fetch, or the files vanished underneath the queue item.

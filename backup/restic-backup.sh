@@ -62,6 +62,51 @@ else
   echo "immich_postgres not running - skipping (previous dump is retained)"
 fi
 
+# ── 1b. Snapshot the Jellyfin SQLite databases ───────────────────────────
+#
+# Same problem as Immich Postgres above, different engine. /config/data/data
+# holds jellyfin.db and library.db as live SQLite. Copying those file-by-file
+# while Jellyfin is writing captures a torn page or a stale main file with the
+# real commit still sitting in the -wal, and the restore is a coin flip.
+#
+# Most of the library is regenerable by rescanning. Watch state, users and
+# their per-user home screen choices are NOT - those exist only here.
+#
+# Measured on 2026-08-31: jellyfin.db was 7.5 MB with a 4.0 MB -wal beside it.
+# Over a third of the committed state was outside the main file at that
+# moment. A file-by-file copy would have missed it.
+#
+# The fix is SQLite's online backup API, which walks the pages under a read
+# lock and folds the -wal in, without stopping Jellyfin.
+#
+# ⚠️ It is driven from python3 rather than the sqlite3 CLI on purpose. The
+# CLI is present in NEITHER the linuxserver/jellyfin image nor on pve-prod -
+# both were checked. python3 is on the host and ships the module in its
+# standard library, so this adds no package to install.
+#
+# The source is opened mode=ro so this can never write to the live database.
+# The output lands next to it in the appdata tree, which is already a restic
+# source below, so no new path joins the run.
+log "Snapshotting Jellyfin SQLite"
+JF_DATA=/mnt/docker-data/appdata/jellyfin/data/data
+if [ -f "$JF_DATA/jellyfin.db" ]; then
+  python3 - "$JF_DATA" <<'PY'
+import sqlite3, sys, os, glob
+data = sys.argv[1]
+for src in sorted(glob.glob(os.path.join(data, "*.db"))):
+    dst = src + ".bak"
+    con = sqlite3.connect("file:%s?mode=ro" % src, uri=True)
+    out = sqlite3.connect(dst + ".tmp")
+    with out:
+        con.backup(out)
+    out.close(); con.close()
+    os.replace(dst + ".tmp", dst)
+    print("wrote %s (%.1f MB)" % (os.path.basename(dst), os.path.getsize(dst) / 1e6))
+PY
+else
+  echo "no Jellyfin database at $JF_DATA - skipping"
+fi
+
 # ── 2. Back up to jjserver ───────────────────────────────────────────────
 log "Backup -> jjserver"
 SOURCES=(/mnt/safe /mnt/docker-data/appdata)

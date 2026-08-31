@@ -29,6 +29,36 @@ http:
         stsIncludeSubdomains: true
         forceSTSHeader: true
 
+    # Lets Jellyfin embed Seerr in an iframe, for the "Requests" tab added by
+    # the Custom Tabs plugin. Applied to the seerr routers only, in
+    # ../../../media/seerr/compose.yaml.
+    #
+    # Why a CSP header and not a second X-Frame-Options value:
+    #
+    # `secure-headers` above is attached to the websecure ENTRYPOINT, so it
+    # wraps every router. Entrypoint middleware is the outermost layer, which
+    # means it writes response headers LAST. A router-level headers middleware
+    # setting a different customFrameOptionsValue is overwritten on the way
+    # out and has no effect. Verified before writing this: seerr answers
+    # `x-frame-options: SAMEORIGIN` through Traefik and no framing header at
+    # all when reached directly at http://seerr:5055.
+    #
+    # CSP frame-ancestors sidesteps the ordering problem entirely. When a
+    # response carries both headers the browser honours frame-ancestors and
+    # ignores X-Frame-Options, so SAMEORIGIN can stay in place globally.
+    # `secure-headers` sets no contentSecurityPolicy of its own, so nothing
+    # collides here.
+    #
+    # Both Jellyfin names are listed because the zone the iframe is loaded
+    # from is whichever zone the viewer reached Jellyfin on, and that differs
+    # per person. See docs/ARCHITECTURE.md for the admin/home split.
+    seerr-frameable:
+      headers:
+        contentSecurityPolicy: >-
+          frame-ancestors 'self'
+          https://jellyfin.admin.jjventer.co.za
+          https://jellyfin.home.jjventer.co.za
+
     # ── Not yet deployed ──────────────────────────────────────────────────
     #
     # Both are defined here ready to go, but stay commented until the service

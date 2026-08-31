@@ -72,8 +72,22 @@ services:
       - "traefik.http.routers.seerr-home.rule=Host(`seerr.${HOME_DOMAIN}`)"
       - "traefik.http.routers.seerr-home.service=seerr"
       - "traefik.http.services.seerr.loadbalancer.server.port=5055"
-      # entrypoints/tls/middlewares deliberately omitted — see the comment in
+      # entrypoints/tls deliberately omitted — see the comment in
       # prowlarr/compose.yaml, same reasoning applies here.
+      #
+      # The one middleware Seerr does NOT inherit from the entrypoint. The
+      # Custom Tabs plugin in Jellyfin renders a "Requests" tab as an iframe
+      # pointing here, and the global `secure-headers` sends
+      # X-Frame-Options: SAMEORIGIN, which blocks it. `seerr-frameable` adds a
+      # CSP frame-ancestors listing the two Jellyfin names. The browser
+      # prefers frame-ancestors over X-Frame-Options, so SAMEORIGIN stays put
+      # for every other route. Full reasoning in
+      # ../../platform/traefik/dynamic/middlewares.yml.
+      #
+      # ⚠️ Both routers need it. Naming it on `seerr` only would leave the
+      # home zone unframeable, which is the zone household members use.
+      - "traefik.http.routers.seerr.middlewares=seerr-frameable@file"
+      - "traefik.http.routers.seerr-home.middlewares=seerr-frameable@file"
 
 networks:
   ingress:

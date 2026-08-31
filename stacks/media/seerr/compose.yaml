@@ -55,7 +55,22 @@ services:
 
     labels:
       - "traefik.enable=true"
+      # Two zones, same container. Added to the home zone 2026-08-31.
+      #
+      #   admin -> pve-prod's tailnet address. Requesting from outside the
+      #            house, and from a phone on mobile data.
+      #   home  -> pve-prod's LAN address. Household members request titles
+      #            from devices that do not run Tailscale.
+      #
+      # Seerr is the second service in both zones, after jellyfin. The reason
+      # is the same in both cases: people other than JJ use it, and those
+      # people are not on the tailnet. Do NOT copy this to the *arr apps —
+      # those are single-operator and belong in the admin zone only.
       - "traefik.http.routers.seerr.rule=Host(`seerr.${ADMIN_DOMAIN}`)"
+      # A second router on the same container needs an explicit `.service`,
+      # because naming a service below stops Traefik inferring one per router.
+      - "traefik.http.routers.seerr-home.rule=Host(`seerr.${HOME_DOMAIN}`)"
+      - "traefik.http.routers.seerr-home.service=seerr"
       - "traefik.http.services.seerr.loadbalancer.server.port=5055"
       # entrypoints/tls/middlewares deliberately omitted — see the comment in
       # prowlarr/compose.yaml, same reasoning applies here.

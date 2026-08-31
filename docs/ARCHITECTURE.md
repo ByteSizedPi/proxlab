@@ -125,15 +125,24 @@ The `100.x` address is an identity, not a detour. Two peers on the same LAN
 connect directly over that LAN. Confirm with `tailscale ping pve-prod`, which
 reports `direct` at home and `DERP` only when a network blocks direct UDP.
 
-### Why Jellyfin has a name in both zones
+### Why Jellyfin and Seerr have a name in both zones
 
-It is the one service with a real claim on each. The TV cannot run Tailscale,
-so it needs the `home` name. Watching from outside the house needs the `admin`
-name. A high-bitrate remux on the LAN should also not pay WireGuard's
-encryption cost and 1280-byte MTU to cross a single hop.
+These two are the exception. The test is the same for both: **someone other
+than JJ uses the service, and that person is not on the tailnet.**
 
-Do not copy this pattern by default. Every other service belongs in exactly
-one zone.
+Jellyfin needs the `home` name because the TV cannot run Tailscale, and the
+`admin` name for watching from outside the house. A high-bitrate remux on the
+LAN should also not pay WireGuard's encryption cost and 1280-byte MTU to cross
+a single hop.
+
+Seerr (added 2026-08-31) needs the `home` name because household members
+request titles from phones and laptops that are not tailnet members, and the
+`admin` name for requesting from mobile data.
+
+Do not copy this pattern by default. The *arr apps, Tdarr, Netdata, Traefik,
+Komodo, AdGuard, Proxmox and Immich are single-operator and belong in the
+admin zone only. A second router costs nothing to add and everything to
+reason about later, so add one only when a real non-tailnet person needs it.
 
 ## DNS: correcting a wrong assumption
 

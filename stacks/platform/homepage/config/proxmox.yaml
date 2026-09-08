@@ -1,0 +1,22 @@
+# Homepage Proxmox integration.
+# Docs: https://gethomepage.dev/configs/proxmox/
+#
+# ⚠️ TRACKED ON PURPOSE, AND DELIBERATELY EMPTY. See custom.js for why every
+# one of Homepage's 9 config names is tracked even when it holds nothing.
+#
+# What this file would be for: it names a Proxmox API endpoint, which lets a
+# service in services.yaml carry `proxmoxNode:` and `proxmoxVMID:` and get
+# live CPU and memory in the same shape as the docker services. It is the same
+# API token as the commented `proxmox` widget on the Infrastructure > Proxmox
+# entry, and it is off for the same reason: the PVE API at 10.42.0.10:8006
+# serves a self-signed certificate, so Homepage needs both a token and a
+# skipped certificate check for a VM count.
+#
+# To enable, create a PVE API token, add PROXMOX_TOKEN_ID and
+# PROXMOX_TOKEN_SECRET as Komodo Variables, wire them into compose.yaml as
+# HOMEPAGE_VAR_*, and uncomment:
+#
+# pve:
+#   url: https://10.42.0.10:8006
+#   token: "{{HOMEPAGE_VAR_PROXMOX_TOKEN_ID}}"
+#   secret: "{{HOMEPAGE_VAR_PROXMOX_TOKEN_SECRET}}"

@@ -19,6 +19,10 @@ services:
     #     numbers out as an aligned table instead of four loose blocks per
     #     card. Read the header of that file before changing the layout.
     #
+    # That pass failed to deploy, and finding out why showed the 2026-08-24
+    # pass had never deployed either. Cause and fix are in the `volumes:`
+    # comment below. Read it before adding a file to config/.
+    #
     # All of that lives in config/, which does not trigger a redeploy on its
     # own. This comment is edited on every config pass for exactly that
     # reason: it puts compose.yaml in the diff, so Komodo pulls the repo.
@@ -65,6 +69,46 @@ services:
       #
       # NOT read-only: Homepage writes .next/ build artefacts and a logs/
       # directory under /app/config on startup.
+      #
+      # ⚠️ THIS BIND MOUNT SILENTLY BROKE GITOPS FOR 15 DAYS. Read this before
+      # adding any file to config/.
+      #
+      # Homepage's checkAndCopyConfig() copies a skeleton into /app/config for
+      # any of its 9 config names that is ABSENT at startup:
+      #
+      #   bookmarks.yaml  custom.css  custom.js  docker.yaml
+      #   kubernetes.yaml proxmox.yaml services.yaml settings.yaml
+      #   widgets.yaml
+      #
+      # /app/config is this directory inside Komodo's deploy clone at
+      # /etc/komodo/stacks/homepage. So a generated file appears in the clone
+      # as an UNTRACKED file, and a later commit that adds a file of the same
+      # name makes the pull refuse:
+      #
+      #   error: The following untracked working tree files would be
+      #   overwritten by merge:
+      #       stacks/platform/homepage/config/bookmarks.yaml
+      #       stacks/platform/homepage/config/custom.css
+      #   Please move or remove them before you merge.
+      #   Aborting
+      #
+      # ⚠️ THE FAILURE IS SILENT. The pull aborts, the clone stays on its old
+      # commit, and Komodo redeploys the SAME old config and reports success.
+      # Commit 80fb7f7 on 2026-08-24 added config/bookmarks.yaml. The clone
+      # had a Homepage-generated bookmarks.yaml already, so that pull failed
+      # and every pull after it failed too. The clone sat on cc1c70f from
+      # 2026-08-24 to 2026-09-08 while the dashboard served the 15 August
+      # config. Nobody noticed, because a dashboard that renders looks fine.
+      #
+      # FIXED by tracking all 9 names, empty ones included. A file that
+      # already exists is never generated, so the collision cannot recur.
+      # Do not delete config/custom.js, config/kubernetes.yaml or
+      # config/proxmox.yaml because they look empty. Empty is their job.
+      #
+      # If a pull ever aborts like this again, on pve-prod:
+      #   sudo git -C /etc/komodo/stacks/homepage status --short -uall
+      #   remove the untracked files it lists under this config/ directory
+      #   sudo git -C /etc/komodo/stacks/homepage pull --ff-only
       - ./config:/app/config:Z
 
       # Read-only, and ONLY so the `resources` widget in widgets.yaml can call

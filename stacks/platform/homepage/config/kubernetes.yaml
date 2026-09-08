@@ -1,0 +1,12 @@
+# Homepage Kubernetes integration.
+# Docs: https://gethomepage.dev/configs/kubernetes/
+#
+# ⚠️ TRACKED ON PURPOSE, AND DELIBERATELY EMPTY. There is no Kubernetes here.
+# pve-prod runs plain Docker. See config/docker.yaml for the integration that
+# is actually used.
+#
+# This file exists only so Homepage cannot generate it. Homepage copies a
+# skeleton into /app/config for any config name that is absent at startup, and
+# because /app/config is a bind mount of this directory inside Komodo's deploy
+# clone, a generated file becomes an untracked file that blocks `git pull`.
+# custom.js carries the full explanation.

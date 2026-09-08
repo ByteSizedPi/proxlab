@@ -105,10 +105,35 @@ services:
       # Do not delete config/custom.js, config/kubernetes.yaml or
       # config/proxmox.yaml because they look empty. Empty is their job.
       #
-      # If a pull ever aborts like this again, on pve-prod:
-      #   sudo git -C /etc/komodo/stacks/homepage status --short -uall
-      #   remove the untracked files it lists under this config/ directory
-      #   sudo git -C /etc/komodo/stacks/homepage pull --ff-only
+      # ⚠️ Homepage regenerates a missing config file ON DEMAND, not only at
+      # startup. checkAndCopyConfig() runs on every config read, so a file
+      # deleted from config/ is back as Homepage's stock skeleton within
+      # seconds. NEVER `rm` a file in here to fix anything. The delete does
+      # not hold, and what comes back is Homepage's Github/Reddit/YouTube
+      # sample rather than the committed content.
+      #
+      # RECOVERY, on pve-prod. Run step 1 and then read it before doing
+      # anything else:
+      #
+      #   1. sudo git -C /etc/komodo/stacks/homepage status --short -uall
+      #
+      #   2. STOP unless step 1 lists a file under this config/ directory
+      #      with `??`. `logs/homepage.log` is always there and is fine to
+      #      ignore. Nothing else needs doing, and a delete at this point
+      #      only overwrites good config with skeletons.
+      #
+      #   3. `??` on a config NAME (bookmarks.yaml, custom.css, custom.js,
+      #      docker.yaml, kubernetes.yaml, proxmox.yaml, services.yaml,
+      #      settings.yaml, widgets.yaml) means that name is untracked in
+      #      this repo, which should now be impossible. Track it here first,
+      #      then delete the copy in the clone.
+      #
+      #   4. ` M` on a config file means Homepage overwrote it with a
+      #      skeleton. Restore it from git, do not delete it:
+      #        sudo git -C /etc/komodo/stacks/homepage checkout -- \
+      #          stacks/platform/homepage/config
+      #
+      #   5. sudo git -C /etc/komodo/stacks/homepage pull --ff-only
       - ./config:/app/config:Z
 
       # Read-only, and ONLY so the `resources` widget in widgets.yaml can call

@@ -787,6 +787,74 @@ path = ""
 command = "mkdir -p /mnt/safe/immich /mnt/docker-data/appdata/immich/postgres"
 shell_mode = true
 
+[[stack]]
+name = "freshrss"
+tags = ["apps"]
+[stack.config]
+server = "pve-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/apps/freshrss"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+# One secret, a Komodo Variable with "Secret" enabled. Create it BEFORE the
+# first deploy:
+#
+#   FRESHRSS_ADMIN_PASSWORD   openssl rand -base64 24
+#
+# It is the login password for the single user `jj`, and it is also the API
+# password the phone clients use for the Google Reader endpoint.
+#
+# Avoid `$` in the value. Compose substitutes the values it reads from an
+# --env-file, so a `$` is eaten on the way through. base64 output never
+# contains one.
+#
+# ⚠️ The value is consumed ONLY on first boot, while the data directory is
+# empty. Changing the Variable later does NOT change the password. Change it
+# in the FreshRSS UI (Settings > Profile), or with
+# `docker exec freshrss php cli/reconfigure.php`, and then update the
+# Variable so the two agree.
+environment = """
+FRESHRSS_ADMIN_PASSWORD=[[FRESHRSS_ADMIN_PASSWORD]]
+"""
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "freshrss.env"]
+
+# --- Automation ---
+webhook_enabled = false
+
+# auto_update is ON, like the *arr stacks and unlike immich and authentik.
+#
+# FreshRSS applies its own SQLite migrations on start and its releases are
+# small. Nothing else depends on it, so a bad 03:00 update costs a feed reader
+# for a few hours, not a photo library or the login path for the estate.
+# The database is inside ${CONFIG_ROOT}, which restic backs up nightly.
+auto_update = true
+poll_for_updates = true
+
+# --- Pre-deploy: refuse unresolved secrets, then mkdir ---
+#
+# The guard is the same one the authentik stack uses, and it is CALLED from
+# there rather than copied here. A missing Komodo Variable is written through
+# as the literal string [[FRESHRSS_ADMIN_PASSWORD]], which is non-empty, so
+# compose's `${VAR:?}` in compose.yaml never fires and FreshRSS would install
+# with a password that is printed in this repo. Komodo clones the whole repo
+# into each stack's directory, so the relative path below resolves inside this
+# stack's own clone.
+#
+# The mkdir half creates both bind sources. Docker would create them as
+# root-owned directories anyway; creating them here means a mistyped path is
+# an error rather than an empty directory. The FreshRSS entrypoint chowns the
+# data directory to www-data itself on first start.
+[stack.config.pre_deploy]
+path = ""
+command = "sh ../../platform/authentik/check-secrets.sh komodo.env && mkdir -p /mnt/docker-data/appdata/freshrss/data /mnt/docker-data/appdata/freshrss/extensions"
+shell_mode = true
+
+
 ## ── Komodo Core is deliberately NOT here ────────────────────────────────
 ##
 ## Core and Periphery are updated by scripts/update-komodo.sh, driven by

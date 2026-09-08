@@ -107,6 +107,43 @@ else
   echo "no Jellyfin database at $JF_DATA - skipping"
 fi
 
+# ── 1c. Snapshot the FreshRSS SQLite database ────────────────────────────
+#
+# Same reason as Jellyfin above, same method. FreshRSS keeps one SQLite
+# database per user under data/users/<user>/, and the cron inside the
+# container refreshes feeds twice an hour, so a file-by-file copy can land
+# mid-write.
+#
+# The glob is deliberate: it takes every user directory and every .sqlite file
+# in it, so adding a second FreshRSS user needs no change here.
+#
+# Read state is the part that cannot be regenerated. The subscription list can
+# be rebuilt from stacks/apps/freshrss/feeds.opml, but which of 500 articles
+# you have already read exists only in this file.
+log "Snapshotting FreshRSS SQLite"
+FRSS_USERS=/mnt/docker-data/appdata/freshrss/data/users
+if [ -d "$FRSS_USERS" ]; then
+  python3 - "$FRSS_USERS" <<'PY'
+import sqlite3, sys, os, glob
+users = sys.argv[1]
+found = False
+for src in sorted(glob.glob(os.path.join(users, "*", "*.sqlite"))):
+    found = True
+    dst = src + ".bak"
+    con = sqlite3.connect("file:%s?mode=ro" % src, uri=True)
+    out = sqlite3.connect(dst + ".tmp")
+    with out:
+        con.backup(out)
+    out.close(); con.close()
+    os.replace(dst + ".tmp", dst)
+    print("wrote %s (%.1f MB)" % (dst, os.path.getsize(dst) / 1e6))
+if not found:
+    print("no FreshRSS database under %s - skipping" % users)
+PY
+else
+  echo "no FreshRSS user directory at $FRSS_USERS - skipping"
+fi
+
 # ── 2. Back up to jjserver ───────────────────────────────────────────────
 log "Backup -> jjserver"
 SOURCES=(/mnt/safe /mnt/docker-data/appdata)

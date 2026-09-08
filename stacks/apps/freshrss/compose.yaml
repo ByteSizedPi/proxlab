@@ -1,0 +1,127 @@
+# FreshRSS — the feed reader.
+#
+# ── Why FreshRSS and not Miniflux ────────────────────────────────────────
+#
+# Miniflux has the nicer UI and a native ntfy integration, but it requires its
+# own Postgres. That is a second container and a second database to back up
+# for a single-user reader. FreshRSS keeps its state in SQLite inside the data
+# directory, so this stack is one service and one bind mount.
+#
+# It also speaks the Google Reader API, which is what phone clients (Reeder,
+# FeedMe, Fluent Reader) talk to, and it can scrape a page into a feed with
+# XPath when a site publishes no feed at all.
+#
+# ── Image choice ────────────────────────────────────────────────────────
+#
+# freshrss/freshrss, the project's own image, not a LinuxServer rebuild. It
+# carries the refresh cron itself (CRON_MIN below), so no side-car scheduler
+# is needed. It runs Apache as root and drops to www-data, so PUID/PGID from
+# common.env do not apply here and are deliberately not passed.
+
+services:
+  freshrss:
+    image: freshrss/freshrss:latest
+    container_name: freshrss
+    environment:
+      - TZ=${TZ}
+
+      # Feed refresh schedule, in cron minute syntax. The image runs
+      # cli/actualize-user.php at these minutes of every hour, so this is
+      # twice an hour, offset off the hour to avoid the crowd.
+      # An empty value disables the cron entirely.
+      - CRON_MIN=13,43
+
+      # The `ingress` network, so FreshRSS reads the real client address out
+      # of X-Forwarded-For instead of logging Traefik's container address for
+      # every request. Verified with `docker network inspect ingress` on
+      # pve-prod, 2026-09-08.
+      - TRUSTED_PROXY=172.22.0.0/16
+
+      # ── First-boot install, instead of the web wizard ──────────────────
+      #
+      # Both variables are read ONLY when the data directory is empty. On
+      # every later start the image sees an existing config.php and skips
+      # them, so leaving them here is not a repeated install.
+      #
+      # --api-enabled is what turns on the Google Reader and Fever endpoints.
+      # Without it the phone clients cannot log in, and switching it on later
+      # means editing config.php by hand.
+      #
+      # The hyphenated option names are required. The underscore forms
+      # (--api_enabled, --default_user) still work but print a deprecation
+      # warning and are scheduled for removal.
+      #
+      # One line each. A YAML block scalar would append a newline to the value
+      # and the image passes it to the CLI parser verbatim.
+      - "FRESHRSS_INSTALL=--api-enabled --base-url https://rss.${ADMIN_DOMAIN} --default-user jj --language en"
+      - "FRESHRSS_USER=--user jj --password ${FRESHRSS_ADMIN_PASSWORD:?create the FRESHRSS_ADMIN_PASSWORD Komodo Variable first} --api-password ${FRESHRSS_ADMIN_PASSWORD} --language en"
+
+    volumes:
+      # SQLite database, per-user config, favicons and the article cache.
+      - ${CONFIG_ROOT}/freshrss/data:/var/www/FreshRSS/data:Z
+      # Third-party extensions. Separate path because the image treats it as a
+      # separate tree, and because wiping extensions must not wipe articles.
+      - ${CONFIG_ROOT}/freshrss/extensions:/var/www/FreshRSS/extensions:Z
+
+      # The starter subscription list. Relative to this compose file, which
+      # Komodo clones to /etc/komodo/stacks/freshrss/stacks/apps/freshrss/ on
+      # pve-prod (Komodo clones the whole repo per stack, then runs compose in
+      # the stack's run_directory).
+      #
+      # FreshRSS never reads it on its own. Import it once, by hand:
+      #
+      #   docker exec freshrss php /var/www/FreshRSS/cli/import-for-user.php \
+      #       --user jj --filename /opml/feeds.opml
+      #
+      # Manual on purpose: an import on every deploy would resurrect every
+      # feed you had unsubscribed from. Re-running it is safe, FreshRSS
+      # matches on xmlUrl and skips feeds it already has.
+      - ./feeds.opml:/opml/feeds.opml:ro
+
+    # ── No `ports:` block. Deliberate. ────────────────────────────────────
+    # Same reasoning as prowlarr and immich: Traefik reaches this over
+    # `ingress`, so publishing 80 on the host would only add an unauthenticated
+    # path around the proxy.
+    security_opt:
+      - no-new-privileges:true
+
+    # cli/health.php ships with the image. It requests http://localhost/api/
+    # and exits non-zero unless the response is 200 AND looks like the FreshRSS
+    # API page, so a 404 or an Apache error page fails the check. That is the
+    # `curl -f` rule from the README, already enforced by the script.
+    #
+    # curl and wget are NOT in this image. Only PHP is, so a shell probe is
+    # not available. Verified inside freshrss/freshrss:latest on pve-prod,
+    # 2026-09-08, together with a run that returned exit 0 once Apache came up.
+    healthcheck:
+      test: ["CMD", "php", "/var/www/FreshRSS/cli/health.php"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      # First boot runs the install, creates the user and refreshes the
+      # default feed before Apache accepts requests. Measured at about 20s.
+      start_period: 60s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ingress
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.freshrss.rule=Host(`rss.${ADMIN_DOMAIN}`)"
+      # The image exposes only 80, but naming it keeps the router working if a
+      # future tag exposes a second port.
+      - "traefik.http.services.freshrss.loadbalancer.server.port=80"
+      #
+      # Admin zone only. FreshRSS is single-operator, so it gets no
+      # home.jjventer.co.za name. See the zone split in ../../common.env.
+
+networks:
+  # Created by the traefik stack's pre_deploy hook. External because it spans
+  # compose projects.
+  ingress:
+    external: true

@@ -1,0 +1,48 @@
+[Unit]
+Description=Agent to connect with Komodo Core
+Documentation=https://komo.do/docs/connect-servers
+
+# ⚠️ BOTH LINES BELOW ARE LOAD-BEARING. Removing either one gives you a
+# Komodo that is dead every morning and works again the moment you look at it.
+#
+# periphery.config.toml sets bind_ip = "172.17.0.1", the docker0 bridge
+# address, so the agent listens on the bridge only and not on the LAN or the
+# tailnet. That address does not exist until dockerd creates the bridge.
+#
+# Without this ordering, systemd starts periphery first at boot and the bind
+# fails:
+#
+#   ERROR CONNECTION ERROR: Failed to start https server:
+#   Cannot assign requested address (os error 99)
+#
+# Observed on the 7 and 8 September 2026 boots. Both times the agent was dead
+# from boot, Core reported the server unreachable, and the gitops procedure
+# failed with "Cannot send command when Server is unreachable or disabled".
+After=docker.service
+Wants=docker.service
+
+[Service]
+# ⚠️ REQUIRED. systemd gives services a near-empty environment and
+# setup-periphery.py reads os.environ['HOME'] unconditionally.
+Environment="HOME=/root"
+
+ExecStart=/bin/sh -lc "/usr/local/bin/periphery --config-path /etc/komodo/periphery.config.toml"
+
+# ⚠️ Restart=always, NOT Restart=on-failure, which is what the upstream
+# installer writes.
+#
+# periphery EXITS 0 when the bind fails. systemd logs "Deactivated
+# successfully" and on-failure therefore never fires: the agent stays dead
+# until somebody starts it by hand. A clean exit code is not evidence of a
+# clean shutdown.
+#
+# This is a different unit from komodo-update.service, where Restart=on-failure
+# IS wrong (Type=oneshot, and the timer is the retry mechanism). Here the
+# process is long-running and restarting it is the correct response.
+Restart=always
+RestartSec=5s
+
+TimeoutStartSec=0
+
+[Install]
+WantedBy=default.target

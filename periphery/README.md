@@ -32,12 +32,17 @@ curl -fsSL -o /tmp/setup-periphery.py \
 sudo python3 /tmp/setup-periphery.py
 ```
 
-Then:
+Then replace the unit the installer wrote with the one in this directory, and
+enable it:
 
 ```sh
+sudo install -m 0644 periphery.service /etc/systemd/system/periphery.service
+sudo systemctl daemon-reload
 sudo systemctl enable --now periphery
 systemctl status periphery
 ```
+
+The installer's own unit boots dead. See "The boot race" below.
 
 ## Staying in step with Core
 
@@ -75,6 +80,42 @@ komodo-update.service -b --since "10 min ago"`. A bare `-n 30` shows the tail
 of the *previous* run alongside the current one, and an old traceback sitting
 above a successful run reads exactly like a fresh failure.
 
+## The boot race
+
+`periphery.service` in this directory differs from the one the installer
+writes, in two places, for one reason.
+
+`periphery.config.toml` sets `bind_ip = "172.17.0.1"`. That is the docker0
+bridge address, chosen so the agent listens on the bridge only and is not
+reachable from the LAN or the tailnet. The address does not exist until
+dockerd creates the bridge.
+
+The installer's unit declares no ordering against Docker, so at boot systemd
+starts Periphery first and the bind fails:
+
+```
+ERROR CONNECTION ERROR: Failed to start https server: Cannot assign requested address (os error 99)
+```
+
+Periphery then **exits 0**. systemd logs `Deactivated successfully`, and the
+installer's `Restart=on-failure` never fires, because by its own exit code
+nothing failed. The agent stays dead until someone starts it by hand.
+
+That happened on the 7 and 8 September 2026 boots. pve-prod is powered down
+overnight, so every boot is a fresh roll of this dice. The visible symptom is
+not "Periphery is down" — it is the gitops procedure failing with:
+
+```
+Failed to get Swarm or Server for Stack <name> | Cannot send command when Server is unreachable or disabled
+```
+
+which reads like a problem with the stack being deployed. It is not. Check
+`systemctl is-active periphery` first, before reading a single line of the
+stack that appears in the message.
+
+The fix is `After=docker.service` plus `Wants=docker.service`, and
+`Restart=always` rather than `Restart=on-failure`.
+
 ## The one setting that matters
 
 `periphery.config.toml` contains a **root directory** (default `/etc/komodo`).
@@ -88,6 +129,7 @@ prefer it.
 
 ## Housekeeping
 
-Installing this creates a **system-level systemd unit**, which is a change
-outside the dotfiles stow tree. Record the unit file and the reason in
-`~/dotfiles/SYSTEM.md`.
+Installing this creates a **system-level systemd unit**. The unit file lives
+here, in `periphery.service`, and is copied to `/etc/systemd/system/`. It does
+NOT go in `~/dotfiles/SYSTEM.md`: that rule covers jj-laptop. Everything that
+belongs to pve-prod belongs in this repo.

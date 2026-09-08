@@ -4,37 +4,67 @@
 title: jjventer homelab
 description: pve-prod service dashboard
 
-# Group ordering is taken from services.yaml top to bottom rather than being
-# re-sorted alphabetically here.
+# ── Page shape, 2026-09-08 ──────────────────────────────────────────────
+#
+# Two passes over the same services, top to bottom:
+#
+#   1. "All Services"  a compact strip of icon + name, every service that has
+#                      a web interface. Bookmarks, not services, because a
+#                      service card always draws its widget and its stats and
+#                      there is no setting to suppress them.
+#   2. everything else the detailed cards, with the docker CPU / MEM / RX / TX
+#                      row rendered as an aligned table by config/custom.css.
+#
+# Group order on the page is the order of the keys below, not the order in
+# services.yaml. A group missing from this list still renders, after these.
 layout:
-  # FIRST, and a bookmark group rather than a service group. `iconsOnly` works
-  # on bookmark groups only, which is why the top strip lives in
-  # bookmarks.yaml. `header: false` drops the "Quick Links" title, so the row
-  # reads as a strip of icons rather than a section.
-  Quick Links:
-    iconsOnly: true
+  # FIRST, and a BOOKMARK group. `header: false` drops the group title, so the
+  # strip reads as a strip rather than a section. 6 columns keeps it to three
+  # short lines on a 1080p screen.
+  All Services:
+    style: row
+    columns: 6
     header: false
+
+  # ── Detailed cards ───────────────────────────────────────────────────
+  #
+  # `columns: 2` throughout, and this number is load-bearing for the table.
+  # Every card in a `row` group is the same width, and custom.css gives every
+  # card the same "name | CPU | MEM | RX | TX" template, so the stat cells
+  # line up down the page. Change this and the columns still align, they just
+  # get narrower. At 3 or more the stat cells stop fitting on one line.
   Media:
     style: row
-    columns: 4
+    columns: 2
     icon: mdi-play-circle
   Media Management:
     style: row
-    columns: 4
+    columns: 2
     icon: mdi-magnify-scan
   Downloads:
     style: row
     columns: 2
     icon: mdi-download
+  Apps:
+    style: row
+    columns: 2
+    icon: mdi-apps
   Platform:
     style: row
-    columns: 3
+    columns: 2
     icon: mdi-server-network
+  # Proxmox and AdGuard. Neither is a container on pve-prod, so neither has a
+  # stats row. The table's first column is all they fill.
+  Infrastructure:
+    style: row
+    columns: 2
+    icon: mdi-lan
   # Everything with no web interface. JJ asked for these to be listed rather
   # than hidden, and separated so it is obvious there is nothing to click.
+  # 13 rows of pure CPU and memory, which is the case the table helps most.
   Headless Services:
     style: row
-    columns: 3
+    columns: 2
     icon: mdi-cog-transfer
 
 headerStyle: boxed
@@ -44,7 +74,8 @@ disableCollapse: false
 
 # Show container CPU and memory under every service that declares
 # `server:` + `container:`. This is what gives the headless services real
-# numbers instead of a bare name.
+# numbers instead of a bare name, and it is what config/custom.css lays out
+# as a table. Turning this off empties the table.
 showStats: true
 
 theme: dark

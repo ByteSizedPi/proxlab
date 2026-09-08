@@ -9,8 +9,19 @@ services:
     # Links" strip placed first in the layout. Bookmarks, not services,
     # because Homepage's `iconsOnly` applies to bookmark groups only.
     #
+    # UI pass 2026-09-08, three changes:
+    #   - Added the services that were missing: Proxmox, AdGuard, Authentik,
+    #     Netdata, ntfy, Immich and FreshRSS, plus the six supporting
+    #     containers those stacks run.
+    #   - Replaced the 8-link icons-only strip with "All Services", a compact
+    #     icon-and-name strip covering every service that has a web interface.
+    #   - Added config/custom.css, which lays the docker CPU / MEM / RX / TX
+    #     numbers out as an aligned table instead of four loose blocks per
+    #     card. Read the header of that file before changing the layout.
+    #
     # All of that lives in config/, which does not trigger a redeploy on its
-    # own.
+    # own. This comment is edited on every config pass for exactly that
+    # reason: it puts compose.yaml in the diff, so Komodo pulls the repo.
     container_name: homepage
     environment:
       - PUID=${PUID}

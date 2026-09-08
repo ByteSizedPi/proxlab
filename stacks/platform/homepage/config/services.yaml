@@ -220,6 +220,140 @@
         #   showSummary: true
         #   showStacks: true
 
+    - Authentik:
+        icon: authentik.png
+        href: https://auth.admin.jjventer.co.za
+        description: Identity provider, forward auth for the admin zone
+        server: pve-prod
+        container: authentik-server
+        # ⚠️ WIDGET LEFT OFF. The authentik widget needs an API token with
+        # read access to core/users and events/events. Creating a token that
+        # can read the auth events log, so a dashboard can show a login count,
+        # widens what a Homepage compromise reaches. Not worth it yet.
+        #
+        # To enable: Authentik > Directory > Tokens, then add an
+        # AUTHENTIK_API_KEY Komodo Variable and uncomment.
+        # widget:
+        #   type: authentik
+        #   url: http://authentik-server:9000
+        #   key: "{{HOMEPAGE_VAR_AUTHENTIK_KEY}}"
+
+    - Netdata:
+        icon: netdata.png
+        href: https://netdata.admin.jjventer.co.za
+        description: Host and container metrics, 1 second resolution
+        server: pve-prod
+        container: netdata
+        # The only widget here that needs NO credential. /api/v1/info is
+        # unauthenticated, and the widget reads the alarm counts from it.
+        # Reached over `ingress`, which both containers are on.
+        widget:
+          type: netdata
+          url: http://netdata:19999
+
+    - ntfy:
+        icon: ntfy.png
+        href: https://ntfy.admin.jjventer.co.za
+        description: Push notifications, alert delivery for the estate
+        server: pve-prod
+        container: ntfy
+        # ⚠️ WIDGET LEFT OFF, and the reason is not credentials. The ntfy
+        # widget shows the LAST MESSAGE ON ONE TOPIC, so it needs a `topic:`
+        # naming a single topic. Nothing publishes on a fixed topic yet. Pick
+        # the topic first, then uncomment.
+        # widget:
+        #   type: ntfy
+        #   url: http://ntfy:80
+        #   topic: alerts
+
+- Apps:
+    - Immich:
+        icon: immich.png
+        href: https://immich.admin.jjventer.co.za
+        description: Photos, two External Libraries on /mnt/safe
+        server: pve-prod
+        container: immich_server
+        # ⚠️ WIDGET LEFT OFF. It needs an Immich API key. Add one when the
+        # library rebuild is finished, not before: the photo and video counts
+        # it shows are the numbers being reorganised right now, so a wrong
+        # count on the dashboard would be noise, not a signal.
+        #
+        # To enable: Immich > Account Settings > API Keys, then add an
+        # IMMICH_API_KEY Komodo Variable and uncomment.
+        # widget:
+        #   type: immich
+        #   url: http://immich_server:2283
+        #   key: "{{HOMEPAGE_VAR_IMMICH_KEY}}"
+        #   version: 2
+
+    - FreshRSS:
+        icon: freshrss.png
+        href: https://rss.admin.jjventer.co.za
+        description: Feed reader, single operator
+        server: pve-prod
+        container: freshrss
+        # ⚠️ WIDGET LEFT OFF. The freshrss widget authenticates against the
+        # Google Reader API with the FreshRSS username and its separate API
+        # PASSWORD, which is not the web login password. Both would have to
+        # become Komodo Variables.
+        #
+        # To enable: FreshRSS > Settings > Profile > API management, set an
+        # API password, then add FRESHRSS_USER and FRESHRSS_API_PASS and
+        # uncomment.
+        # widget:
+        #   type: freshrss
+        #   url: http://freshrss:80
+        #   username: "{{HOMEPAGE_VAR_FRESHRSS_USER}}"
+        #   password: "{{HOMEPAGE_VAR_FRESHRSS_PASS}}"
+
+# ── Not containers on pve-prod ───────────────────────────────────
+#
+# Both of these run outside Docker, so neither can carry `server:` and
+# `container:` and neither shows CPU or memory. They are here because they are
+# the two admin pages that are opened when something is broken, and hunting
+# for the URL at that moment is the wrong time.
+#
+#   Proxmox   the hypervisor UI on `pve`, 10.42.0.10:8006
+#   AdGuard   DNS and ad blocking in LXC 100 on `pve`, 10.42.0.12:80
+#
+# Traefik fronts both through file-provider routes rather than docker labels.
+# See ../../traefik/dynamic/proxmox.yml and ../../traefik/dynamic/adguard.yml.
+- Infrastructure:
+    - Proxmox:
+        icon: proxmox.png
+        href: https://proxmox.admin.jjventer.co.za
+        description: Hypervisor host management, Dell PowerEdge R720
+        # ⚠️ WIDGET LEFT OFF. The proxmox widget needs a PVE API token, and
+        # the API serves a self-signed certificate, so Homepage would also
+        # need certificate verification turned off for that call. Two things
+        # to get wrong for a VM count.
+        #
+        # A `proxmoxNode:` + `proxmoxVMID:` pair would give this entry live
+        # CPU and memory in the same shape as the docker services, but it
+        # needs the same API token. Same decision.
+        # widget:
+        #   type: proxmox
+        #   url: https://10.42.0.10:8006
+        #   username: "{{HOMEPAGE_VAR_PROXMOX_TOKEN_ID}}"
+        #   password: "{{HOMEPAGE_VAR_PROXMOX_TOKEN_SECRET}}"
+
+    - AdGuard:
+        icon: adguard-home.png
+        href: https://adguard.admin.jjventer.co.za
+        description: DNS and ad blocking, LXC 100. Holds the ACME TXT record
+        # ⚠️ WIDGET LEFT OFF. /control/stats is behind AdGuard's own login, so
+        # the widget needs that username and password as Komodo Variables.
+        #
+        # ⚠️ If it is ever enabled, point `url:` at 10.42.0.12 and NOT at
+        # adguard.admin.jjventer.co.za. That name resolves through AdGuard to
+        # Traefik, so calling it would send the request back out through the
+        # proxy and depend on the service it is meant to be reporting on.
+        # widget:
+        #   type: adguard
+        #   url: http://10.42.0.12
+        #   username: "{{HOMEPAGE_VAR_ADGUARD_USER}}"
+        #   password: "{{HOMEPAGE_VAR_ADGUARD_PASS}}"
+
 # ── Everything below has NO web interface ────────────────────────────────
 #
 # Listed on purpose rather than hidden. None of these have an href, because
@@ -279,3 +413,39 @@
         description: NO WEB UI. Komodo Core's database
         server: pve-prod
         container: komodo-mongo-1
+
+    - Authentik Worker:
+        icon: authentik.png
+        description: NO WEB UI. Runs Authentik's blueprints, outposts and tasks
+        server: pve-prod
+        container: authentik-worker
+
+    - Authentik PostgreSQL:
+        icon: postgres.png
+        description: NO WEB UI. Authentik's database
+        server: pve-prod
+        container: authentik-postgresql
+
+    - Immich Machine Learning:
+        icon: immich.png
+        description: NO WEB UI. Face and object recognition for Immich
+        server: pve-prod
+        container: immich_machine_learning
+
+    - Immich PostgreSQL:
+        icon: postgres.png
+        description: NO WEB UI. Immich's database, pgvector for search
+        server: pve-prod
+        container: immich_postgres
+
+    - Immich Valkey:
+        icon: redis.png
+        description: NO WEB UI. Immich's job queue
+        server: pve-prod
+        container: immich_redis
+
+    - Socket Proxy (Netdata):
+        icon: docker.png
+        description: NO WEB UI. Read-only docker API for Netdata, CONTAINERS only
+        server: pve-prod
+        container: netdata-socket-proxy

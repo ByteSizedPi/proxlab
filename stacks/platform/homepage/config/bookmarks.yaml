@@ -3,55 +3,89 @@
 #
 # WHY THIS FILE EXISTS
 #
-# JJ asked for a row of the most-used links at the top of the dashboard, as
-# icons only. Homepage cannot do that with services: `iconsOnly` applies to
-# BOOKMARK groups only. So the top strip is bookmarks that point at the same
-# hrefs as the service cards further down.
+# JJ asked for a compact strip at the top of the dashboard: every service as
+# an icon and a name, with the detailed cards further down the page. Homepage
+# has no "compact" mode for SERVICE groups, so the strip is a BOOKMARK group
+# that points at the same hrefs as the service cards in services.yaml.
 #
-# It is also NOT a "recently used" row, and cannot be. Homepage records no
-# clicks and has no dynamic panel. This list is static and hand-ordered, so
-# put the link you open every day first and delete the ones you never touch.
+# 2026-09-08: this was an icons-only strip of 8 favourites. It is now names
+# plus icons, and it lists every service that has a web interface.
+#
+# It is NOT a "recently used" row and cannot be. Homepage records no clicks
+# and has no dynamic panel. The order below is hand-written, so put the link
+# you open every day first.
 #
 # ⚠️ The group name must differ from every group name in services.yaml. The
 # docs are explicit: "Using the same name for a service and bookmark group can
 # cause unexpected behavior like a bookmark group being hidden."
 #
+# ⚠️ A bookmark needs an href. The seven containers in the "Headless Services"
+# group have no web interface, so they cannot appear in this strip. They are
+# in services.yaml only.
+#
 # The `- icon:` list nesting below is required, not a typo. A bookmark name
 # takes a LIST of one mapping.
 #
-# Icon names resolve against the dashboard-icons CDN, same as services.yaml.
-# `description` is what the hover tooltip shows once the labels are gone.
+# `description` is omitted on purpose. Homepage falls back to the hostname
+# when there is none, and config/custom.css hides that line, so the strip
+# stays two lines high. Icon names resolve against the dashboard-icons CDN,
+# same as services.yaml.
 
-- Quick Links:
+- All Services:
     - Jellyfin:
         - icon: jellyfin.png
           href: https://jellyfin.admin.jjventer.co.za
-          description: Watch something
     - Seerr:
         - icon: jellyseerr.png
           href: https://seerr.admin.jjventer.co.za
-          description: Request something
+    - Plex:
+        - icon: plex.png
+          href: https://plex.admin.jjventer.co.za
+    - Immich:
+        - icon: immich.png
+          href: https://immich.admin.jjventer.co.za
+    - FreshRSS:
+        - icon: freshrss.png
+          href: https://rss.admin.jjventer.co.za
     - Sonarr:
         - icon: sonarr.png
           href: https://sonarr.admin.jjventer.co.za
-          description: TV
     - Radarr:
         - icon: radarr.png
           href: https://radarr.admin.jjventer.co.za
-          description: Movies
-    - qBittorrent:
-        - icon: qbittorrent.png
-          href: https://qbittorrent.admin.jjventer.co.za
-          description: Download queue
     - Prowlarr:
         - icon: prowlarr.png
           href: https://prowlarr.admin.jjventer.co.za
-          description: Indexers
+    - Bazarr:
+        - icon: bazarr.png
+          href: https://bazarr.admin.jjventer.co.za
+    - Maintainerr:
+        - icon: maintainerr.png
+          href: https://maintainerr.admin.jjventer.co.za
+    - qBittorrent:
+        - icon: qbittorrent.png
+          href: https://qbittorrent.admin.jjventer.co.za
+    - Tdarr:
+        - icon: tdarr.png
+          href: https://tdarr.admin.jjventer.co.za
+    - Proxmox:
+        - icon: proxmox.png
+          href: https://proxmox.admin.jjventer.co.za
+    - AdGuard:
+        - icon: adguard-home.png
+          href: https://adguard.admin.jjventer.co.za
     - Komodo:
         - icon: mdi-lambda
           href: https://komodo.admin.jjventer.co.za
-          description: Deploys
     - Traefik:
         - icon: traefik.png
           href: https://traefik.admin.jjventer.co.za
-          description: Proxy and TLS
+    - Authentik:
+        - icon: authentik.png
+          href: https://auth.admin.jjventer.co.za
+    - Netdata:
+        - icon: netdata.png
+          href: https://netdata.admin.jjventer.co.za
+    - ntfy:
+        - icon: ntfy.png
+          href: https://ntfy.admin.jjventer.co.za

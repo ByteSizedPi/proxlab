@@ -79,9 +79,15 @@
 }
 
 /* An API widget (Sonarr counts, Jellyfin now-playing) is NOT part of the
- * table. It keeps the full width, on its own row under the service. */
+ * table. It gets its own row under the service.
+ *
+ * The max-width matters because the groups are one column wide. Without it a
+ * three-block Jellyfin widget stretches its blocks across the whole page and
+ * a count of 41 sits in a 500px box. Capped, the widget reads at the same
+ * size it had when the groups were two columns. */
 .services-group .service-card > .service-container {
   grid-column: 1 / -1;
+  max-width: 46rem;
 }
 
 /* A service with no container, such as Proxmox or AdGuard, has no

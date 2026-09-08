@@ -28,43 +28,53 @@ layout:
 
   # ── Detailed cards ───────────────────────────────────────────────────
   #
-  # `columns: 2` throughout, and this number is load-bearing for the table.
-  # Every card in a `row` group is the same width, and custom.css gives every
-  # card the same "name | CPU | MEM | RX | TX" template, so the stat cells
-  # line up down the page. Change this and the columns still align, they just
-  # get narrower. At 3 or more the stat cells stop fitting on one line.
+  # `style: row` + `columns: 1` throughout. One service per row, full page
+  # width, stacked vertically. That is what makes these groups read as a
+  # table rather than as a wall of cards.
+  #
+  # ⚠️ `style: row` with `columns: 1` is NOT the same as `style: columns`.
+  # Both stack the services vertically, but `style: columns` also makes the
+  # GROUP narrow (basis-1/4 at xl), so Media, Downloads and Platform would sit
+  # side by side across the page. `row` keeps every group full width.
+  #
+  # `columns` is load-bearing for the table. Every card in a `row` group is
+  # the same width, and custom.css gives every card the same
+  # "name | CPU | MEM | RX | TX" template, so the stat cells line up down the
+  # whole page. Raising this to 2 or 3 still aligns them, it just puts several
+  # narrower tables beside each other. Above 3 the stat cells stop fitting on
+  # one line. Homepage caps `columns` at 8.
   Media:
     style: row
-    columns: 2
+    columns: 1
     icon: mdi-play-circle
   Media Management:
     style: row
-    columns: 2
+    columns: 1
     icon: mdi-magnify-scan
   Downloads:
     style: row
-    columns: 2
+    columns: 1
     icon: mdi-download
   Apps:
     style: row
-    columns: 2
+    columns: 1
     icon: mdi-apps
   Platform:
     style: row
-    columns: 2
+    columns: 1
     icon: mdi-server-network
   # Proxmox and AdGuard. Neither is a container on pve-prod, so neither has a
   # stats row. The table's first column is all they fill.
   Infrastructure:
     style: row
-    columns: 2
+    columns: 1
     icon: mdi-lan
   # Everything with no web interface. JJ asked for these to be listed rather
   # than hidden, and separated so it is obvious there is nothing to click.
   # 13 rows of pure CPU and memory, which is the case the table helps most.
   Headless Services:
     style: row
-    columns: 2
+    columns: 1
     icon: mdi-cog-transfer
 
 headerStyle: boxed

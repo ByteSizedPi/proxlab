@@ -1,30 +1,40 @@
 #!/usr/bin/env python3
 """Write 720p H.264 companion files for media that cannot direct play.
 
-Runs on pve-prod. Calls ffprobe and ffmpeg inside the jellyfin container,
-because that container holds jellyfin-ffmpeg 8.1 with the tonemapx filter.
+Runs on pve-prod as the jj user. See docs/media/TRANSCODING.md for why this
+exists, what the target format is, and why the output does not go beside the
+source.
 
-Sources are never modified. Output mirrors the source tree into a sibling
-folder, which becomes a second Jellyfin library. See
-docs/media/TRANSCODING.md for why the output does not go beside the source.
+ffmpeg runs in a THROWAWAY container built from the jellyfin image, not through
+`docker exec jellyfin`. Two reasons:
 
-Resumable. A file whose output already exists is skipped, so the nightly
-power-off of pve-prod costs at most one part-finished file.
+1. The jellyfin stack has auto_update and poll_for_updates on, and Komodo polls
+   every 5 minutes. A new jellyfin:latest recreates the container, which kills
+   any `docker exec` running inside it. A throwaway container does not care.
+2. `docker exec` runs as root, so output landed root:root. `--user 1000:1000`
+   writes files owned by jj directly, with no chown step.
+
+The image is needed only for jellyfin-ffmpeg 8.1 and its tonemapx filter.
+
+Sources are never modified. Resumable: a file whose output already exists is
+skipped, so the nightly power-off of pve-prod costs at most one part-finished
+file.
 """
 
 import json
 import os
-import shlex
 import subprocess
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 
+IMAGE = "lscr.io/linuxserver/jellyfin:latest"
 FFMPEG = "/usr/lib/jellyfin-ffmpeg/ffmpeg"
 FFPROBE = "/usr/lib/jellyfin-ffmpeg/ffprobe"
-CONTAINER = "jellyfin"
 
 # Container paths. /mnt/data on the host is /data in the container.
+HOST_ROOT = "/mnt/data"
+CONT_ROOT = "/data"
 PAIRS = [
     ("/data/media/tv", "/data/media/tv-720p"),
     ("/data/media/movies", "/data/media/movies-720p"),
@@ -38,66 +48,105 @@ HDR_TRANSFERS = {"smpte2084", "arib-std-b67"}
 WORKERS = 2
 # 10 threads per job drove the pve-prod load average to 16.9 with ONE job
 # running, because x264 and the 2160p decoder each take threads. 8 keeps two
-# jobs inside 24 vCPUs. Every process is nice 19, so direct play still wins.
+# jobs inside 24 vCPUs. Every container is nice 19, so direct play still wins.
 THREADS = 8
 NICE = 19
-
-# PUID and PGID from stacks/common.env.
-OWNER_UID = 1000
-OWNER_GID = 1000
+OWNER = "1000:1000"
 
 
-def dexec(args, timeout=None):
-    """Run one command inside the jellyfin container."""
-    cmd = ["docker", "exec", CONTAINER, "nice", "-n", str(NICE)] + args
-    return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+def host(p):
+    """Container path to host path."""
+    return p.replace(CONT_ROOT + "/", HOST_ROOT + "/", 1)
 
 
-_PROBE_CACHE = {}
+# Every container this script starts carries this name prefix, so an
+# interrupted run can be cleaned up with one command:
+#   docker ps -a --filter name=c720- -q | xargs -r docker rm -f
+# Killing the python process alone does NOT stop the containers. The docker
+# run client dies, the container keeps encoding, and its output goes to a
+# scratch file nothing will move.
+NAME_PREFIX = "c720-"
+
+
+def drun(entrypoint, args, timeout=None):
+    """Run one binary from the jellyfin image in a throwaway container.
+
+    `nice` goes INSIDE the container. A container does not inherit the nice
+    value of the `docker run` client, because the daemon starts the process,
+    not the client. Measured: the docker client sat at nice 19 while ffmpeg
+    ran at nice 0. --cpu-shares lowers the cgroup weight as well, which is the
+    part the kernel honours under real contention.
+    """
+    name = "%s%d-%d" % (NAME_PREFIX, os.getpid(), time.time_ns())
+    cmd = ["docker", "run", "--rm",
+           "--name", name,
+           "--cpu-shares", "256",
+           "--user", OWNER, "-v", HOST_ROOT + ":" + CONT_ROOT,
+           "--entrypoint", "/usr/bin/nice", IMAGE,
+           "-n", str(NICE), entrypoint] + args
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True,
+                              timeout=timeout)
+    except subprocess.TimeoutExpired:
+        subprocess.run(["docker", "rm", "-f", name],
+                       capture_output=True, text=True)
+        raise
+
+
+def scan():
+    """One container call returns codec and height for every video file.
+
+    Probing 244 files one container at a time costs about 4 minutes of pure
+    container startup, so the cheap pass runs as a single shell loop inside one
+    container. Only the candidates get a full probe afterwards.
+    """
+    roots = " ".join("'%s'" % src for src, _ in PAIRS)
+    script = (
+        'find %s -type f 2>/dev/null | while read -r f; do '
+        'case "$f" in *.mkv|*.mp4|*.m4v|*.avi|*.ts|*.m2ts) ;; *) continue;; esac; '
+        '%s -v quiet -select_streams v:0 -show_entries stream=codec_name,height '
+        '-of csv=p=0 "$f" 2>/dev/null | head -1 | tr -d "\\n"; '
+        'printf "|%%s\\n" "$f"; done' % (roots, FFPROBE)
+    )
+    r = drun("/bin/sh", ["-c", script], timeout=1800)
+    rows = []
+    for line in r.stdout.splitlines():
+        if "|" not in line:
+            continue
+        head, path = line.split("|", 1)
+        parts = head.split(",")
+        codec = parts[0] if parts else ""
+        try:
+            height = int(parts[1])
+        except (IndexError, ValueError):
+            height = 0
+        rows.append((codec, height, path))
+    return rows
 
 
 def probe(path):
-    """ffprobe one file. Cached, because main() and encode() both ask."""
-    if path in _PROBE_CACHE:
-        return _PROBE_CACHE[path]
-    r = dexec([FFPROBE, "-v", "quiet", "-print_format", "json",
-               "-show_streams", "-show_format", path], timeout=120)
-    info = None
-    if r.returncode == 0:
-        try:
-            info = json.loads(r.stdout)
-        except json.JSONDecodeError:
-            info = None
-    _PROBE_CACHE[path] = info
-    return info
+    """Full stream list for one file."""
+    r = drun(FFPROBE, ["-v", "quiet", "-print_format", "json",
+                       "-show_streams", path], timeout=300)
+    if r.returncode != 0:
+        return None
+    try:
+        return json.loads(r.stdout)
+    except json.JSONDecodeError:
+        return None
 
 
-def list_sources():
-    """Every video file under each source root, as container paths."""
-    out = []
-    for src, dst in PAIRS:
-        r = dexec(["find", src, "-type", "f"], timeout=120)
-        for line in r.stdout.splitlines():
-            if line.lower().endswith(VIDEO_EXT):
-                out.append((line, src, dst))
-    return out
+def needs_companion(codec, height):
+    """The filter recorded in docs/media/TRANSCODING.md.
 
-
-def needs_companion(info):
-    """True when a browser or a phone cannot direct play this file.
-
-    The filter is the one recorded in docs/media/TRANSCODING.md: video codec
-    is not h264, or height is above 1080.
+    Video codec is not h264, or height is above 1080. A browser decodes neither
+    HEVC nor Dolby Vision, and many phone decoders cap h264 at 1080p.
     """
-    v = next((s for s in info["streams"] if s.get("codec_type") == "video"), None)
-    if v is None:
-        return False, None
-    codec = v.get("codec_name", "")
-    height = int(v.get("height") or 0)
-    return (codec != "h264" or height > 1080), v
+    return codec != "h264" or height > 1080
 
 
-def build_args(src, tmp, info, vstream):
+def build_args(src, tmp, info):
+    vstream = next(s for s in info["streams"] if s.get("codec_type") == "video")
     hdr = vstream.get("color_transfer") in HDR_TRANSFERS
     scale = ("scale=1280:720:force_original_aspect_ratio=decrease"
              ":force_divisible_by=2")
@@ -105,8 +154,8 @@ def build_args(src, tmp, info, vstream):
         # Scale in the source bit depth first, then tone map down to 8-bit.
         # Scaling first is cheaper and keeps 10-bit precision through the
         # resize. apply_dovi defaults to true, which is correct here: every
-        # Dolby Vision file in this library is profile 8 and carries an
-        # HDR10 base layer.
+        # Dolby Vision file in this library is profile 8 and carries an HDR10
+        # base layer, so tone mapping reads real metadata.
         vf = (scale + ",tonemapx=tonemap=bt2390:transfer=bt709:matrix=bt709"
               ":primaries=bt709:range=tv:format=yuv420p:desat=0")
     else:
@@ -117,7 +166,7 @@ def build_args(src, tmp, info, vstream):
             if s.get("codec_type") == "subtitle"
             and s.get("codec_name") in TEXT_SUBS]
 
-    args = [FFMPEG, "-nostdin", "-y", "-hide_banner", "-loglevel", "warning",
+    args = ["-nostdin", "-y", "-hide_banner", "-loglevel", "warning",
             "-i", src, "-map", "0:v:0"]
 
     # Output audio 0 is AAC stereo, because no browser decodes eac3 or dts.
@@ -150,66 +199,73 @@ def encode(job):
     src, root, dst_root = job
     rel = os.path.relpath(src, root)
     out = os.path.join(dst_root, os.path.splitext(rel)[0] + ".mkv")
+    host_out = host(out)
 
-    host_out = out.replace("/data/", "/mnt/data/", 1)
     if os.path.exists(host_out) and os.path.getsize(host_out) > 0:
         return ("skip", src, "output exists")
 
     info = probe(src)
     if info is None:
         return ("fail", src, "ffprobe failed")
-    wanted, vstream = needs_companion(info)
-    if not wanted:
-        return ("pass", src, "already direct plays")
+    if not any(s.get("codec_type") == "video" for s in info["streams"]):
+        return ("fail", src, "no video stream")
 
-    tmp = os.path.join(SCRATCH, "enc-%d-%s.mkv" % (os.getpid(), str(time.time())))
-    args, hdr = build_args(src, tmp, info, vstream)
+    tmp = os.path.join(SCRATCH, "enc-%d-%d.mkv" % (os.getpid(), time.time_ns()))
+    host_tmp = host(tmp)
+    args, hdr = build_args(src, tmp, info)
 
-    dexec(["mkdir", "-p", os.path.dirname(out)])
+    os.makedirs(os.path.dirname(host_out), exist_ok=True)
     t0 = time.time()
-    r = dexec(args, timeout=6 * 3600)
+    r = drun(FFMPEG, args, timeout=6 * 3600)
     took = time.time() - t0
 
     if r.returncode != 0:
-        dexec(["rm", "-f", tmp])
+        if os.path.exists(host_tmp):
+            os.remove(host_tmp)
         return ("fail", src, (r.stderr or "").strip()[-400:])
 
-    mv = dexec(["mv", tmp, out])
-    if mv.returncode != 0:
-        return ("fail", src, "move failed: " + (mv.stderr or "").strip())
+    # Scratch and output share /dev/sdc, so this is a rename, not a copy.
+    os.replace(host_tmp, host_out)
+    os.chmod(host_out, 0o664)
 
-    # ffmpeg ran as root, because docker exec does not assume the container
-    # user. The rest of the library is 1000:1000, so match it.
-    dexec(["chown", "-R", "%d:%d" % (OWNER_UID, OWNER_GID), os.path.dirname(out)])
-    dexec(["chmod", "664", out])
-
-    size = os.path.getsize(host_out) if os.path.exists(host_out) else 0
-    return ("ok", src,
-            "%s  %.0f min  %.0f MB" % ("HDR" if hdr else "SDR",
-                                       took / 60, size / 1e6))
+    size = os.path.getsize(host_out)
+    return ("ok", src, "%s  %.0f min  %.0f MB"
+            % ("HDR" if hdr else "SDR", took / 60, size / 1e6))
 
 
 def main():
     limit = int(sys.argv[1]) if len(sys.argv) > 1 else 0
 
+    # A previous interrupted run may have left containers encoding.
+    stale = subprocess.run(
+        ["docker", "ps", "-aq", "--filter", "name=" + NAME_PREFIX],
+        capture_output=True, text=True).stdout.split()
+    if stale:
+        print("removing %d container(s) from an earlier run" % len(stale),
+              flush=True)
+        subprocess.run(["docker", "rm", "-f"] + stale, capture_output=True)
+    for f in os.listdir(host(SCRATCH)):
+        if f.startswith("enc-") and f.endswith(".mkv"):
+            os.remove(os.path.join(host(SCRATCH), f))
+
     print("scanning", flush=True)
-    sources = list_sources()
-    print("found %d video files" % len(sources), flush=True)
+    rows = scan()
+    print("found %d video files" % len(rows), flush=True)
 
     jobs = []
-    for job in sources:
-        info = probe(job[0])
-        if info is None:
+    for codec, height, path in rows:
+        if not needs_companion(codec, height):
             continue
-        wanted, _ = needs_companion(info)
-        if wanted:
-            jobs.append(job)
+        for src_root, dst_root in PAIRS:
+            if path.startswith(src_root + "/"):
+                jobs.append((path, src_root, dst_root))
+                break
     print("%d need a companion" % len(jobs), flush=True)
     if limit:
         jobs = jobs[:limit]
         print("limited to %d" % len(jobs), flush=True)
 
-    counts = {"ok": 0, "skip": 0, "fail": 0, "pass": 0}
+    counts = {"ok": 0, "skip": 0, "fail": 0}
     done = 0
     with ThreadPoolExecutor(max_workers=WORKERS) as pool:
         for status, src, note in pool.map(encode, jobs):
@@ -218,9 +274,6 @@ def main():
             print("[%d/%d] %-5s %s  (%s)"
                   % (done, len(jobs), status, os.path.basename(src), note),
                   flush=True)
-
-    for _, dst in PAIRS:
-        dexec(["chown", "-R", "%d:%d" % (OWNER_UID, OWNER_GID), dst])
 
     print("\ndone: " + ", ".join("%s=%d" % kv for kv in counts.items()),
           flush=True)

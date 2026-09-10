@@ -136,3 +136,59 @@ executions = [
 ## this procedure can no longer be triggered from GitHub. Recovery is the LAN
 ## UI (http://10.42.0.11:9120) or the 15-minute schedule above, which is the
 ## other reason that schedule is enabled.
+
+
+## ── Daily image prune ────────────────────────────────────────────────────
+##
+## Every stack sets `auto_update = true`, so each new `:latest` pull leaves the
+## old image behind as an untagged `<none>` image. Nothing else deletes them.
+## On 2026-09-10 there were 57 of them, 27.57 GB on the 63 GB root disk
+## /dev/sda1. Jellyfin refuses to start with less than 2 GiB free, so it
+## crash-looped from boot until they were pruned by hand.
+##
+## Komodo already has a prune for this, and it never runs here. The Server
+## setting `auto_prune` (default true, not set in servers.toml) is driven by
+## `spawn_prune_loop()` in bin/core/src/helpers/prune.rs, which sleeps on
+## `wait_until_timelength(Timelength::OneDay, 5000)`. That wakes at the next
+## whole multiple of a day since the epoch, which is 00:00:05 UTC. pve-prod is
+## powered off every night, and in the 12 boots up to 2026-09-10 it was never
+## on at 00:00 UTC. So the built-in prune has never fired.
+##
+## This procedure runs the same command, `docker image prune -a -f`, at a time
+## the box is on. 18:05 SAST (16:05 UTC) fell inside every one of those 12
+## boots. The 5 minutes keep it off the 15-minute grid of `gitops` above, so a
+## prune never races an image pull from BatchDeployStackIfChanged. If the box is
+## off at 18:05 the day is skipped. Growth was about 0.75 GB a day, so a
+## skipped day costs nothing.
+##
+## `-a` removes every image that no container references, not only `<none>`
+## images. A stopped container still references its image, so a stopped stack
+## keeps its image. What goes is images for stacks that were removed, and
+## one-off images such as `alpine` or `curlimages/curl`, which Docker pulls
+## again the next time something needs them.
+##
+## Adding this procedure does NOT trip the manual-sync trap described above.
+## The sync creates a new procedure through a separate path from the update
+## path, and only an update to the procedure that is running the sync fails.
+
+[[procedure]]
+name = "prune-images"
+tags = ["platform"]
+[procedure.config]
+
+# Cron, not English, so the time is exact. Komodo requires the seconds field:
+# second, minute, hour, day, month, day-of-week.
+schedule_format = "Cron"
+schedule = "0 5 18 * * *"
+# Explicit, because Core's own timezone is empty, which means UTC.
+schedule_timezone = "Africa/Johannesburg"
+schedule_enabled = true
+schedule_alert = false      # a routine prune is not news
+failure_alert = true
+
+[[procedure.config.stage]]
+name = "prune images"
+enabled = true
+executions = [
+  { execution.type = "PruneImages", execution.params.server = "pve-prod", enabled = true },
+]

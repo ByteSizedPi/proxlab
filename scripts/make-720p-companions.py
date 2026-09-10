@@ -46,10 +46,22 @@ TEXT_SUBS = {"subrip", "ass", "ssa", "mov_text", "webvtt", "text"}
 HDR_TRANSFERS = {"smpte2084", "arib-std-b67"}
 
 WORKERS = 2
-# 10 threads per job drove the pve-prod load average to 16.9 with ONE job
-# running, because x264 and the 2160p decoder each take threads. 8 keeps two
-# jobs inside 24 vCPUs. Every container is nice 19, so direct play still wins.
-THREADS = 8
+
+# HARD CPU QUOTA, per container. This is the knob that makes the PowerEdge
+# quiet. `nice` does not reduce CPU power draw, it only decides who runs first,
+# so a niced encode still pins every core and still spins the fans up. --cpus
+# is a CFS quota and does cap the draw.
+#
+# Measured on pve with `ipmitool sdr type Fan` while 2 uncapped jobs ran:
+# fans 4 to 6 at 7920 to 8880 RPM, CPU packages at 71 and 63 degrees C.
+#
+# WORKERS * CPUS is the total budget out of the VM's 24 vCPUs. Raise CPUS for
+# speed, lower it for quiet. Encode time scales roughly inversely.
+CPUS = 4
+
+# Threads above CPUS buys nothing once the quota binds, and x264 loses a little
+# efficiency per thread, so keep them equal.
+THREADS = CPUS
 NICE = 19
 OWNER = "1000:1000"
 
@@ -74,12 +86,14 @@ def drun(entrypoint, args, timeout=None):
     `nice` goes INSIDE the container. A container does not inherit the nice
     value of the `docker run` client, because the daemon starts the process,
     not the client. Measured: the docker client sat at nice 19 while ffmpeg
-    ran at nice 0. --cpu-shares lowers the cgroup weight as well, which is the
-    part the kernel honours under real contention.
+    ran at nice 0. --cpu-shares lowers the cgroup weight under contention, and
+    --cpus sets a hard ceiling that holds even when the box is otherwise idle.
+    The ceiling is the one that keeps the fans down.
     """
     name = "%s%d-%d" % (NAME_PREFIX, os.getpid(), time.time_ns())
     cmd = ["docker", "run", "--rm",
            "--name", name,
+           "--cpus", str(CPUS),
            "--cpu-shares", "256",
            "--user", OWNER, "-v", HOST_ROOT + ":" + CONT_ROOT,
            "--entrypoint", "/usr/bin/nice", IMAGE,

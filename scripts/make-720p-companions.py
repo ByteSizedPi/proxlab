@@ -36,8 +36,15 @@ TEXT_SUBS = {"subrip", "ass", "ssa", "mov_text", "webvtt", "text"}
 HDR_TRANSFERS = {"smpte2084", "arib-std-b67"}
 
 WORKERS = 2
-THREADS = 10
+# 10 threads per job drove the pve-prod load average to 16.9 with ONE job
+# running, because x264 and the 2160p decoder each take threads. 8 keeps two
+# jobs inside 24 vCPUs. Every process is nice 19, so direct play still wins.
+THREADS = 8
 NICE = 19
+
+# PUID and PGID from stacks/common.env.
+OWNER_UID = 1000
+OWNER_GID = 1000
 
 
 def dexec(args, timeout=None):
@@ -171,6 +178,11 @@ def encode(job):
     if mv.returncode != 0:
         return ("fail", src, "move failed: " + (mv.stderr or "").strip())
 
+    # ffmpeg ran as root, because docker exec does not assume the container
+    # user. The rest of the library is 1000:1000, so match it.
+    dexec(["chown", "-R", "%d:%d" % (OWNER_UID, OWNER_GID), os.path.dirname(out)])
+    dexec(["chmod", "664", out])
+
     size = os.path.getsize(host_out) if os.path.exists(host_out) else 0
     return ("ok", src,
             "%s  %.0f min  %.0f MB" % ("HDR" if hdr else "SDR",
@@ -206,6 +218,9 @@ def main():
             print("[%d/%d] %-5s %s  (%s)"
                   % (done, len(jobs), status, os.path.basename(src), note),
                   flush=True)
+
+    for _, dst in PAIRS:
+        dexec(["chown", "-R", "%d:%d" % (OWNER_UID, OWNER_GID), dst])
 
     print("\ndone: " + ", ".join("%s=%d" % kv for kv in counts.items()),
           flush=True)

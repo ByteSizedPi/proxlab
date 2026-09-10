@@ -278,8 +278,16 @@ design. Remove it, or rename it to `tv-720p`.
 First, `CONFIG_ROOT` is `/dev/sda1`, the 63 GB VM root disk. It sat at 87
 percent used with 8.5 GB free on 2026-08-31. One 2160p scratch file is larger
 than that, so a transcode there fills the root filesystem and takes the OS with
-it. The original `stacks/media/tdarr/compose.yaml` mounted `/temp` there. That
-was fixed on 2026-09-04.
+it. The original `stacks/media/tdarr/compose.yaml` mounted `/temp` there.
+
+The fix was WRITTEN on 2026-09-04 but sat uncommitted in the working tree until
+commit `1c29830` on 2026-09-10. The running container used the root-disk path
+for those 6 days. Tdarr ran no job in that window, so nothing filled the disk.
+
+The root filesystem did fill on 2026-09-10, to 98 percent, and Jellyfin
+crash-looped. The cause was old Docker images, not transcode scratch. Commit
+`e1509c3` adds a daily prune procedure, because Komodo Core's own `auto_prune`
+fires at UTC midnight, when `pve-prod` is powered off.
 
 Second, `transcode/` and `media/` are on the same filesystem, `/dev/sdc`. Tdarr
 finishes a job by moving the output into place. On one filesystem that is a

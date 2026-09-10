@@ -26,13 +26,28 @@ services:
       # Scratch space during transcode — disk-backed, not /dev/shm like
       # jellyfin's transcode cache. Video transcode temp files run multiple
       # GB, too large to assume tmpfs/RAM can absorb safely.
-      - ${CONFIG_ROOT}/tdarr/transcode:/temp:Z
+      #
+      # On DATA_ROOT, NOT CONFIG_ROOT. CONFIG_ROOT is /dev/sda1, the 63 GB VM
+      # root disk, which sat at 87% used with 8.5 GB free on 2026-08-31. One
+      # 2160p scratch file is larger than that, so a transcode there fills the
+      # root filesystem and takes the OS down with it. DATA_ROOT is /dev/sdc
+      # with 2.5 TB free. Keep this mount and the media mount on the SAME
+      # filesystem so Tdarr moves the finished file instead of copying it.
+      - ${DATA_ROOT}/transcode:/temp:Z
 
-    # No hardware transcode device passthrough — same reasoning as
-    # jellyfin/compose.yaml. This is the whole point of running Tdarr in the
-    # first place (background transcode, see arr-stack-buildout memory), so
-    # software-only will be slow — revisit once GPU passthrough on pve-prod
-    # is confirmed one way or the other.
+    # No hardware transcode device passthrough, and none is possible.
+    # ANSWERED 2026-09-04, the open question in the old version of this
+    # comment: pve-prod runs 2 sockets of Intel Xeon E5-2670 (Sandy Bridge-EP,
+    # 2012). That family has no integrated graphics and no Quick Sync, and the
+    # PowerEdge carries only a Matrox BMC display chip, which cannot encode.
+    # `/dev/dri` does not exist in the guest. So there is nothing to pass
+    # through. Hardware transcode needs a discrete GPU bought and fitted to the
+    # host first, which is blocked on budget.
+    #
+    # Every transcode on this box is therefore software, on 24 vCPUs of a
+    # 2012 CPU. That is exactly why Tdarr earns its place: it moves the cost
+    # off playback time. Do NOT queue a whole-library pass — see
+    # docs/media/TRANSCODING.md for the scope rule.
     #
     # No `ports:` block, same reasoning as prowlarr/compose.yaml.
     security_opt:

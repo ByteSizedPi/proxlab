@@ -26,6 +26,9 @@ services:
     # All of that lives in config/, which does not trigger a redeploy on its
     # own. This comment is edited on every config pass for exactly that
     # reason: it puts compose.yaml in the diff, so Komodo pulls the repo.
+    #
+    # Config pass 2026-09-21: the Jellyfin widget now sets `version: 2`,
+    # which Jellyfin 12 and later require.
     container_name: homepage
     environment:
       - PUID=${PUID}

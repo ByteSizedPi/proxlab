@@ -26,6 +26,11 @@
           type: jellyfin
           url: http://jellyfin:8096
           key: "{{HOMEPAGE_VAR_JELLYFIN_KEY}}"
+          # Jellyfin 12 dropped the legacy auth that widget version 1 uses,
+          # and version 1 then shows "API Error". Version 2 sends the new
+          # Authorization header. Set 2026-09-21, after the :latest image
+          # pulled 12.1.
+          version: 2
           enableBlocks: true
           enableNowPlaying: true
           enableUser: true

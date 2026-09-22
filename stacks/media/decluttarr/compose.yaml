@@ -26,6 +26,12 @@ services:
       # full write-up. A directory inode is stable, so a pull is picked up.
       #
       # Read-only because decluttarr only ever reads this. It keeps no state.
+      #
+      # A push that only changes configs/ does NOT deploy. Komodo decides
+      # "changed" from this compose file alone (`file_paths` in
+      # komodo/resources/stacks.toml), so edit a comment here in the same
+      # commit. See recyclarr/compose.yaml for the full write-up.
+      # 2026-09-22: touched for the remove_failed_imports pattern change.
       - ./configs:/app/config:ro
 
       # ── Media, READ-ONLY, for the detect_deletions job ────────────────────

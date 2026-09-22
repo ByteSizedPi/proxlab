@@ -73,9 +73,28 @@ jobs:
     # trackedDownloadStatus=warning AND trackedDownloadState in
     # {importPending, importFailed, importBlocked}. A healthy upgrade that
     # imports cleanly never reaches warning state, so it cannot be caught.
+    #
+    # ── Two patterns removed 2026-09-22 ─────────────────────────────────────
+    #
+    # "Not a Custom Format upgrade for existing*" and "Not an upgrade for
+    # existing*" were here. They fire on EVERY season pack that overlaps an
+    # episode already on disk, because Sonarr imports the new episodes and
+    # leaves the item at importBlocked for the ones it already has. This job
+    # then removes the pack AND BLOCKLISTS it. `blocklist = True` is
+    # hard-coded in src/jobs/remove_failed_imports.py, and no config key turns
+    # it off.
+    #
+    # Arrested Development, 2026-09-21: the S05 pack imported its 4 missing
+    # episodes at 13:24, and decluttarr then removed and blocklisted it at 15:01.
+    # The S03 pack reached the same state after its 11 episodes imported. So
+    # every known-good pack ended up on the blocklist after it succeeded.
+    #
+    # Cost of removing them: a partly imported pack now stays in qBittorrent
+    # until it reaches the 1.0 ratio limit, with a warning in the Sonarr
+    # queue. Clear it by hand if it bothers you. The 2026-08-31 stuck-pack case
+    # above is still covered, because its message was "Episode file already
+    # imported at", which stays.
     message_patterns:
-      - "Not a Custom Format upgrade for existing*"
-      - "Not an upgrade for existing*"
       - "*Found potentially dangerous file with extension*"
       - "Invalid video file*"
       - "No files found are eligible for import*"

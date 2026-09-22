@@ -65,6 +65,9 @@ services:
       # 2026-08-14: this line touched on purpose, to force the deploy that
       # the profile rename in configs/recyclarr.yml needs (see the comment
       # above). No functional change here.
+      #
+      # 2026-09-22: touched again for the same reason. configs/recyclarr.yml
+      # set x265 (HD) to 0 and lowered the Bluray size floors.
 
     # No `ports:`, no Traefik labels — Recyclarr has no UI, it only talks
     # OUT to Sonarr/Radarr over `media` on its own schedule.

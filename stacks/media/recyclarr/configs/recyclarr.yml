@@ -72,6 +72,24 @@ sonarr:
 
     quality_definition:
       type: series
+      # ── Bluray minimums lowered 2026-09-22 ──────────────────────────────
+      #
+      # The guide floor for Bluray-1080p is 50.4 MB/min, more than 3x the WEB
+      # 1080p floor of 15. That floor exists to reject re-encodes, but it also
+      # rejects every efficient encode, and for an older series an efficient
+      # encode is often the only well-seeded release. Arrested Development
+      # S03 on 2026-09-21: every healthy pack was a 1080p BluRay x265 encode
+      # at about 33 MB/min, so Sonarr approved nothing and 11 episodes stayed
+      # missing. See docs/problems.md in the dotfiles repo.
+      #
+      # Each Bluray floor now matches the WEB floor at the same resolution.
+      # The LQ, LQ (Release Title) and Upscaled formats below still block
+      # the known bad encoders at any size.
+      qualities:
+        - name: Bluray-1080p
+          min: 15
+        - name: Bluray-720p
+          min: 10
 
     quality_profiles:
       - trash_id: 72dae194fc92bf828f32cde7744e51a1  # WEB-1080p
@@ -116,8 +134,9 @@ sonarr:
         # host has NO hardware transcoding (see the note in the Radarr section).
         # Add `- name: Bluray-2160p` above WEB 2160p if that trade ever changes.
         #
-        # The x265 (HD) format below scores -10000 but targets 720p/1080p only,
-        # so it does not block 2160p HEVC, which is the normal codec up there.
+        # The x265 (HD) format below targets 720p/1080p only, so it never
+        # touched 2160p HEVC, which is the normal codec up there. Since
+        # 2026-09-22 it scores 0, not -10000. See custom_formats below.
         qualities:
           - name: WEB 2160p
             qualities:
@@ -140,11 +159,31 @@ sonarr:
           until_quality: WEB 2160p
           until_score: 10000
 
+    # ── x265 (HD) is a fallback, not a block (2026-09-22) ─────────────────
+    #
+    # This format came in through the "[Optional] Golden Rule HD" group at
+    # -10000, which REJECTS every 720p/1080p x265 release. That rule is about
+    # quality (most HD x265 is a re-encode) and about browsers, which cannot
+    # decode HEVC. docs/media/TRANSCODING.md in this repo measured that every
+    # native client app here direct plays HEVC and only browsers transcode.
+    #
+    # At 0, x265 can still be grabbed, but it loses to any WEB x264 release,
+    # because the streaming-service boosts put those at about +1700. So x265
+    # wins only when nothing else exists, and `until_score: 10000` upgrades
+    # it later if an x264 release turns up.
+    #
+    # Listed here and NOT in custom_format_groups. The Recyclarr docs do not
+    # say which score wins when one trash_id is in both places, so it is in
+    # exactly one.
+    custom_formats:
+      - trash_ids:
+          - 47435ece6b99a0b477caf360e79ba0bb  # x265 (HD)
+        assign_scores_to:
+          - name: "1080p, auto-upgrade to 4K"
+            score: 0
+
     custom_format_groups:
       add:
-        - trash_id: 158188097a58d7687dee647e04af0da3  # [Optional] Golden Rule HD
-          select:
-            - 47435ece6b99a0b477caf360e79ba0bb  # x265 (HD)
         # No `select:` here. Both formats in this group (HD Streaming Boost,
         # UHD Streaming Boost) are marked `required` in the guide, and
         # required formats are always included. Naming them made Recyclarr
@@ -199,6 +238,13 @@ radarr:
 
     quality_definition:
       type: movie
+      # Bluray floors lowered to the WEB floor (12.5 MB/min), same reasoning
+      # as the Sonarr instance above. Guide values were 50.8 and 25.7.
+      qualities:
+        - name: Bluray-1080p
+          min: 12.5
+        - name: Bluray-720p
+          min: 12.5
 
     quality_profiles:
       - trash_id: d1d67249d3890e49bc12e275d989a7e9  # HD Bluray + WEB
@@ -260,11 +306,16 @@ radarr:
           until_quality: WEB 2160p
           until_score: 10000
 
+    # x265 (HD) at 0, same reasoning as the Sonarr instance above.
+    custom_formats:
+      - trash_ids:
+          - dc98083864ea246d05a42df0d05f81cc  # x265 (HD)
+        assign_scores_to:
+          - name: "1080p, auto-upgrade to 4K"
+            score: 0
+
     custom_format_groups:
       add:
-        - trash_id: f8bf8eab4617f12dfdbd16303d8da245  # [Optional] Golden Rule HD
-          select:
-            - dc98083864ea246d05a42df0d05f81cc  # x265 (HD)
         - trash_id: a3ac6af01d78e4f21fcb75f601ac96df  # [Unwanted] Unwanted Formats
           select:
             - b8cd450cbfa689c0259a01d9e29ba3d6  # 3D

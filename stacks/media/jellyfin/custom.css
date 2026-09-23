@@ -1,0 +1,16 @@
+/* Catppuccin Mocha, mauve accent. Matches the desktop theme in ~/dotfiles
+ * (Noctalia builtin "Catppuccin", kitty active_border_color #cba6f7).
+ *
+ * Jellyfin does NOT read this file. Paste it into Dashboard > General >
+ * Branding > Custom CSS code. Jellyfin stores it in /config/config/branding.xml.
+ * This copy is the record, so the CSS survives a rebuilt /config volume.
+ *
+ * Source: https://github.com/catppuccin/jellyfin (MIT).
+ * Jellyfin 12: the theme styles only the "TV" and "Legacy" display modes.
+ */
+@import url("https://jellyfin.catppuccin.com/theme.css");
+@import url("https://jellyfin.catppuccin.com/catppuccin-mocha.css");
+
+/* Mocha already defaults to mauve. Change the accent here, for example:
+ * :root { --main-color: var(--blue); }
+ */

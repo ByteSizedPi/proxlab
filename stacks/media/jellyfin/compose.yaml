@@ -67,6 +67,24 @@ services:
     # Jellyfin keeps running, trust breaks until Jellyfin restarts. A container
     # IP was rejected here for the same reason, in reverse.
 
+    # ── Plugins, also configured in Jellyfin, not here ───────────────────
+    #
+    # Plugin state lives in /config/data/plugins and is NOT part of this repo.
+    # On 2026-09-22 the web UI layer changed to Jellyfin Enhanced 12.8.0.0
+    # (repo https://raw.githubusercontent.com/n00bcodr/jellyfin-plugins/main/manifest.json).
+    # It does the Seerr search/requests and the per-source ratings row.
+    #
+    # Disabled, not uninstalled, on that date:
+    #   Home Screen Sections - its Seerr Discover rows loaded slowly and
+    #                          broke the home page at the bottom of the scroll.
+    #   Collection Sections  - built for ABI 10.11.11, running on 12.1.
+    #   Media Bar            - disabled to test one UI plugin at a time.
+    # Kept: File Transformation and Plugin Pages, which Jellyfin Enhanced uses.
+    # Backup of the earlier state: /config/plugins-backup-2026-09-22.tgz.
+    #
+    # Theme: Catppuccin Mocha. The CSS is in custom.css next to this file,
+    # pasted into Dashboard > Branding. Jellyfin does not read the file.
+
     labels:
       - "traefik.enable=true"
       # Jellyfin is the one service published in BOTH zones, and the reasons

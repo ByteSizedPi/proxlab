@@ -11,6 +11,9 @@ services:
       - ${DATA_ROOT}:/data:Z
       # RAM-backed transcode scratch space, not disk. Matches jjserver.
       - /dev/shm:/transcode
+      # Logo files for custom.css, served at /web/branding/. Inside the web
+      # root because Jellyfin serves nothing else without a plugin.
+      - ./branding:/usr/share/jellyfin/web/branding:ro,Z
 
     # No hardware transcode device passthrough (/dev/dri etc.) — not
     # confirmed available on pve-prod's VM, unlike jjserver's bare-metal
@@ -82,8 +85,10 @@ services:
     # Kept: File Transformation and Plugin Pages, which Jellyfin Enhanced uses.
     # Backup of the earlier state: /config/plugins-backup-2026-09-22.tgz.
     #
-    # Theme: Catppuccin Mocha. The CSS is in custom.css next to this file,
-    # pasted into Dashboard > Branding. Jellyfin does not read the file.
+    # Theme: Catppuccin Mocha, branded "ByteSizedMedia". The CSS is in
+    # custom.css next to this file, pasted into Dashboard > Branding.
+    # Jellyfin does not read custom.css. It does serve ./branding (above).
+    # The server name is set in Dashboard > General, also not in this repo.
 
     labels:
       - "traefik.enable=true"

@@ -14,3 +14,23 @@
 /* Mocha already defaults to mauve. Change the accent here, for example:
  * :root { --main-color: var(--blue); }
  */
+
+/* ByteSizedMedia logo. The files are in ./branding, which compose.yaml
+ * mounts at /usr/share/jellyfin/web/branding. Made from ByteSizedPi.ai,
+ * recolored to mauve #cba6f7 and teal #94e2d5.
+ *
+ * .pageTitleWithDefaultLogo is the header logo, .splashLogo the loading
+ * screen. Both class names were read from the 12.1.0 web bundle.
+ */
+.pageTitleWithDefaultLogo {
+  background-image: url("/web/branding/banner.png") !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+}
+
+.splashLogo {
+  background-image: url("/web/branding/banner.png") !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+}

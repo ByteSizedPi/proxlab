@@ -200,18 +200,43 @@ AdGuard's tailnet address no matter what the wifi link does. The home zone has
 no such override on purpose — it must resolve on the LAN — so it takes the
 full weight of the wrong choice.
 
-**Fix, on the AX10 admin UI at `http://10.42.0.1`:** set the DHCP DNS server
-list to `10.42.0.12` **only**. Remove the router's own address.
+#### Rejected fix: AdGuard as the only DHCP resolver
 
-This is the same change that makes ad blocking work for the whole house. Any
-client that picks `10.42.0.1` today bypasses AdGuard entirely, so the filter
-lists are being applied to an unknown subset of devices.
+The first fix written here (2026-08-31) was to set the AX10 DHCP DNS list to
+`10.42.0.12` only. **Do not do this.** AdGuard is LXC 100 on `pve`, and `pve`
+is off every night and whenever it is not needed. With AdGuard as the only
+resolver, every LAN client loses all DNS while `pve` is off. The internet
+fails too, not only the home zone. Corrected 2026-09-29.
 
-Keep a second entry out of the list rather than adding a public resolver as a
-fallback. A fallback resolver reintroduces exactly this failure: it answers
-fast, it answers wrong for both private zones, and it silently disables
-filtering. If AdGuard is down the correct symptom is "no DNS", which is
-diagnosable, not "half the names resolve".
+#### Fix: publish the home zone in public DNS
+
+Keep both resolvers in the DHCP list. Make both of them give the same answer
+instead:
+
+1. In Cloudflare, add `A  *.home  10.42.0.11`, proxy status **DNS only**
+   (grey cloud). Cloudflare cannot proxy a private address.
+2. Keep the AdGuard rewrite. It gives the same answer, so the two resolvers
+   agree.
+3. From a LAN client, run `dig +short @10.42.0.1 jellyfin.home.jjventer.co.za`.
+   The result must be `10.42.0.11`.
+
+The AX10 forwards the query upstream and Cloudflare answers it. The name then
+resolves on the LAN with `pve` off or on. With `pve-prod` off, the name still
+resolves, but the connection fails, which is correct.
+
+This fix publishes a private address and the service names `jellyfin` and
+`seerr`. See "DNS is not access control" above: the leak is information only.
+The admin zone stays out of public DNS.
+
+⚠️ **Risk:** some routers apply DNS rebinding protection and drop public
+answers that contain a private address. If the `dig` in step 3 returns empty
+while `dig +short @1.1.1.1 jellyfin.home.jjventer.co.za` returns `10.42.0.11`,
+the AX10 does this. Look for a rebinding setting in the AX10 UI. If there is
+none, this fix does not work and the coin flip stays.
+
+**Trade-off that stays:** a client that picks `10.42.0.1` skips AdGuard, so ad
+blocking covers only some devices. An always-on AdGuard is the only full fix.
+That waits for a host that is permanently on.
 
 ### AdGuard must be a tailnet node, not just a LAN address
 

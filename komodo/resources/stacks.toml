@@ -27,6 +27,8 @@
 ##                           + monitoring   netdata, scrutiny, uptime-kuma,
 ##                                           ntfy
 ##                 apps      (no secondary tag needed yet — homepage, immich)
+##                 work      (no secondary tag needed yet — openproject)
+##                           client work. Data on /mnt/work, see docs/WORK.md
 ##
 ## A stack always carries its category tag even when a secondary tag also
 ## applies, so filtering by "media" alone still finds everything media-
@@ -854,6 +856,57 @@ path = ""
 command = "sh ../../platform/authentik/check-secrets.sh komodo.env && mkdir -p /mnt/docker-data/appdata/freshrss/data /mnt/docker-data/appdata/freshrss/extensions"
 shell_mode = true
 
+
+[[stack]]
+name = "openproject"
+tags = ["work"]
+[stack.config]
+server = "pve-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/work/openproject"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+# Two secrets. Generate each once, HEX ONLY, and store as Komodo Variables
+# with "Secret" on:
+#
+#     openssl rand -hex 32    # OPENPROJECT_DB_PASSWORD
+#     openssl rand -hex 64    # OPENPROJECT_SECRET_KEY_BASE
+#
+# Hex because the DB password is embedded in DATABASE_URL, where base64's
+# `/` and `+` would need URL escaping.
+#
+# ⚠️ Same trap as Immich: changing OPENPROJECT_DB_PASSWORD after first deploy
+# does NOT change the database password. Postgres sets it at initdb only.
+environment = """
+OP_DB_PASSWORD=[[OPENPROJECT_DB_PASSWORD]]
+OP_SECRET_KEY_BASE=[[OPENPROJECT_SECRET_KEY_BASE]]
+"""
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "openproject.env"]
+
+# --- Automation ---
+webhook_enabled = false
+
+# OFF for the same reason as Immich: version bumps run schema migrations.
+# Deploy by hand, after a fresh backup.
+auto_update = false
+poll_for_updates = true
+
+# --- Pre-deploy: refuse a missing work disk, refuse unresolved secrets, mkdir ---
+#
+# The mountpoint check comes first and matters most. If the work disk is not
+# mounted, /mnt/work is an empty directory on the 64 GB root disk, and a
+# deploy would quietly create a fresh, empty OpenProject there. The client
+# records would look lost, and new ones would land outside the backup's
+# intended disk. Failing the deploy is the correct outcome.
+[stack.config.pre_deploy]
+path = ""
+command = "mountpoint -q /mnt/work && sh ../../platform/authentik/check-secrets.sh komodo.env && mkdir -p /mnt/work/openproject/assets /mnt/work/openproject/postgres"
+shell_mode = true
 
 ## ── Komodo Core is deliberately NOT here ────────────────────────────────
 ##

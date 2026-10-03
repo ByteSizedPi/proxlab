@@ -2,7 +2,7 @@
 #
 # 3-2-1 backup for pve-prod.
 #
-#   copy 1  /mnt/safe on pve-prod          the working data (RAID6)
+#   copy 1  /mnt/safe and /mnt/work        the working data (RAID6)
 #   copy 2  restic repo on jjserver        second machine, second array
 #   copy 3  restic repo on Backblaze B2    offsite
 #
@@ -60,6 +60,22 @@ if docker ps --format '{{.Names}}' | grep -qx immich_postgres; then
   echo "wrote $(du -h "$DUMP_DIR/immich.sql.gz" | cut -f1)"
 else
   echo "immich_postgres not running - skipping (previous dump is retained)"
+fi
+
+# ── 1a. Dump the OpenProject database ────────────────────────────────────
+#
+# Client records. The dump goes to /mnt/work/db, not DUMP_DIR, so client data
+# never leaves the work disk. See docs/WORK.md.
+log "Dumping OpenProject Postgres"
+WORK_DUMP_DIR=/mnt/work/db
+if mountpoint -q /mnt/work && docker ps --format '{{.Names}}' | grep -qx openproject_postgres; then
+  mkdir -p "$WORK_DUMP_DIR"
+  docker exec openproject_postgres pg_dump -U openproject -d openproject --clean --if-exists \
+    | gzip -c > "$WORK_DUMP_DIR/openproject.sql.gz.tmp"
+  mv -f "$WORK_DUMP_DIR/openproject.sql.gz.tmp" "$WORK_DUMP_DIR/openproject.sql.gz"
+  echo "wrote $(du -h "$WORK_DUMP_DIR/openproject.sql.gz" | cut -f1)"
+else
+  echo "openproject_postgres not running or /mnt/work not mounted - skipping (previous dump is retained)"
 fi
 
 # ── 1b. Snapshot the Jellyfin SQLite databases ───────────────────────────
@@ -147,6 +163,10 @@ fi
 # ── 2. Back up to jjserver ───────────────────────────────────────────────
 log "Backup -> jjserver"
 SOURCES=(/mnt/safe /mnt/docker-data/appdata)
+# The work disk, only when it is really mounted. An unmounted /mnt/work is an
+# empty directory, and backing that up would add an empty snapshot path that
+# looks like data loss on the next restore.
+mountpoint -q /mnt/work && SOURCES+=(/mnt/work)
 [ -d /mnt/docker-data/komodo/backups ] && SOURCES+=(/mnt/docker-data/komodo/backups)
 
 restic backup \
@@ -154,6 +174,7 @@ restic backup \
   --tag pve-prod \
   --exclude /mnt/safe/immich/thumbs \
   --exclude /mnt/safe/immich/encoded-video \
+  --exclude /mnt/work/openproject/postgres \
   --exclude '**/lost+found' \
   "${SOURCES[@]}"
 

@@ -1,0 +1,74 @@
+name: openproject
+
+# Project management for the Work stack. Single user, admin zone only.
+# Client data (database and attachments) lives on /mnt/work. See docs/WORK.md.
+
+services:
+  openproject:
+    # The all-in-one image, pointed at the external database below. With
+    # DATABASE_URL set it does not start its embedded Postgres. It still runs
+    # its own memcached, web, worker and cron processes. Enough for one user.
+    image: openproject/openproject:${OPENPROJECT_VERSION}
+    container_name: openproject
+    environment:
+      # Hex-only password: it sits inside a URL, so no escaping is needed.
+      - DATABASE_URL=postgres://openproject:${OP_DB_PASSWORD:?}@db/openproject?pool=20&encoding=unicode&reconnect=true
+      - OPENPROJECT_SECRET_KEY_BASE=${OP_SECRET_KEY_BASE:?}
+      - OPENPROJECT_HOST__NAME=projects.${ADMIN_DOMAIN}
+      - OPENPROJECT_HTTPS=true
+      - OPENPROJECT_DEFAULT__LANGUAGE=en
+      - TZ=${TZ}
+    volumes:
+      - ${WORK_ROOT}/openproject/assets:/var/openproject/assets
+    depends_on:
+      db:
+        condition: service_healthy
+
+    # No `ports:` block. Traefik reaches this over `ingress`.
+    # No `no-new-privileges`: the all-in-one image starts as root and drops
+    # to its app user internally, and that flag can block the switch.
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ingress
+      - openproject_internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openproject.rule=Host(`projects.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.openproject.loadbalancer.server.port=80"
+
+  db:
+    image: postgres:16
+    container_name: openproject_postgres
+    environment:
+      POSTGRES_USER: openproject
+      POSTGRES_DB: openproject
+      POSTGRES_PASSWORD: ${OP_DB_PASSWORD:?}
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+    volumes:
+      - ${WORK_ROOT}/openproject/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openproject -d openproject"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - openproject_internal
+
+networks:
+  ingress:
+    external: true
+  openproject_internal:

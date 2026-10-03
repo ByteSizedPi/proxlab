@@ -35,7 +35,7 @@ Written 2026-10-03. Single user, admin zone only, nothing public.
 
 | Stack | Name | Status |
 |---|---|---|
-| `stacks/work/openproject` | `projects.admin.jjventer.co.za` | Added 2026-10-03 |
+| `stacks/work/openproject` | `projects.admin.jjventer.co.za` | Added 2026-10-03. OpenProject 17, PostgreSQL 17 |
 | Paperless-ngx | - | Later, for receipts and tax documents |
 | Invoice Ninja | - | Later, when a Markdown invoice template stops being enough |
 | DocuSeal (e-signatures) | - | On the VPS when it exists. Must be always-on and public |

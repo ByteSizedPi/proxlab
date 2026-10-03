@@ -1,0 +1,24 @@
+[Unit]
+Description=Alert on ntfy when restic-backup.service fails
+Documentation=file:///home/jj/proxlab/docs/WORK.md
+
+# Why this exists: from 2026-08-15 to 2026-10-03 every backup run failed at
+# the retention step on a stale lock, and nothing said so. Snapshots kept
+# appearing, because the backup step runs BEFORE retention, so `restic
+# snapshots` looked healthy for seven weeks. Retention never ran, and copy 3
+# (B2) would never have been reached. A failed unit must be loud.
+#
+# Triggered by OnFailure= in restic-backup.service.
+#
+# /etc/restic/ntfy.env (root:root 600, never committed):
+#   NTFY_URL=https://ntfy.admin.jjventer.co.za/alerts
+#   NTFY_USER=alerts
+#   NTFY_PASSWORD=<the alerts password, see stacks/platform/ntfy/ntfy.env>
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/restic/ntfy.env
+ExecStart=/bin/sh -c 'curl -fsS --max-time 20 -u "$NTFY_USER:$NTFY_PASSWORD" \
+  -H "Title: pve-prod backup FAILED" -H "Priority: high" -H "Tags: warning" \
+  -d "restic-backup.service failed at $(date -Is). Read: journalctl -u restic-backup -n 50" \
+  "$NTFY_URL"'

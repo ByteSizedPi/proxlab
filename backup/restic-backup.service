@@ -8,6 +8,10 @@ RequiresMountsFor=/mnt/safe /mnt/docker-data
 After=docker.service network-online.target
 Wants=network-online.target
 
+# Any failure sends an ntfy alert. See restic-backup-failed.service for the
+# seven silent weeks that made this necessary.
+OnFailure=restic-backup-failed.service
+
 [Service]
 Type=oneshot
 ExecStart=/usr/local/sbin/restic-backup.sh

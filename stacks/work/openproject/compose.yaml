@@ -12,7 +12,11 @@ services:
     container_name: openproject
     environment:
       # Hex-only password: it sits inside a URL, so no escaping is needed.
-      - DATABASE_URL=postgres://openproject:${OP_DB_PASSWORD:?}@db/openproject?pool=20&encoding=unicode&reconnect=true
+      # No query parameters. The all-in-one entrypoint tests this URL with
+      # psql before it starts, and psql rejects the Rails-only `pool`,
+      # `encoding` and `reconnect` that OpenProject's multi-container example
+      # uses ("invalid URI query parameter"), so the container restart-loops.
+      - DATABASE_URL=postgres://openproject:${OP_DB_PASSWORD:?}@db/openproject
       - OPENPROJECT_SECRET_KEY_BASE=${OP_SECRET_KEY_BASE:?}
       - OPENPROJECT_HOST__NAME=projects.${ADMIN_DOMAIN}
       - OPENPROJECT_HTTPS=true

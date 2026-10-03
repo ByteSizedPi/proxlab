@@ -45,28 +45,30 @@ Written 2026-10-03. Single user, admin zone only, nothing public.
 Same pattern as `/mnt/safe` (see docs/HARDWARE.md, "Final layout on VM 110").
 A thin volume on `tank`, so the size only costs what is written.
 
-On `pve`:
+On `pve`. Same options as `scsi2` and `scsi3` (checked 2026-10-03):
 
 ```sh
-qm config 110 | grep -E '^scsi[0-9]'          # copy the option string from scsi2
-qm set 110 --scsi4 tank:50,<options from scsi2>   # 50 GB, hot-plugged
-echo "info block" | qm monitor 110 | grep -A4 drive-scsi4   # want no zeroinit
+qm set 110 --scsi4 tank:50,discard=on,iothread=1
+echo "info block" | qm monitor 110 | grep -A4 drive-scsi4   # want discard unmap, no zeroinit
 ```
 
-On `pve-prod`:
+On `pve-prod`. Check the device name first. Letters move between boots.
 
 ```sh
-lsblk -o NAME,SIZE,LABEL,MOUNTPOINT            # find the new 50 G disk, no label
-sudo mkfs.ext4 -L work -E lazy_itable_init=0,lazy_journal_init=0 /dev/sdX
-sudo mkdir -p /mnt/work
-grep /mnt/safe /etc/fstab                      # copy its options
-# add: LABEL=work  /mnt/work  ext4  <same options as /mnt/safe>  0  2
-sudo systemctl daemon-reload && sudo mount /mnt/work
-mountpoint /mnt/work && df -h /mnt/work
+lsblk -o NAME,SIZE,LABEL,MOUNTPOINT            # the new 50G disk, no label, no mount
+sudo wipefs -n /dev/sdX                        # must print nothing: no old signatures
+sudo mkfs.ext4 -m 0 -L work -E lazy_itable_init=0,lazy_journal_init=0 /dev/sdX
+echo "UUID=$(sudo blkid -s UUID -o value /dev/sdX)  /mnt/work  ext4  defaults,nofail,x-systemd.device-timeout=10  0  2" \
+  | sudo tee -a /etc/fstab
+sudo mkdir -p /mnt/work && sudo systemctl daemon-reload && sudo mount /mnt/work
+findmnt /mnt/work && df -h /mnt/work
 ```
 
-Mount by label, never by `/dev/sdX`. Device letters swap across reboots on
-this VM (docs/HARDWARE.md).
+The fstab line copies `/mnt/safe` and `/mnt/data` exactly: mount by UUID,
+`nofail` so a missing disk does not stop the boot, and a 10 second device
+timeout. Because of `nofail`, a missing disk leaves `/mnt/work` as an empty
+directory, which is why every Work service and the backup check
+`mountpoint -q /mnt/work` first.
 
 The default inode ratio is right here. Unlike `/mnt/safe` and `/mnt/data`,
 this disk holds many small files: documents, attachments, database pages.

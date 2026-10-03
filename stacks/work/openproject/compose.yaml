@@ -17,7 +17,12 @@ services:
       # `encoding` and `reconnect` that OpenProject's multi-container example
       # uses ("invalid URI query parameter"), so the container restart-loops.
       - DATABASE_URL=postgres://openproject:${OP_DB_PASSWORD:?}@db/openproject
-      - OPENPROJECT_SECRET_KEY_BASE=${OP_SECRET_KEY_BASE:?}
+      # SECRET_KEY_BASE, not OPENPROJECT_SECRET_KEY_BASE. The image reads the
+      # plain Rails name and otherwise falls back to its built-in
+      # "OVERWRITE_ME", which OpenProject 17 refuses: web and worker exit at
+      # boot and Traefik serves 503. Never change this value after first
+      # start - encrypted database content depends on it.
+      - SECRET_KEY_BASE=${OP_SECRET_KEY_BASE:?}
       - OPENPROJECT_HOST__NAME=projects.${ADMIN_DOMAIN}
       - OPENPROJECT_HTTPS=true
       - OPENPROJECT_DEFAULT__LANGUAGE=en

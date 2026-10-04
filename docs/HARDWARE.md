@@ -887,9 +887,39 @@ module is a different slot (by symmetry with B3, probably A3). **Which
 physical module is faulty is not yet known.** Check the Lifecycle Log (F10 at
 boot, or racadm once iDRAC has a network) and the BIOS Memory Settings page.
 
+### Boot loop, and the module that was removed (14:00 to 14:43)
+
+After the first recovery, every boot alternated between 96 GB and 128 GB. When
+the flaky module trained, the Lifecycle Controller saw "new" memory, ran power
+characterisation, and rebooted. When it failed, POST stopped at "Memory
+initialization warning detected" and F1. An intermittent module.
+
+Physical layout found with the lid off: **A1, B1, B2, B3** (one module on
+CPU 1, three on CPU 2, as received from the previous owner). The 96 GB boots
+had A1, B1, B3 active, so **B2 was the module that dropped out**. It was
+removed and labelled "faulty, removed 2026-10-04".
+
+The remaining three were rearranged for one module per channel on the first
+(white) slots, and to separate module faults from slot faults:
+
+| Slot | Module | History |
+|---|---|---|
+| A1 | ex-B3 | no errors |
+| A2 | ex-A1 | **the module the 11:03 UE named.** Taped "suspect" |
+| B1 | ex-B1 | no errors |
+
+If a UE recurs and names **A2**, the module is bad. If it names **A1** again,
+the slot or CPU 1's memory channel is. Booted clean at 14:41 with 96 GB, EDAC
+counters 0, no new memory events.
+
+The Dell Lifecycle Controller "Hardware Diagnostics" (ePSA) failed: its
+package is missing and installing it needs a networked firmware update.
+memtest86+ 7.20 is already installed, and GRUB already has "Memory test
+(memtest86+x64.efi)" entries.
+
 ### Still to do
 
-1. Run the Dell ePSA memory test (F10 > Hardware Diagnostics), or memtest86+.
+1. Run memtest86+ for one full pass (GRUB menu, 5 s timeout at boot) (F10 > Hardware Diagnostics), or memtest86+.
 2. Identify and replace the faulty module (Samsung M386B4G70DM0-CMA3, 32 GB
    DDR3-1866 LRDIMM). Until then the host runs on 96 GB, which is enough.
 3. Save, then clear, the SEL: 930 entries, 90% used, mostly backplane

@@ -47,6 +47,23 @@ log() { printf '\n=== %s ===\n' "$1"; }
 exec 9>"$LOCK"
 flock -n 9 || { echo "another restic-backup is already running"; exit 0; }
 
+# ── 0. Clear stale locks ──────────────────────────────────────────────────
+#
+# pve-prod is shut down nightly, often while a long `restic copy` to B2 is
+# still running. On 2026-10-03 at 21:08 the shutdown took the network down
+# before restic could release its lock on jjserver ("error while unlocking:
+# ssh command exited: exit status 255"). The next morning's run then saved
+# its snapshot and failed at retention, because `forget --prune` needs an
+# exclusive lock. The same thing had already happened once, after the
+# 2026-08-15 power loss, and went unnoticed for seven weeks.
+#
+# `restic unlock` without --remove-all removes only STALE locks: locks whose
+# process no longer exists on this host, or which are old. A live lock from
+# another run is never touched, and the flock above already guarantees there
+# is no other run on this host. So this is safe on every start.
+log "Clearing stale locks"
+restic unlock
+
 # ── 1. Dump the Immich database ──────────────────────────────────────────
 log "Dumping Immich Postgres"
 mkdir -p "$DUMP_DIR"
@@ -198,6 +215,9 @@ if [ -f "$B2_ENV" ]; then
   export RESTIC_FROM_REPOSITORY="$RESTIC_REPOSITORY"
   export RESTIC_FROM_PASSWORD_FILE="$RESTIC_PASSWORD_FILE"
   export RESTIC_REPOSITORY="$B2_REPOSITORY"
+  # Same stale-lock cleanup as step 0, on the B2 side. An interrupted copy
+  # holds a lock on the destination too.
+  restic unlock
   restic copy --from-repo "$RESTIC_FROM_REPOSITORY"
   restic forget --tag pve-prod \
     --keep-daily 7 --keep-weekly 4 --keep-monthly 6 \

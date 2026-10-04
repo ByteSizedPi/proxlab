@@ -218,8 +218,18 @@ if [ -f "$B2_ENV" ]; then
   # Same stale-lock cleanup as step 0, on the B2 side. An interrupted copy
   # holds a lock on the destination too.
   restic unlock
-  restic copy --from-repo "$RESTIC_FROM_REPOSITORY"
-  restic forget --tag pve-prod \
+  # Upload cap for the internet leg only. jjserver is on the LAN and is not
+  # limited. Measured 2026-10-03: an uncapped copy ran at about 7 MB/s, the
+  # whole uplink. Image pulls on pve-prod and git over SSH from the laptop
+  # stalled or were reset while it ran. The value is KiB/s, set in b2.env so
+  # it can change without a commit. 0 or unset means no cap.
+  LIMIT_ARGS=()
+  if [ "${B2_LIMIT_UPLOAD_KIB:-0}" -gt 0 ]; then
+    LIMIT_ARGS=(--limit-upload "$B2_LIMIT_UPLOAD_KIB")
+    echo "upload capped at ${B2_LIMIT_UPLOAD_KIB} KiB/s"
+  fi
+  restic copy "${LIMIT_ARGS[@]}" --from-repo "$RESTIC_FROM_REPOSITORY"
+  restic forget "${LIMIT_ARGS[@]}" --tag pve-prod \
     --keep-daily 7 --keep-weekly 4 --keep-monthly 6 \
     --prune
 else

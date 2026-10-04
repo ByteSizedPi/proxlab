@@ -843,3 +843,57 @@ Nokia, is not.
 
 Lesson for the next time throughput looks wrong: measure each hop, and do not
 trust a CPU figure that is a symptom of pushing traffic rather than a cause.
+
+## 2026-10-04 11:03 — host frozen by an uncorrectable memory error
+
+### Symptom
+
+The whole R720xd went silent at about 11:03 SAST, under backup load (restic
+chunking 247 GiB for the jjserver leg). `pve`, `pve-prod` and both LXCs
+stopped answering ARP on the LAN. Power, fans and drive LEDs stayed on. The
+iDRAC LED was blue. Every reboot afterwards seemed to hang, because POST
+stopped at **"Strike the F1 key to continue"** and waited. After F1, the
+Lifecycle Controller spent several minutes on "Collecting System Inventory"
+before GRUB.
+
+### Cause, from the SEL (read locally with `ipmitool sel elist` on `pve`)
+
+```
+353 | 11:03:13 AM | Unknown MSR Info Log |  | Asserted
+354 | 11:03:13 AM | Unknown MSR Info Log |  | Asserted
+355 | 11:03:13 AM | Memory ECC Uncorr Err | Uncorrectable ECC ( DIMMA1) | Asserted
+356 | 11:03:14 AM | Unknown MSR Info Log |  | Asserted
+... six more MSR Info Log entries to 11:03:15
+```
+
+An uncorrectable ECC error is a fatal machine check. The firmware halts the
+machine instead of letting corrupt data through, which is why nothing reached
+the journal (it ends at 10:53:51, the 5-minute journald sync loses the last
+minutes) and pstore is empty. No thermal trip and no power event at 11:03.
+It was the first memory event in the SEL. EDAC counters were 0 after reboot.
+
+### A 32 GB module has been mapped out
+
+```
+kernel Memory line   2026-10-01: 122323296K/134153004K   (128 GB)
+                     2026-10-04 12:11: 91391180K/100598572K   (96 GB)
+dmidecode now: DIMM_A1, DIMM_B1, DIMM_B3 = 32 GB each. Every other slot
+               "No Module Installed".
+```
+
+The BIOS disabled one module at POST, which is also why POST stopped at the
+F1 prompt. The SEL names **A1**, yet A1 is still in the map, so the disabled
+module is a different slot (by symmetry with B3, probably A3). **Which
+physical module is faulty is not yet known.** Check the Lifecycle Log (F10 at
+boot, or racadm once iDRAC has a network) and the BIOS Memory Settings page.
+
+### Still to do
+
+1. Run the Dell ePSA memory test (F10 > Hardware Diagnostics), or memtest86+.
+2. Identify and replace the faulty module (Samsung M386B4G70DM0-CMA3, 32 GB
+   DDR3-1866 LRDIMM). Until then the host runs on 96 GB, which is enough.
+3. Save, then clear, the SEL: 930 entries, 90% used, mostly backplane
+   presence flapping on bay `#0xab` (see "A red herring worth recording").
+   A full SEL stops recording the next real event.
+4. Consider giving iDRAC a network address. This incident was invisible from
+   the LAN until someone stood at the console.

@@ -150,6 +150,10 @@ The second cable was not connected during the drain. `AC lost` re-asserted at
 reads `No Reading`. The machine runs on one supply. The second supply is
 present in bay 10.2 and needs only a C13 cable.
 
+**Superseded 2026-09-10:** PSU 2 now has a cable and mains power, but it
+reports a power-good failure. See "PSU 2 has mains, but reports a power-good
+failure" at the end of this file.
+
 ## Change log
 
 ### ipmitool installed on `pve`, 2026-08-05
@@ -810,6 +814,10 @@ INQUIRY with a field the Seagates reject. Harmless, and the origin of their
 off a single supply. One cable is the fix and it is the cheapest reliability
 improvement available in this build.
 
+**Superseded 2026-09-10:** the cable is in, and PSU 2 has had mains since about
+15 or 16 August. It still does not give redundancy, because its power-good
+signal reads failed. See the last section of this file.
+
 **The Nokia-to-AX10 roof cable is the network bottleneck, and it is not
 fixable.** Diagnosed 2026-08-14 in this order, recorded because the first two
 conclusions were wrong:
@@ -843,6 +851,113 @@ Nokia, is not.
 
 Lesson for the next time throughput looks wrong: measure each hop, and do not
 trust a CPU figure that is a symptom of pushing traffic rather than a cause.
+
+---
+
+## `pve`: PSU 2 has mains, but reports a power-good failure (2026-09-10)
+
+Found while measuring the power draw. This supersedes both "PSU 2 has no cable"
+notes above. PSU 2 has had mains power since about 15 or 16 August, but its
+output does not report good. The machine therefore still depends on PSU 1 alone.
+
+### Power draw
+
+| When | Draw | Load | Source |
+|---|---|---|---|
+| 2026-08-05 | 158 W | `pve` load 1.58 | iDRAC, see the fan section above |
+| 2026-09-10 14:22 SAST | 364 to 367 W | 720p encode job on `pve-prod`, `pve` load 21 | iDRAC `Pwr Consumption` and DCMI |
+| 2026-09-10, about 14:30 SAST | 168 W | not recorded | iDRAC `Pwr Consumption` |
+| Highest ever recorded | 431 W, 2026-08-25 17:42 SAST | not recorded | `ipmitool delloem powermonitor` |
+
+At the 14:22 reading, RAPL gave 92 W for CPU package 0 and 95 W for package 1,
+measured over 5 seconds. The two E5-2670 CPUs used 187 W, about half of the
+total, at about 80 percent of their 115 W rating. The rest is memory, drives,
+fans, the board and PSU losses. Those parts were not measured one by one.
+
+`ipmitool delloem powermonitor` also reports 58.8 kWh of cumulative energy
+since 2022-07-25. That is much too low for a host that runs about 13 hours a
+day, so do not use that counter to estimate cost.
+
+### PSU state, read on 2026-09-10
+
+```
+PS1, PS2 FRU       PWR SPLY,1100W,RDNT,LTON   part 0NTCWPA00   (identical)
+Voltage 1 / 2      226 V / 226 V
+Current 1 / 2      1.6 A / 0.2 A     (at 364 W)
+Status 62h (PS1)   Presence detected
+Status 63h (PS2)   Presence detected
+PS1 PG Fail 2Dh    State Deasserted  (good)
+PS2 PG Fail 2Ch    State Asserted    (failed)
+PS Redundancy 74h  No Reading, Event Status Unavailable
+```
+
+The two supplies are the same model and rating, so a rating mismatch does not
+explain the fault.
+
+### What the System Event Log shows
+
+| Period | Events |
+|---|---|
+| 27 June to 15 August 2026 | `Power Supply AC lost` on PS2, on most boots. The last one is 14:04:05 on 15 August, the outage recorded above. |
+| 15 August, 14:38:52 | One `Config Error` on PS2 (sensor 63h). The event data is `06ffff`, so the BMC gives no reason. |
+| 16 August 17:15:07 to 10 September | 63 `PS2 PG Fail` events. The sensor often asserts and deasserts in pairs 5 seconds apart. The last event is an assertion at 11:05:50 on 10 September. |
+
+No `AC lost` event has been logged since 15 August.
+
+### What this means
+
+These points are inferred from the readings above, not observed directly.
+
+- PSU 2 got its C13 cable between 14:04 on 15 August and 17:15 on 16 August.
+  The `AC lost` events stop and the `PG Fail` events start inside that window.
+  This file did not record the change.
+- The input side of PSU 2 works. The BMC reads 226 V on it, and its status
+  sensor shows no `AC lost`.
+- The output side does not report good. `PG Fail` is the supply's own
+  power-good signal. It has read failed for most of the time since 16 August,
+  and it reads failed now.
+- So the single-PSU risk from the 15 August outage is still open, although the
+  cable is in.
+
+I do not know if PSU 2 is faulty or asleep. Dell's Hot Spare feature puts the
+second supply to sleep at low load, and 0.2 A (about 45 VA) fits a supply in
+standby. But a working hot-spare pair should report `PS Redundancy` as
+`Fully Redundant`, not `No Reading`.
+
+### Next checks
+
+1. Open Power > Power Supplies in the iDRAC web UI. Read the status of each
+   supply and the Hot Spare setting.
+2. If PSU 2 shows failed, swap PSU 1 and PSU 2 between bays during the nightly
+   shutdown.
+3. If the fault follows the supply, replace the supply. If the fault stays in
+   bay 2, suspect the bay or the cable.
+4. After any change, run `ipmitool sdr elist | grep -E "PG Fail|Redundancy"`.
+   The target is both `PG Fail` sensors `Deasserted` and `PS Redundancy` at
+   `Fully Redundant`.
+
+### Trap: verbose `sdr` output lists enabled states, not current states
+
+`ipmitool -v sdr entity 10.2` prints `Failure detected`, `Predictive failure`,
+`Power Supply AC lost` and `Config Error` under PSU 2's status sensor. Most of
+those lines are the lists of states the sensor CAN assert. A grep for `[` in
+that output mixes them with the current state. The current state is the
+`Sensor Reading` and the plain `ipmitool sdr elist` line, which show only
+`Presence detected`. Do not read the verbose list as a live fault.
+
+### Commands
+
+```
+ipmitool sdr type "Power Supply"                    # presence, status, redundancy
+ipmitool sdr elist | grep -E "PG Fail|Current|Voltage|Pwr"
+ipmitool sensor get "Pwr Consumption"               # whole-server watts now
+ipmitool dcmi power reading                         # the same, through DCMI
+ipmitool delloem powermonitor                       # peak watts, energy counter
+ipmitool fru | grep -A8 "PS[12]"                    # PSU model and rating
+ipmitool sel elist | grep -iE "power supply|PG Fail"
+```
+
+---
 
 ## 2026-10-04 11:03 — host frozen by an uncorrectable memory error
 

@@ -410,7 +410,18 @@ Deliberately ordered to avoid paying for infrastructure ahead of need.
    via DNS-01, admin services behind `*.admin.jjventer.co.za`.
 3. **Then** — migrate the wanted services off `jjserver`. *arr stack,
    Jellyfin. Everything internal, everything on the tailnet.
-4. **Later** — wipe `jjserver`, rebuild as a NAS.
+4. **Later** — wipe `jjserver`, rebuild as a NAS. End state, decided
+   2026-10-05, not started:
+   - **Keeps:** the restic repo (copy 2), Tailscale, and a **secondary
+     AdGuard** that copies its config from the one on `pve`. Its own AdGuard
+     config is thrown away, because the `pve` one is better. Traefik only if
+     a service on `jjserver` still needs it.
+   - **Why the secondary AdGuard:** `pve` is off every night, and the admin
+     zone resolves only through AdGuard. With a second resolver on a box that
+     is always on, the admin names, and the iDRAC relay for powering `pve`
+     on and off, still work while `pve` is off.
+   - **Everything else is retired and wiped**, including the 920 GB Jellyfin
+     library. That library no longer has to be watched first.
 5. **When `pve-prod` is permanently on** — buy the VPS, add public ingress,
    Tailscale ACLs, auth layer. Only then does anything become public.
 
@@ -434,7 +445,8 @@ that are re-downloadable. `/mnt/safe` is the irreplaceable half: camera
 originals, photos, documents, laptop backups, app state. Backing up the media
 would multiply the offsite bill by twenty for no benefit. See
 `jjserver-media-stays-put` for the related decision that jjserver's own 920 GB
-library is never migrated either.
+library is never migrated either. Since 2026-10-05 that library is wiped with
+`jjserver` (see Sequencing, step 4).
 
 **Live databases are dumped, not copied.** A Postgres or Mongo data directory
 copied file-by-file is mid-write and restores are a coin flip. Immich is

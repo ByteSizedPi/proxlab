@@ -1034,11 +1034,36 @@ memtest86+ 7.20 is already installed, and GRUB already has "Memory test
 
 ### Still to do
 
-1. Run memtest86+ for one full pass (GRUB menu, 5 s timeout at boot) (F10 > Hardware Diagnostics), or memtest86+.
-2. Identify and replace the faulty module (Samsung M386B4G70DM0-CMA3, 32 GB
-   DDR3-1866 LRDIMM). Until then the host runs on 96 GB, which is enough.
-3. Save, then clear, the SEL: 930 entries, 90% used, mostly backplane
-   presence flapping on bay `#0xab` (see "A red herring worth recording").
-   A full SEL stops recording the next real event.
-4. Consider giving iDRAC a network address. This incident was invisible from
-   the LAN until someone stood at the console.
+1. ~~Run memtest86+ for one full pass.~~ Done, clean (see Follow-up).
+2. ~~Identify and replace the faulty module.~~ Not needed for now. The module
+   is back in after a clean memtest (see Follow-up).
+3. ~~Save, then clear, the SEL.~~ Done 2026-10-05.
+4. ~~Give iDRAC a network address.~~ Done, `10.42.0.161`. Still to do: reserve
+   it on the AX10 and record it in `docs/network/RENUMBER.md`.
+
+### Follow-up, 2026-10-05 to 2026-10-07
+
+- **A second uncorrectable error is in the SEL**, at 14:51:43 on 4 October,
+  naming **DIMMB1**. A PCIe fatal error on bus 01 came 3 seconds before it.
+  It happened about 30 seconds after the lid closed, so probably on the first
+  power-on after the modules were moved. No memory events since.
+- **SEL saved and cleared** at 08:11 on 5 October. The dump is
+  `docs/sel/pve-sel-2026-10-05.txt`.
+- **memtest86+ ran for about a day with no errors.**
+- **B2's module is back in, in slot A3.** Layout now: A1, A2, A3, B1, 32 GB
+  each, 128 GB. The memtest result did not support keeping it out. If POST
+  starts to alternate between 96 GB and 128 GB again, this module is the first
+  suspect, because a module that fails training never reaches memtest.
+- **iDRAC is on the LAN** at `10.42.0.161` (`CN=idrac-HJDGGZ1`). The web UI
+  returned 404 on `/start.html` on 7 October. SSH and HTTPS ports are open.
+
+### Trap: `grub-reboot` repeats forever on this host
+
+After the memtest run, every boot went back into memtest. `grub-reboot` had
+set `next_entry`, and GRUB clears that entry at boot only if it can write
+`/boot/grub/grubenv`. GRUB does not write to LVM, and `/boot/grub` is on
+`/dev/mapper/pve-root`. So the one-time entry never cleared.
+
+Fixed on 7 October with `grub-editenv - unset next_entry` (backup in
+`/root/grubenv.bak-2026-10-07`). For a future memtest run, pick the entry by
+hand in the GRUB menu. Do not use `grub-reboot` here.

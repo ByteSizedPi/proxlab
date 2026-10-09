@@ -1,0 +1,1024 @@
+   5 | 07/25/2022 | 01:29:42 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+   6 | 07/25/2022 | 01:29:47 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Deasserted
+   7 | 07/25/2022 | 01:30:32 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+   8 | 07/25/2022 | 01:31:33 PM SAST | Power Supply Status | Power Supply AC lost | Deasserted
+   9 | 07/25/2022 | 01:55:48 PM SAST | Drive Slot / Bay #0xa1 | Drive Present () | Deasserted
+   a | 07/25/2022 | 01:55:50 PM SAST | Drive Slot / Bay Drive 0 | Drive Present () | Deasserted
+   b | 07/25/2022 | 01:55:51 PM SAST | Drive Slot / Bay #0xa2 | Drive Present () | Deasserted
+   c | 07/25/2022 | 02:14:25 PM SAST | Drive Slot / Bay #0xa1 | Drive Present () | Asserted
+   d | 07/25/2022 | 02:14:27 PM SAST | Drive Slot / Bay Drive 0 | Drive Present () | Asserted
+   e | 07/25/2022 | 02:14:27 PM SAST | Drive Slot / Bay #0xa2 | Drive Present () | Asserted
+   f | 07/25/2022 | 02:31:35 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  10 | 07/25/2022 | 02:31:55 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Deasserted
+  11 | 07/25/2022 | 02:33:42 PM SAST | OS Boot | C: boot completed | Asserted
+  12 | 07/25/2022 | 02:33:42 PM SAST | OEM record dc | 000137 | 009c8dde6200
+  13 | 07/25/2022 | 02:35:31 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  14 | 07/25/2022 | 02:36:21 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Deasserted
+  15 | 07/25/2022 | 02:42:48 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  16 | 07/25/2022 | 02:44:16 PM SAST | OS Boot | C: boot completed | Asserted
+  17 | 07/25/2022 | 02:44:16 PM SAST | OEM record dc | 000137 | 001790de6200
+  18 | 07/25/2022 | 02:47:13 PM SAST | OS Critical Stop | OS graceful shutdown | Asserted
+  19 | 07/25/2022 | 02:47:13 PM SAST | OEM record dd | 000137 | 000300028000
+  1a | 07/25/2022 | 02:50:56 PM SAST | OS Boot | C: boot completed | Asserted
+  1b | 07/25/2022 | 02:50:56 PM SAST | OEM record dc | 000137 | 00aa91de6200
+  1c | 07/25/2022 | 02:52:17 PM SAST | OS Critical Stop | OS graceful shutdown | Asserted
+  1d | 07/25/2022 | 02:52:17 PM SAST | OEM record dd | 000137 | 000400020000
+  1e | 07/25/2022 | 02:55:03 PM SAST | OS Boot | C: boot completed | Asserted
+  1f | 07/25/2022 | 02:55:03 PM SAST | OEM record dc | 000137 | 00a192de6200
+  20 | 07/25/2022 | 03:01:39 PM SAST | OS Critical Stop | OS graceful shutdown | Asserted
+  21 | 07/25/2022 | 03:01:39 PM SAST | OEM record dd | 000137 | 000000000000
+  22 | 07/25/2022 | 03:05:51 PM SAST | OS Boot | C: boot completed | Asserted
+  23 | 07/25/2022 | 03:05:51 PM SAST | OEM record dc | 000137 | 002995de6200
+  24 | 07/25/2022 | 05:48:48 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  25 | 07/25/2022 | 05:48:53 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Deasserted
+  26 | 07/25/2022 | 05:57:15 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  27 | 12/31/1999 | 08:00:35 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  28 | 07/25/2022 | 06:16:40 PM SAST | Drive Slot / Bay #0xa1 | Drive Present () | Deasserted
+  29 | 07/25/2022 | 06:16:42 PM SAST | Drive Slot / Bay Drive 0 | Drive Present () | Deasserted
+  2a | 07/25/2022 | 06:42:09 PM SAST | Drive Slot / Bay Drive 0 | Drive Present () | Asserted
+  2b | 07/25/2022 | 06:42:14 PM SAST | Drive Slot / Bay Drive 0 | Drive Present () | Deasserted
+  2c | 07/25/2022 | 06:42:31 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Deasserted
+  2d | 12/31/1999 | 08:00:33 PM SAST | Battery CMOS Battery | Failed | Asserted
+  2e | 12/31/1999 | 08:00:51 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  2f | 12/31/1999 | 08:00:33 PM SAST | Battery CMOS Battery | Failed | Asserted
+  30 | 12/31/1999 | 08:00:44 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  31 | 12/31/1999 | 08:00:32 PM SAST | Battery CMOS Battery | Failed | Asserted
+  32 | 12/31/1999 | 08:00:35 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  33 | 12/31/1999 | 08:00:49 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  34 | 12/31/1999 | 08:00:33 PM SAST | Battery CMOS Battery | Failed | Asserted
+  35 | 12/31/1999 | 08:00:36 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  36 | 12/31/1999 | 08:00:50 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  37 | 12/31/1999 | 08:00:31 PM SAST | Battery CMOS Battery | Failed | Asserted
+  38 | 12/31/1999 | 08:00:34 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  39 | 12/31/1999 | 08:00:49 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  3a | 12/31/1999 | 08:00:32 PM SAST | Battery CMOS Battery | Failed | Asserted
+  3b | 12/31/1999 | 08:00:35 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  3c | 12/31/1999 | 08:00:48 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  3d | 12/31/1999 | 08:00:32 PM SAST | Battery CMOS Battery | Failed | Asserted
+  3e | 12/31/1999 | 08:00:37 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  3f | 12/31/1999 | 08:02:36 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  40 | 12/31/1999 | 08:00:31 PM SAST | Battery CMOS Battery | Failed | Asserted
+  41 | 12/31/1999 | 08:00:34 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  42 | 12/31/1999 | 08:00:48 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  43 | 12/31/1999 | 08:02:30 PM SAST | Battery CMOS Battery | Failed | Deasserted
+  44 | 12/06/2019 | 02:03:31 AM SAST | Power Supply Status | Power Supply AC lost | Deasserted
+  45 | 12/06/2019 | 02:10:46 AM SAST | OS Boot | C: boot completed | Asserted
+  46 | 12/06/2019 | 02:10:46 AM SAST | OEM record dc | 000137 | 0039dcea5d00
+  47 | 12/06/2019 | 02:18:18 AM SAST | Physical Security Intrusion | General Chassis intrusion () | Deasserted
+  48 | 12/06/2019 | 02:18:28 AM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  49 | 12/07/2019 | 01:08:00 AM SAST | OS Boot | C: boot completed | Asserted
+  4a | 12/07/2019 | 01:08:00 AM SAST | OEM record dc | 000137 | 0049dfea5d00
+  4b | 12/07/2019 | 01:10:37 AM SAST | OS Critical Stop | OS graceful shutdown | Asserted
+  4c | 12/07/2019 | 01:10:37 AM SAST | OEM record dd | 000137 | 000300028000
+  4d | 12/07/2019 | 01:14:35 AM SAST | OS Boot | C: boot completed | Asserted
+  4e | 12/07/2019 | 01:14:36 AM SAST | OEM record dc | 000137 | 00d5e0ea5d00
+  4f | 12/07/2019 | 01:17:43 AM SAST | OS Critical Stop | OS graceful shutdown | Asserted
+  50 | 12/07/2019 | 01:17:43 AM SAST | OEM record dd | 000137 | 000400020000
+  51 | 12/07/2019 | 01:20:44 AM SAST | OS Boot | C: boot completed | Asserted
+  52 | 12/07/2019 | 01:20:44 AM SAST | OEM record dc | 000137 | 0046e2ea5d00
+  53 | 12/07/2019 | 02:18:49 AM SAST | OS Critical Stop | OS graceful shutdown | Asserted
+  54 | 12/07/2019 | 02:18:49 AM SAST | OEM record dd | 000137 | 000000000000
+  55 | 07/26/2022 | 01:41:31 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Deasserted
+  56 | 07/26/2022 | 01:41:36 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  57 | 07/26/2022 | 01:41:46 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Deasserted
+  58 | 07/26/2022 | 01:43:47 PM SAST | OS Boot | C: boot completed | Asserted
+  59 | 07/26/2022 | 01:43:47 PM SAST | OEM record dc | 000137 | 006cd3df6200
+  5a | 07/26/2022 | 01:47:12 PM SAST | OS Critical Stop | OS graceful shutdown | Asserted
+  5b | 07/26/2022 | 01:47:12 PM SAST | OEM record dd | 000137 | 000000000000
+  5c | 07/26/2022 | 01:51:40 PM SAST | OS Boot | C: boot completed | Asserted
+  5d | 07/26/2022 | 01:51:40 PM SAST | OEM record dc | 000137 | 0047d5df6200
+  5e | 07/26/2022 | 01:52:53 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  5f | 08/11/2022 | 01:37:23 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  60 | 08/11/2022 | 01:42:58 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  61 | 08/11/2022 | 01:45:35 PM SAST | OS Boot | C: boot completed | Asserted
+  62 | 08/11/2022 | 01:45:35 PM SAST | OEM record dc | 000137 | 00d6ebf46200
+  63 | 08/18/2022 | 07:54:34 PM SAST | OS Boot | C: boot completed | Asserted
+  64 | 08/18/2022 | 07:54:34 PM SAST | OEM record dc | 000137 | 00d27cfe6200
+  65 | 08/18/2022 | 07:58:25 PM SAST | OS Critical Stop | OS graceful shutdown | Asserted
+  66 | 08/18/2022 | 07:58:25 PM SAST | OEM record dd | 000137 | 000000000000
+  67 | 06/27/2026 | 12:13:45 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  68 | 06/27/2026 | 12:13:59 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  69 | 06/27/2026 | 12:20:24 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  6a | 06/27/2026 | 07:20:42 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  6b | 06/27/2026 | 12:28:03 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Deasserted
+  6c | 06/27/2026 | 12:28:08 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  6d | 06/27/2026 | 12:28:18 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Deasserted
+  6e | 06/27/2026 | 05:29:09 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  6f | 06/27/2026 | 05:29:14 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Deasserted
+  70 | 06/27/2026 | 05:31:46 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  71 | 06/27/2026 | 09:05:34 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  72 | 06/27/2026 | 09:06:19 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Deasserted
+  73 | 07/13/2026 | 02:43:38 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+  74 | 07/13/2026 | 02:43:43 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Deasserted
+  75 | 07/13/2026 | 03:15:40 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  76 | 07/13/2026 | 04:31:46 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  77 | 07/14/2026 | 12:52:39 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  78 | 07/14/2026 | 01:16:32 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  79 | 07/16/2026 | 05:11:18 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  7a | 07/16/2026 | 05:18:48 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  7b | 07/17/2026 | 07:04:47 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  7c | 07/19/2026 | 10:45:07 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  7d | 07/20/2026 | 08:38:24 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  7e | 07/21/2026 | 01:19:11 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  7f | 07/22/2026 | 08:55:48 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  80 | 07/23/2026 | 04:32:48 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  81 | 07/29/2026 | 03:19:30 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  82 | 07/30/2026 | 09:24:04 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  83 | 07/31/2026 | 02:48:34 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  84 | 08/01/2026 | 11:41:38 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  85 | 08/02/2026 | 08:59:44 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  86 | 08/03/2026 | 07:35:32 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  87 | 08/04/2026 | 05:43:33 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  88 | 08/05/2026 | 08:36:20 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  89 | 08/06/2026 | 09:56:31 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  8a | 08/06/2026 | 04:15:20 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  8b | 08/08/2026 | 09:58:45 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  8c | 08/09/2026 | 09:27:16 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  8d | 08/10/2026 | 11:13:46 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  8e | 08/11/2026 | 09:51:31 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  8f | 08/13/2026 | 11:19:26 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  90 | 08/14/2026 | 02:47:50 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  91 | 08/14/2026 | 02:48:05 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  92 | 08/14/2026 | 02:48:55 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+  93 | 08/14/2026 | 02:49:59 PM SAST | Drive Slot / Bay #0xad | Drive Fault () | Asserted
+  94 | 08/14/2026 | 02:50:09 PM SAST | Drive Slot / Bay #0xad | Drive Fault () | Deasserted
+  95 | 08/14/2026 | 02:58:49 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+  96 | 08/14/2026 | 02:58:54 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+  97 | 08/14/2026 | 02:58:59 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+  98 | 08/14/2026 | 02:59:04 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+  99 | 08/14/2026 | 03:02:00 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  9a | 08/14/2026 | 03:02:05 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  9b | 08/14/2026 | 03:03:26 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  9c | 08/14/2026 | 03:03:31 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  9d | 08/14/2026 | 03:08:58 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  9e | 08/14/2026 | 03:09:04 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  9f | 08/14/2026 | 03:09:24 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  a0 | 08/14/2026 | 03:09:30 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  a1 | 08/14/2026 | 03:13:02 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  a2 | 08/14/2026 | 03:13:07 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  a3 | 08/14/2026 | 03:14:23 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  a4 | 08/14/2026 | 03:15:43 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  a5 | 08/14/2026 | 03:18:14 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  a6 | 08/14/2026 | 03:18:20 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  a7 | 08/14/2026 | 03:18:25 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  a8 | 08/14/2026 | 03:18:35 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  a9 | 08/14/2026 | 03:19:46 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  aa | 08/14/2026 | 03:19:52 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  ab | 08/14/2026 | 03:20:07 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  ac | 08/14/2026 | 03:20:13 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  ad | 08/14/2026 | 03:20:48 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  ae | 08/14/2026 | 03:20:53 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  af | 08/14/2026 | 03:21:18 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  b0 | 08/14/2026 | 03:21:24 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  b1 | 08/14/2026 | 03:21:54 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  b2 | 08/14/2026 | 03:21:59 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  b3 | 08/14/2026 | 03:22:16 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  b4 | 08/14/2026 | 03:22:22 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  b5 | 08/14/2026 | 03:22:27 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  b6 | 08/14/2026 | 03:22:32 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  b7 | 08/14/2026 | 03:22:58 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  b8 | 08/14/2026 | 03:23:03 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  b9 | 08/14/2026 | 03:23:08 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  ba | 08/14/2026 | 03:23:14 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  bb | 08/14/2026 | 03:24:49 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  bc | 08/14/2026 | 03:24:54 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  bd | 08/14/2026 | 03:25:00 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  be | 08/14/2026 | 03:25:10 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  bf | 08/14/2026 | 03:25:55 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  c0 | 08/14/2026 | 03:26:00 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  c1 | 08/14/2026 | 03:26:16 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+  c2 | 08/14/2026 | 03:26:21 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+  c3 | 08/14/2026 | 03:30:18 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  c4 | 08/14/2026 | 03:30:23 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  c5 | 08/14/2026 | 03:31:23 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  c6 | 08/14/2026 | 03:31:29 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  c7 | 08/14/2026 | 03:32:19 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  c8 | 08/14/2026 | 03:32:24 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  c9 | 08/14/2026 | 03:33:15 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  ca | 08/14/2026 | 03:33:25 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  cb | 08/14/2026 | 03:33:51 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  cc | 08/14/2026 | 03:33:56 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  cd | 08/14/2026 | 03:34:01 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  ce | 08/14/2026 | 03:34:06 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  cf | 08/14/2026 | 03:34:11 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  d0 | 08/14/2026 | 03:34:18 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  d1 | 08/14/2026 | 03:34:23 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  d2 | 08/14/2026 | 03:34:33 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  d3 | 08/14/2026 | 03:35:03 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  d4 | 08/14/2026 | 03:35:08 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  d5 | 08/14/2026 | 03:35:13 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  d6 | 08/14/2026 | 03:35:25 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  d7 | 08/14/2026 | 03:35:36 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  d8 | 08/14/2026 | 03:35:51 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  d9 | 08/14/2026 | 03:36:01 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  da | 08/14/2026 | 03:36:06 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  db | 08/14/2026 | 03:36:11 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  dc | 08/14/2026 | 03:36:22 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  dd | 08/14/2026 | 03:36:27 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  de | 08/14/2026 | 03:36:32 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  df | 08/14/2026 | 03:36:38 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  e0 | 08/14/2026 | 03:36:43 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  e1 | 08/14/2026 | 03:38:18 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  e2 | 08/14/2026 | 03:38:24 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  e3 | 08/14/2026 | 03:38:29 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  e4 | 08/14/2026 | 03:38:34 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  e5 | 08/14/2026 | 03:38:45 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  e6 | 08/14/2026 | 03:39:10 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  e7 | 08/14/2026 | 03:39:45 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  e8 | 08/14/2026 | 03:39:55 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  e9 | 08/14/2026 | 03:40:00 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  ea | 08/14/2026 | 03:40:21 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  eb | 08/14/2026 | 03:40:51 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  ec | 08/14/2026 | 03:40:56 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  ed | 08/14/2026 | 03:41:07 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  ee | 08/14/2026 | 03:41:12 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  ef | 08/14/2026 | 03:41:17 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  f0 | 08/14/2026 | 03:41:32 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  f1 | 08/14/2026 | 03:41:37 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  f2 | 08/14/2026 | 03:42:28 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  f3 | 08/14/2026 | 03:42:48 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  f4 | 08/14/2026 | 03:42:53 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  f5 | 08/14/2026 | 03:42:58 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  f6 | 08/14/2026 | 03:43:09 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  f7 | 08/14/2026 | 03:43:15 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  f8 | 08/14/2026 | 03:43:46 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  f9 | 08/14/2026 | 03:46:07 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  fa | 08/14/2026 | 03:46:27 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  fb | 08/14/2026 | 03:46:37 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  fc | 08/14/2026 | 03:47:12 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  fd | 08/14/2026 | 03:47:17 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+  fe | 08/14/2026 | 03:48:03 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+  ff | 08/14/2026 | 03:48:08 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 100 | 08/14/2026 | 03:48:13 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 101 | 08/14/2026 | 03:48:28 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 102 | 08/14/2026 | 03:48:40 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 103 | 08/14/2026 | 03:48:45 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 104 | 08/14/2026 | 03:49:41 PM SAST | Drive Slot / Bay #0xad | Drive Fault () | Asserted
+ 105 | 08/14/2026 | 03:49:46 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 106 | 08/14/2026 | 03:49:46 PM SAST | Drive Slot / Bay #0xad | Drive Fault () | Deasserted
+ 107 | 08/14/2026 | 03:50:57 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 108 | 08/14/2026 | 03:52:17 PM SAST | Drive Slot / Bay #0xad | Drive Fault () | Asserted
+ 109 | 08/14/2026 | 03:52:43 PM SAST | Drive Slot / Bay #0xad | Drive Fault () | Deasserted
+ 10a | 08/14/2026 | 03:52:48 PM SAST | Drive Slot / Bay #0xad | Drive Fault () | Asserted
+ 10b | 08/14/2026 | 03:53:48 PM SAST | Drive Slot / Bay #0xad | Drive Fault () | Deasserted
+ 10c | 08/14/2026 | 03:57:59 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 10d | 08/14/2026 | 03:58:05 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 10e | 08/14/2026 | 03:59:20 PM SAST | Drive Slot / Bay #0xad | Drive Fault () | Asserted
+ 10f | 08/14/2026 | 04:00:01 PM SAST | Drive Slot / Bay #0xad | Drive Fault () | Deasserted
+ 110 | 08/14/2026 | 04:03:37 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 111 | 08/14/2026 | 04:03:47 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 112 | 08/14/2026 | 04:03:52 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 113 | 08/14/2026 | 04:05:53 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 114 | 08/14/2026 | 04:05:58 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 115 | 08/14/2026 | 04:06:19 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 116 | 08/14/2026 | 04:06:24 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 117 | 08/14/2026 | 04:06:29 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 118 | 08/14/2026 | 04:07:40 PM SAST | Drive Slot / Bay #0xad | Drive Fault () | Asserted
+ 119 | 08/14/2026 | 04:07:45 PM SAST | Drive Slot / Bay #0xad | Drive Fault () | Deasserted
+ 11a | 08/14/2026 | 04:07:50 PM SAST | Drive Slot / Bay #0xad | Drive Fault () | Asserted
+ 11b | 08/14/2026 | 04:08:06 PM SAST | Drive Slot / Bay #0xad | Drive Fault () | Deasserted
+ 11c | 08/14/2026 | 04:08:57 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 11d | 08/14/2026 | 04:09:27 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 11e | 08/14/2026 | 04:10:08 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 11f | 08/14/2026 | 04:10:13 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 120 | 08/14/2026 | 04:11:38 PM SAST | Drive Slot / Bay #0xad | Drive Fault () | Asserted
+ 121 | 08/14/2026 | 04:13:34 PM SAST | Drive Slot / Bay #0xad | Drive Fault () | Deasserted
+ 122 | 08/14/2026 | 04:13:55 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 123 | 08/14/2026 | 04:14:00 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 124 | 08/14/2026 | 04:14:35 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 125 | 08/14/2026 | 04:14:40 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 126 | 08/14/2026 | 04:14:51 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 127 | 08/14/2026 | 04:14:57 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 128 | 08/14/2026 | 04:15:03 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 129 | 08/14/2026 | 04:15:13 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 12a | 08/14/2026 | 04:15:33 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 12b | 08/14/2026 | 04:15:38 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 12c | 08/14/2026 | 04:15:44 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 12d | 08/14/2026 | 04:15:54 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 12e | 08/14/2026 | 04:16:50 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 12f | 08/14/2026 | 04:17:20 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 130 | 08/14/2026 | 04:17:40 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 131 | 08/14/2026 | 04:18:01 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 132 | 08/14/2026 | 04:18:06 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 133 | 08/14/2026 | 04:18:36 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 134 | 08/14/2026 | 04:18:41 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 135 | 08/14/2026 | 04:18:52 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 136 | 08/14/2026 | 04:19:07 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 137 | 08/14/2026 | 04:19:12 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 138 | 08/14/2026 | 04:20:43 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 139 | 08/14/2026 | 04:20:53 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 13a | 08/14/2026 | 04:21:24 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 13b | 08/14/2026 | 04:21:29 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 13c | 08/14/2026 | 04:21:35 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 13d | 08/14/2026 | 04:21:45 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 13e | 08/14/2026 | 04:21:55 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 13f | 08/14/2026 | 04:22:06 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 140 | 08/14/2026 | 04:22:21 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 141 | 08/14/2026 | 04:22:27 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 142 | 08/14/2026 | 04:22:37 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 143 | 08/14/2026 | 04:22:42 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 144 | 08/14/2026 | 04:22:52 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 145 | 08/14/2026 | 04:22:57 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 146 | 08/14/2026 | 04:23:02 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 147 | 08/14/2026 | 04:23:13 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 148 | 08/14/2026 | 04:23:18 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 149 | 08/14/2026 | 04:23:43 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 14a | 08/14/2026 | 04:23:49 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 14b | 08/14/2026 | 04:25:25 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 14c | 08/14/2026 | 04:25:50 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 14d | 08/14/2026 | 04:25:55 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 14e | 08/14/2026 | 04:26:01 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 14f | 08/14/2026 | 04:26:06 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 150 | 08/14/2026 | 04:26:22 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 151 | 08/14/2026 | 04:26:27 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 152 | 08/14/2026 | 04:26:47 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 153 | 08/14/2026 | 04:26:57 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 154 | 08/14/2026 | 04:27:43 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 155 | 08/14/2026 | 04:27:53 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 156 | 08/14/2026 | 04:28:59 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 157 | 08/14/2026 | 04:29:04 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 158 | 08/14/2026 | 04:29:15 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 159 | 08/14/2026 | 04:29:20 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 15a | 08/14/2026 | 04:29:30 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 15b | 08/14/2026 | 04:29:45 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 15c | 08/14/2026 | 04:30:01 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 15d | 08/14/2026 | 04:30:06 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 15e | 08/14/2026 | 04:30:17 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 15f | 08/14/2026 | 04:30:52 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 160 | 08/14/2026 | 04:30:57 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 161 | 08/14/2026 | 04:31:02 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 162 | 08/14/2026 | 04:31:08 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 163 | 08/14/2026 | 04:31:14 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 164 | 08/14/2026 | 04:31:19 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 165 | 08/14/2026 | 04:32:59 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 166 | 08/14/2026 | 04:33:15 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 167 | 08/14/2026 | 04:33:20 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 168 | 08/14/2026 | 04:33:35 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 169 | 08/14/2026 | 04:33:50 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 16a | 08/14/2026 | 04:33:55 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 16b | 08/14/2026 | 04:34:01 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 16c | 08/14/2026 | 04:34:33 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 16d | 08/14/2026 | 04:34:48 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 16e | 08/14/2026 | 04:34:54 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 16f | 08/14/2026 | 04:35:04 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 170 | 08/14/2026 | 04:35:24 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 171 | 08/14/2026 | 04:35:29 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 172 | 08/14/2026 | 04:35:39 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 173 | 08/14/2026 | 04:35:50 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 174 | 08/14/2026 | 04:36:00 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 175 | 08/14/2026 | 04:36:05 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 176 | 08/14/2026 | 04:36:10 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 177 | 08/14/2026 | 04:36:16 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 178 | 08/14/2026 | 04:36:22 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 179 | 08/14/2026 | 04:36:37 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 17a | 08/14/2026 | 04:36:48 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 17b | 08/14/2026 | 04:36:53 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 17c | 08/14/2026 | 04:37:08 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 17d | 08/14/2026 | 04:37:13 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 17e | 08/14/2026 | 04:37:39 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 17f | 08/14/2026 | 04:38:09 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 180 | 08/14/2026 | 04:38:14 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 181 | 08/14/2026 | 04:40:36 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 182 | 08/14/2026 | 04:40:41 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 183 | 08/14/2026 | 04:40:46 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 184 | 08/14/2026 | 04:40:56 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 185 | 08/14/2026 | 04:41:01 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 186 | 08/14/2026 | 04:41:12 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 187 | 08/14/2026 | 04:41:17 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 188 | 08/14/2026 | 04:41:22 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 189 | 08/14/2026 | 04:41:28 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 18a | 08/14/2026 | 04:41:33 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 18b | 08/14/2026 | 04:42:38 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 18c | 08/14/2026 | 04:42:48 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 18d | 08/14/2026 | 04:43:04 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 18e | 08/14/2026 | 04:43:19 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 18f | 08/14/2026 | 04:43:24 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 190 | 08/14/2026 | 04:43:35 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 191 | 08/14/2026 | 04:43:56 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 192 | 08/14/2026 | 04:45:11 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 193 | 08/14/2026 | 04:45:16 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 194 | 08/14/2026 | 04:45:26 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 195 | 08/14/2026 | 04:45:32 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 196 | 08/14/2026 | 04:45:52 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 197 | 08/14/2026 | 04:48:28 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 198 | 08/14/2026 | 04:48:33 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 199 | 08/14/2026 | 04:48:39 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 19a | 08/14/2026 | 04:48:44 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 19b | 08/14/2026 | 04:48:54 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 19c | 08/14/2026 | 04:49:00 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 19d | 08/14/2026 | 04:50:20 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 19e | 08/14/2026 | 04:50:26 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 19f | 08/14/2026 | 04:51:27 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1a0 | 08/14/2026 | 04:51:32 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1a1 | 08/14/2026 | 04:52:07 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1a2 | 08/14/2026 | 04:52:13 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1a3 | 08/14/2026 | 04:53:34 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1a4 | 08/14/2026 | 04:53:45 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1a5 | 08/14/2026 | 04:54:21 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1a6 | 08/14/2026 | 04:54:31 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1a7 | 08/14/2026 | 04:54:36 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1a8 | 08/14/2026 | 04:54:52 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1a9 | 08/14/2026 | 04:54:58 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1aa | 08/14/2026 | 04:55:03 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1ab | 08/14/2026 | 04:55:08 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1ac | 08/14/2026 | 04:55:23 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1ad | 08/14/2026 | 04:56:54 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1ae | 08/14/2026 | 04:57:04 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1af | 08/14/2026 | 04:57:50 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1b0 | 08/14/2026 | 04:57:55 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1b1 | 08/14/2026 | 04:59:05 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1b2 | 08/14/2026 | 04:59:11 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1b3 | 08/14/2026 | 04:59:21 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1b4 | 08/14/2026 | 04:59:26 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1b5 | 08/14/2026 | 04:59:31 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1b6 | 08/14/2026 | 04:59:36 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1b7 | 08/14/2026 | 04:59:47 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1b8 | 08/14/2026 | 04:59:52 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1b9 | 08/14/2026 | 05:00:03 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1ba | 08/14/2026 | 05:00:08 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1bb | 08/14/2026 | 05:00:13 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1bc | 08/14/2026 | 05:00:18 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1bd | 08/14/2026 | 05:02:09 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1be | 08/14/2026 | 05:02:14 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1bf | 08/14/2026 | 05:03:20 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1c0 | 08/14/2026 | 05:03:30 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1c1 | 08/14/2026 | 05:03:35 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1c2 | 08/14/2026 | 05:03:40 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1c3 | 08/14/2026 | 05:04:46 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1c4 | 08/14/2026 | 05:04:56 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1c5 | 08/14/2026 | 05:05:46 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1c6 | 08/14/2026 | 05:05:56 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1c7 | 08/14/2026 | 05:08:42 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1c8 | 08/14/2026 | 05:08:48 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1c9 | 08/14/2026 | 05:09:09 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1ca | 08/14/2026 | 05:09:19 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1cb | 08/14/2026 | 05:12:56 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1cc | 08/14/2026 | 05:13:06 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1cd | 08/14/2026 | 05:13:11 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1ce | 08/14/2026 | 05:13:32 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1cf | 08/14/2026 | 05:14:08 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1d0 | 08/14/2026 | 05:14:38 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1d1 | 08/14/2026 | 05:14:44 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1d2 | 08/14/2026 | 05:15:00 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1d3 | 08/14/2026 | 05:16:40 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1d4 | 08/14/2026 | 05:16:50 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1d5 | 08/14/2026 | 05:21:43 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1d6 | 08/14/2026 | 05:21:48 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1d7 | 08/14/2026 | 05:22:03 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1d8 | 08/14/2026 | 05:22:08 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1d9 | 08/14/2026 | 05:25:14 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1da | 08/14/2026 | 05:25:29 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1db | 08/14/2026 | 05:41:05 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1dc | 08/14/2026 | 05:41:10 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1dd | 08/14/2026 | 05:41:21 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1de | 08/14/2026 | 05:41:26 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1df | 08/14/2026 | 05:41:46 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1e0 | 08/14/2026 | 05:41:51 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1e1 | 08/14/2026 | 05:42:06 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1e2 | 08/14/2026 | 05:42:11 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1e3 | 08/14/2026 | 05:42:37 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1e4 | 08/14/2026 | 05:43:07 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1e5 | 08/14/2026 | 05:43:12 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1e6 | 08/14/2026 | 05:43:18 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1e7 | 08/14/2026 | 05:44:03 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1e8 | 08/14/2026 | 05:44:13 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1e9 | 08/14/2026 | 05:44:18 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1ea | 08/14/2026 | 05:44:23 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1eb | 08/14/2026 | 05:44:28 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1ec | 08/14/2026 | 05:44:34 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1ed | 08/14/2026 | 05:45:49 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1ee | 08/14/2026 | 05:45:55 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1ef | 08/14/2026 | 05:46:00 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1f0 | 08/14/2026 | 05:46:05 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1f1 | 08/14/2026 | 05:51:52 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1f2 | 08/14/2026 | 05:52:03 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1f3 | 08/14/2026 | 05:52:53 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1f4 | 08/14/2026 | 05:53:04 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1f5 | 08/14/2026 | 05:57:31 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1f6 | 08/14/2026 | 05:57:37 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1f7 | 08/14/2026 | 05:58:37 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1f8 | 08/14/2026 | 05:58:48 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1f9 | 08/14/2026 | 05:58:53 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1fa | 08/14/2026 | 05:58:58 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1fb | 08/14/2026 | 05:59:19 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1fc | 08/14/2026 | 05:59:24 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1fd | 08/14/2026 | 06:00:09 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 1fe | 08/14/2026 | 06:00:14 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 1ff | 08/14/2026 | 06:00:24 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 200 | 08/14/2026 | 06:00:29 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 201 | 08/14/2026 | 06:00:35 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 202 | 08/14/2026 | 06:01:30 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 203 | 08/14/2026 | 06:01:50 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 204 | 08/14/2026 | 06:01:56 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 205 | 08/14/2026 | 06:02:01 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 206 | 08/14/2026 | 06:02:07 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 207 | 08/14/2026 | 06:02:12 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 208 | 08/14/2026 | 06:02:47 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 209 | 08/14/2026 | 06:03:22 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 20a | 08/14/2026 | 06:03:28 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 20b | 08/14/2026 | 06:03:33 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 20c | 08/14/2026 | 06:03:38 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 20d | 08/14/2026 | 06:03:58 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 20e | 08/14/2026 | 06:04:38 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 20f | 08/14/2026 | 06:04:49 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 210 | 08/14/2026 | 06:05:09 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 211 | 08/14/2026 | 06:05:14 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 212 | 08/14/2026 | 06:05:35 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 213 | 08/14/2026 | 06:09:11 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 214 | 08/14/2026 | 06:09:16 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 215 | 08/14/2026 | 06:09:21 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 216 | 08/14/2026 | 06:09:32 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 217 | 08/14/2026 | 06:50:32 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 218 | 08/14/2026 | 06:50:43 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 219 | 08/14/2026 | 06:50:53 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 21a | 08/14/2026 | 06:50:58 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 21b | 08/14/2026 | 06:54:34 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 21c | 08/14/2026 | 06:54:39 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 21d | 08/14/2026 | 07:10:21 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 21e | 08/14/2026 | 07:10:26 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 21f | 08/14/2026 | 07:10:32 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 220 | 08/14/2026 | 07:10:37 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 221 | 08/14/2026 | 08:52:56 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 222 | 08/14/2026 | 08:53:01 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 223 | 08/14/2026 | 10:46:46 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 224 | 08/14/2026 | 10:46:52 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 225 | 08/14/2026 | 11:56:05 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 226 | 08/14/2026 | 11:56:10 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 227 | 08/15/2026 | 12:08:41 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 228 | 08/15/2026 | 12:08:46 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 229 | 08/15/2026 | 12:08:57 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 22a | 08/15/2026 | 12:09:02 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 22b | 08/15/2026 | 12:09:12 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 22c | 08/15/2026 | 12:09:22 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 22d | 08/15/2026 | 12:08:50 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+ 22e | 08/15/2026 | 12:56:45 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 22f | 08/15/2026 | 12:56:50 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 230 | 08/15/2026 | 12:57:15 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 231 | 08/15/2026 | 12:57:20 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 232 | 08/15/2026 | 12:58:21 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 233 | 08/15/2026 | 12:58:26 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 234 | 08/15/2026 | 01:00:23 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 235 | 08/15/2026 | 01:00:28 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 236 | 08/15/2026 | 01:00:33 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 237 | 08/15/2026 | 01:00:38 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 238 | 08/15/2026 | 01:07:06 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 239 | 08/15/2026 | 01:07:11 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 23a | 08/15/2026 | 01:07:22 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 23b | 08/15/2026 | 01:07:27 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 23c | 08/15/2026 | 01:07:57 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 23d | 08/15/2026 | 01:08:03 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 23e | 08/15/2026 | 01:09:18 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 23f | 08/15/2026 | 01:09:23 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 240 | 08/15/2026 | 01:09:38 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 241 | 08/15/2026 | 01:09:44 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 242 | 08/15/2026 | 01:11:05 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 243 | 08/15/2026 | 01:11:10 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 244 | 08/15/2026 | 01:23:46 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 245 | 08/15/2026 | 01:23:51 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 246 | 08/15/2026 | 01:24:36 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 247 | 08/15/2026 | 01:24:41 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 248 | 08/15/2026 | 01:28:57 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 249 | 08/15/2026 | 01:29:08 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 24a | 08/15/2026 | 01:29:23 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 24b | 08/15/2026 | 01:29:29 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 24c | 08/15/2026 | 01:50:15 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 24d | 08/15/2026 | 01:50:20 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 24e | 08/15/2026 | 02:01:19 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 24f | 08/15/2026 | 02:01:24 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 250 | 08/15/2026 | 02:04:05 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+ 251 | 08/15/2026 | 02:23:09 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 252 | 08/15/2026 | 02:23:14 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 253 | 08/15/2026 | 02:35:10 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 254 | 08/15/2026 | 02:35:15 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 255 | 08/15/2026 | 02:36:31 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 256 | 08/15/2026 | 02:36:37 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 257 | 08/15/2026 | 02:38:52 PM SAST | Power Supply Status | Config Error | Asserted
+ 258 | 08/15/2026 | 02:41:40 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 259 | 08/15/2026 | 02:41:45 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 25a | 08/15/2026 | 02:45:57 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 25b | 08/15/2026 | 02:46:02 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 25c | 08/15/2026 | 02:48:59 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 25d | 08/15/2026 | 02:49:04 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 25e | 08/15/2026 | 02:49:14 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 25f | 08/15/2026 | 02:49:20 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 260 | 08/15/2026 | 02:50:05 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 261 | 08/15/2026 | 02:50:11 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 262 | 08/15/2026 | 03:10:23 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 263 | 08/15/2026 | 03:10:28 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 264 | 08/15/2026 | 03:13:50 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 265 | 08/15/2026 | 03:13:55 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 266 | 08/15/2026 | 03:22:08 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 267 | 08/15/2026 | 03:22:13 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 268 | 08/15/2026 | 03:22:48 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 269 | 08/15/2026 | 03:22:54 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 26a | 08/15/2026 | 03:33:39 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 26b | 08/15/2026 | 03:33:45 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 26c | 08/15/2026 | 03:40:13 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 26d | 08/15/2026 | 03:40:18 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 26e | 08/15/2026 | 03:40:33 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 26f | 08/15/2026 | 03:41:59 PM SAST | Drive Slot / Bay #0xab | Drive Fault () | Asserted
+ 270 | 08/15/2026 | 03:46:06 PM SAST | Drive Slot / Bay #0xab | Drive Fault () | Deasserted
+ 271 | 08/15/2026 | 03:46:17 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 272 | 08/15/2026 | 03:46:27 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 273 | 08/15/2026 | 03:46:32 PM SAST | Drive Slot / Bay #0xab | Drive Fault () | Asserted
+ 274 | 08/15/2026 | 03:46:48 PM SAST | Drive Slot / Bay #0xab | Drive Fault () | Deasserted
+ 275 | 08/15/2026 | 03:47:13 PM SAST | Drive Slot / Bay #0xab | Drive Fault () | Asserted
+ 276 | 08/15/2026 | 03:47:53 PM SAST | Drive Slot / Bay #0xab | Drive Fault () | Deasserted
+ 277 | 08/15/2026 | 03:48:49 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 278 | 08/15/2026 | 03:49:09 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 279 | 08/15/2026 | 03:49:15 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 27a | 08/15/2026 | 03:49:30 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 27b | 08/15/2026 | 03:49:36 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 27c | 08/15/2026 | 03:50:26 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 27d | 08/15/2026 | 03:50:37 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 27e | 08/15/2026 | 03:50:42 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 27f | 08/15/2026 | 03:50:47 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 280 | 08/15/2026 | 03:51:43 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 281 | 08/15/2026 | 03:51:49 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 282 | 08/15/2026 | 03:52:19 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 283 | 08/15/2026 | 03:52:34 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 284 | 08/15/2026 | 03:52:40 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 285 | 08/15/2026 | 03:52:45 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 286 | 08/15/2026 | 03:56:42 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 287 | 08/15/2026 | 03:56:47 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 288 | 08/15/2026 | 03:58:18 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 289 | 08/15/2026 | 03:58:25 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 28a | 08/15/2026 | 03:58:30 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 28b | 08/15/2026 | 03:58:35 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 28c | 08/15/2026 | 03:59:40 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 28d | 08/15/2026 | 03:59:51 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 28e | 08/15/2026 | 04:06:49 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 28f | 08/15/2026 | 04:06:54 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 290 | 08/15/2026 | 04:27:57 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 291 | 08/15/2026 | 04:28:02 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 292 | 08/15/2026 | 04:29:02 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 293 | 08/15/2026 | 04:29:07 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 294 | 08/15/2026 | 04:41:37 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 295 | 08/15/2026 | 04:41:43 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 296 | 08/15/2026 | 04:42:33 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 297 | 08/15/2026 | 04:42:39 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 298 | 08/15/2026 | 04:42:44 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 299 | 08/15/2026 | 04:42:49 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 29a | 08/15/2026 | 04:44:10 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 29b | 08/15/2026 | 04:44:16 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 29c | 08/15/2026 | 05:12:10 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 29d | 08/15/2026 | 05:12:16 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 29e | 08/15/2026 | 05:12:26 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 29f | 08/15/2026 | 05:12:31 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2a0 | 08/15/2026 | 05:13:12 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2a1 | 08/15/2026 | 05:13:17 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2a2 | 08/15/2026 | 05:58:02 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2a3 | 08/15/2026 | 05:58:08 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2a4 | 08/15/2026 | 06:03:35 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2a5 | 08/15/2026 | 06:03:41 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2a6 | 08/15/2026 | 06:03:51 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2a7 | 08/15/2026 | 06:04:02 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2a8 | 08/15/2026 | 08:06:17 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2a9 | 08/15/2026 | 08:06:22 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2aa | 08/15/2026 | 10:08:16 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2ab | 08/15/2026 | 10:08:22 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2ac | 08/15/2026 | 10:10:23 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2ad | 08/15/2026 | 10:10:28 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2ae | 08/15/2026 | 10:30:30 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2af | 08/15/2026 | 10:30:35 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2b0 | 08/15/2026 | 10:49:43 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2b1 | 08/15/2026 | 10:49:48 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2b2 | 08/15/2026 | 10:51:34 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2b3 | 08/15/2026 | 10:51:39 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2b4 | 08/15/2026 | 11:51:57 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2b5 | 08/15/2026 | 11:52:02 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2b6 | 08/15/2026 | 11:52:47 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2b7 | 08/15/2026 | 11:52:53 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2b8 | 08/15/2026 | 11:56:39 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2b9 | 08/15/2026 | 11:56:44 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2ba | 08/16/2026 | 10:55:21 AM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2bb | 08/16/2026 | 10:55:26 AM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2bc | 08/16/2026 | 10:55:51 AM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2bd | 08/16/2026 | 10:56:02 AM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2be | 08/16/2026 | 10:59:58 AM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2bf | 08/16/2026 | 11:00:08 AM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2c0 | 08/16/2026 | 11:00:44 AM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2c1 | 08/16/2026 | 11:00:49 AM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2c2 | 08/16/2026 | 11:01:29 AM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2c3 | 08/16/2026 | 11:01:34 AM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2c4 | 08/16/2026 | 05:15:07 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2c5 | 08/16/2026 | 05:15:38 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2c6 | 08/16/2026 | 05:16:13 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2c7 | 08/17/2026 | 10:08:59 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2c8 | 08/17/2026 | 10:09:04 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2c9 | 08/19/2026 | 02:30:44 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2ca | 08/19/2026 | 02:30:59 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2cb | 08/19/2026 | 02:32:35 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2cc | 08/19/2026 | 02:32:40 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2cd | 08/19/2026 | 02:32:50 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2ce | 08/19/2026 | 02:32:55 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2cf | 08/19/2026 | 02:38:18 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2d0 | 08/19/2026 | 02:38:23 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2d1 | 08/19/2026 | 02:39:24 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2d2 | 08/19/2026 | 02:39:29 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2d3 | 08/19/2026 | 02:40:50 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2d4 | 08/19/2026 | 02:40:55 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2d5 | 08/19/2026 | 02:41:00 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2d6 | 08/19/2026 | 02:41:10 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2d7 | 08/19/2026 | 02:41:40 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2d8 | 08/19/2026 | 02:41:45 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2d9 | 08/19/2026 | 09:49:30 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2da | 08/19/2026 | 09:49:35 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2db | 08/20/2026 | 03:24:05 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2dc | 08/20/2026 | 03:24:11 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2dd | 08/20/2026 | 03:42:33 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2de | 08/20/2026 | 03:42:43 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2df | 08/20/2026 | 04:14:06 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Deasserted
+ 2e0 | 08/20/2026 | 04:14:11 PM SAST | Drive Slot / Bay #0xad | Drive Present () | Asserted
+ 2e1 | 08/20/2026 | 07:23:39 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2e2 | 08/20/2026 | 07:23:44 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2e3 | 08/20/2026 | 07:32:43 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2e4 | 08/20/2026 | 07:32:48 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2e5 | 08/20/2026 | 07:46:53 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2e6 | 08/20/2026 | 07:46:58 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2e7 | 08/21/2026 | 11:38:21 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2e8 | 08/21/2026 | 11:38:26 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2e9 | 08/21/2026 | 11:51:12 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2ea | 08/21/2026 | 11:51:17 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2eb | 08/21/2026 | 11:54:33 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2ec | 08/21/2026 | 11:54:38 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2ed | 08/22/2026 | 11:11:34 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2ee | 08/22/2026 | 11:11:39 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2ef | 08/22/2026 | 11:11:44 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2f0 | 08/22/2026 | 11:11:49 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2f1 | 08/23/2026 | 09:47:08 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2f2 | 08/23/2026 | 09:47:13 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2f3 | 08/23/2026 | 09:49:59 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2f4 | 08/23/2026 | 09:50:04 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2f5 | 08/23/2026 | 05:04:21 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2f6 | 08/23/2026 | 05:04:26 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2f7 | 08/23/2026 | 06:37:55 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2f8 | 08/23/2026 | 06:38:00 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2f9 | 08/23/2026 | 10:24:25 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2fa | 08/23/2026 | 10:24:30 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2fb | 08/23/2026 | 10:26:36 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2fc | 08/23/2026 | 10:26:41 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 2fd | 08/24/2026 | 08:12:50 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2fe | 08/26/2026 | 04:26:43 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 2ff | 08/28/2026 | 01:43:07 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 300 | 08/28/2026 | 01:43:12 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 301 | 08/28/2026 | 01:43:17 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 302 | 08/28/2026 | 01:43:22 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 303 | 08/30/2026 | 04:53:28 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 304 | 08/30/2026 | 04:53:33 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 305 | 08/30/2026 | 04:55:41 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 306 | 08/30/2026 | 04:55:46 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 307 | 08/30/2026 | 04:55:54 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 308 | 09/01/2026 | 08:04:46 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 309 | 09/01/2026 | 08:04:51 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 30a | 09/01/2026 | 08:04:56 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 30b | 09/01/2026 | 08:05:01 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 30c | 09/01/2026 | 08:05:16 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 30d | 09/05/2026 | 08:37:33 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 30e | 09/05/2026 | 08:37:38 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 30f | 09/05/2026 | 08:37:58 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 310 | 09/05/2026 | 08:38:03 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 311 | 09/06/2026 | 09:43:09 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 312 | 09/06/2026 | 09:50:27 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 313 | 09/06/2026 | 09:50:52 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 314 | 09/07/2026 | 10:51:40 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 315 | 09/09/2026 | 10:19:28 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 316 | 09/10/2026 | 11:03:36 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 317 | 09/10/2026 | 11:03:43 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 318 | 09/10/2026 | 11:05:50 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 319 | 09/12/2026 | 02:15:06 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 31a | 09/13/2026 | 05:39:35 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 31b | 09/13/2026 | 05:39:40 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 31c | 09/14/2026 | 12:22:06 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 31d | 09/17/2026 | 09:34:50 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 31e | 09/17/2026 | 09:34:55 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 31f | 09/17/2026 | 09:36:53 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 320 | 09/17/2026 | 09:36:58 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 321 | 09/17/2026 | 09:37:13 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 322 | 09/22/2026 | 09:34:21 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 323 | 09/22/2026 | 09:34:26 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 324 | 09/22/2026 | 09:36:53 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 325 | 09/22/2026 | 09:36:58 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 326 | 09/22/2026 | 04:53:42 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 327 | 09/22/2026 | 04:53:53 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 328 | 09/22/2026 | 04:53:58 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 329 | 09/22/2026 | 05:01:23 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 32a | 09/22/2026 | 05:01:33 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 32b | 09/22/2026 | 05:01:38 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 32c | 09/22/2026 | 05:09:32 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 32d | 09/22/2026 | 05:09:37 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 32e | 09/22/2026 | 05:25:34 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 32f | 09/22/2026 | 05:42:33 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 330 | 09/22/2026 | 05:42:38 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 331 | 09/23/2026 | 01:40:58 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 332 | 09/23/2026 | 01:41:03 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 333 | 09/23/2026 | 06:04:14 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 334 | 09/23/2026 | 06:04:34 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 335 | 09/23/2026 | 06:06:14 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 336 | 09/27/2026 | 12:30:18 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 337 | 09/27/2026 | 12:30:33 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 338 | 09/28/2026 | 08:56:26 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 339 | 09/28/2026 | 08:56:31 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 33a | 09/28/2026 | 08:56:37 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 33b | 09/28/2026 | 08:56:42 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 33c | 09/29/2026 | 09:28:00 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 33d | 10/01/2026 | 09:24:35 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 33e | 10/03/2026 | 03:30:24 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 33f | 10/03/2026 | 03:30:29 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 340 | 10/03/2026 | 03:32:23 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 341 | 10/03/2026 | 03:32:28 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 342 | 10/03/2026 | 06:40:26 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 343 | 10/03/2026 | 07:39:27 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 344 | 10/03/2026 | 07:39:57 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 345 | 10/03/2026 | 08:03:55 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 346 | 10/03/2026 | 08:04:55 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 347 | 10/03/2026 | 10:25:54 PM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 348 | 10/03/2026 | 10:26:30 PM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 349 | 10/04/2026 | 09:57:45 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 34a | 10/04/2026 | 09:58:20 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 34b | 10/04/2026 | 09:58:25 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 34c | 10/04/2026 | 09:58:30 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 34d | 10/04/2026 | 09:58:36 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 34e | 10/04/2026 | 11:02:31 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 34f | 10/04/2026 | 11:02:36 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 350 | 10/04/2026 | 11:03:13 AM SAST | Processor CPU Machine Chk | Transition to Non-recoverable | Asserted
+ 351 | 10/04/2026 | 11:03:13 AM SAST | Unknown MSR Info Log |  | Asserted
+ 352 | 10/04/2026 | 11:03:13 AM SAST | Unknown MSR Info Log |  | Asserted
+ 353 | 10/04/2026 | 11:03:13 AM SAST | Unknown MSR Info Log |  | Asserted
+ 354 | 10/04/2026 | 11:03:13 AM SAST | Unknown MSR Info Log |  | Asserted
+ 355 | 10/04/2026 | 11:03:13 AM SAST | Memory ECC Uncorr Err | Uncorrectable ECC (UnCorrectable ECC |  DIMMA1) | Asserted
+ 356 | 10/04/2026 | 11:03:14 AM SAST | Unknown MSR Info Log |  | Asserted
+ 357 | 10/04/2026 | 11:03:14 AM SAST | Unknown MSR Info Log |  | Asserted
+ 358 | 10/04/2026 | 11:03:14 AM SAST | Unknown MSR Info Log |  | Asserted
+ 359 | 10/04/2026 | 11:03:15 AM SAST | Unknown MSR Info Log |  | Asserted
+ 35a | 10/04/2026 | 11:27:01 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 35b | 10/04/2026 | 11:27:06 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 35c | 10/04/2026 | 11:27:10 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 35d | 10/04/2026 | 11:37:42 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 35e | 10/04/2026 | 11:37:52 AM SAST | Voltage PS2 PG Fail | State Deasserted | Asserted
+ 35f | 10/04/2026 | 11:37:57 AM SAST | Voltage PS2 PG Fail | State Asserted | Asserted
+ 360 | 10/04/2026 | 11:41:03 AM SAST | Power Supply Status | Power Supply AC lost | Asserted
+ 361 | 10/04/2026 | 11:49:05 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 362 | 10/04/2026 | 11:50:26 AM SAST | Drive Slot / Bay #0xab | Drive Fault () | Asserted
+ 363 | 10/04/2026 | 11:53:21 AM SAST | Drive Slot / Bay #0xab | Drive Fault () | Deasserted
+ 364 | 10/04/2026 | 11:53:26 AM SAST | Drive Slot / Bay #0xab | Drive Fault () | Asserted
+ 365 | 10/04/2026 | 11:53:46 AM SAST | Drive Slot / Bay #0xab | Drive Fault () | Deasserted
+ 366 | 10/04/2026 | 11:54:46 AM SAST | Drive Slot / Bay #0xab | Drive Fault () | Asserted
+ 367 | 10/04/2026 | 11:54:52 AM SAST | Drive Slot / Bay #0xab | Drive Fault () | Deasserted
+ 368 | 10/04/2026 | 11:54:57 AM SAST | Drive Slot / Bay #0xab | Drive Fault () | Asserted
+ 369 | 10/04/2026 | 11:55:52 AM SAST | Drive Slot / Bay #0xab | Drive Fault () | Deasserted
+ 36a | 10/04/2026 | 11:55:57 AM SAST | Drive Slot / Bay #0xab | Drive Fault () | Asserted
+ 36b | 10/04/2026 | 11:56:07 AM SAST | Drive Slot / Bay #0xab | Drive Fault () | Deasserted
+ 36c | 10/04/2026 | 11:56:37 AM SAST | Drive Slot / Bay #0xab | Drive Fault () | Asserted
+ 36d | 10/04/2026 | 11:56:42 AM SAST | Drive Slot / Bay #0xab | Drive Fault () | Deasserted
+ 36e | 10/04/2026 | 11:56:47 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 36f | 10/04/2026 | 11:56:53 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 370 | 10/04/2026 | 11:57:23 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 371 | 10/04/2026 | 11:57:28 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 372 | 10/04/2026 | 11:58:03 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 373 | 10/04/2026 | 11:58:08 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 374 | 10/04/2026 | 11:58:13 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 375 | 10/04/2026 | 11:58:19 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 376 | 10/04/2026 | 11:58:29 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 377 | 10/04/2026 | 11:58:34 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 378 | 10/04/2026 | 11:59:54 AM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 379 | 10/04/2026 | 12:00:00 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 37a | 10/04/2026 | 12:00:35 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 37b | 10/04/2026 | 12:00:40 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 37c | 10/04/2026 | 12:01:35 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 37d | 10/04/2026 | 12:01:51 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 37e | 10/04/2026 | 12:02:06 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 37f | 10/04/2026 | 12:02:11 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 380 | 10/04/2026 | 12:02:37 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 381 | 10/04/2026 | 12:02:42 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 382 | 10/04/2026 | 12:02:48 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 383 | 10/04/2026 | 12:02:53 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 384 | 10/04/2026 | 12:03:03 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 385 | 10/04/2026 | 12:03:08 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 386 | 10/04/2026 | 12:03:23 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 387 | 10/04/2026 | 12:03:28 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 388 | 10/04/2026 | 12:03:39 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 389 | 10/04/2026 | 12:03:59 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 38a | 10/04/2026 | 12:04:04 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 38b | 10/04/2026 | 12:04:19 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 38c | 10/04/2026 | 12:04:24 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 38d | 10/04/2026 | 12:04:29 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 38e | 10/04/2026 | 12:05:05 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 38f | 10/04/2026 | 12:05:30 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 390 | 10/04/2026 | 12:05:35 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 391 | 10/04/2026 | 12:06:00 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 392 | 10/04/2026 | 12:06:10 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 393 | 10/04/2026 | 12:06:16 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 394 | 10/04/2026 | 12:06:36 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 395 | 10/04/2026 | 12:06:51 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 396 | 10/04/2026 | 12:06:56 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 397 | 10/04/2026 | 12:07:07 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 398 | 10/04/2026 | 12:07:12 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 399 | 10/04/2026 | 12:07:22 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 39a | 10/04/2026 | 12:07:28 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 39b | 10/04/2026 | 12:08:08 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 39c | 10/04/2026 | 12:08:13 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 39d | 10/04/2026 | 12:11:45 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 39e | 10/04/2026 | 12:11:50 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 39f | 10/04/2026 | 12:13:06 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3a0 | 10/04/2026 | 12:13:17 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3a1 | 10/04/2026 | 12:13:28 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3a2 | 10/04/2026 | 12:13:38 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3a3 | 10/04/2026 | 12:15:05 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3a4 | 10/04/2026 | 12:15:11 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3a5 | 10/04/2026 | 12:20:55 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3a6 | 10/04/2026 | 12:21:00 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3a7 | 10/04/2026 | 12:21:10 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3a8 | 10/04/2026 | 12:21:16 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3a9 | 10/04/2026 | 12:21:26 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3aa | 10/04/2026 | 12:21:31 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3ab | 10/04/2026 | 12:21:57 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3ac | 10/04/2026 | 12:22:02 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3ad | 10/04/2026 | 12:22:57 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3ae | 10/04/2026 | 12:23:02 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3af | 10/04/2026 | 12:25:48 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3b0 | 10/04/2026 | 12:25:54 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3b1 | 10/04/2026 | 12:26:24 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3b2 | 10/04/2026 | 12:26:29 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3b3 | 10/04/2026 | 12:26:35 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3b4 | 10/04/2026 | 12:26:40 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3b5 | 10/04/2026 | 12:27:25 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3b6 | 10/04/2026 | 12:27:31 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3b7 | 10/04/2026 | 12:31:17 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3b8 | 10/04/2026 | 12:31:23 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3b9 | 10/04/2026 | 12:31:28 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3ba | 10/04/2026 | 12:31:33 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3bb | 10/04/2026 | 12:31:39 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3bc | 10/04/2026 | 12:31:45 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3bd | 10/04/2026 | 12:37:31 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3be | 10/04/2026 | 12:37:37 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3bf | 10/04/2026 | 12:41:43 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3c0 | 10/04/2026 | 12:41:48 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3c1 | 10/04/2026 | 12:41:54 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3c2 | 10/04/2026 | 12:42:00 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3c3 | 10/04/2026 | 12:42:50 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3c4 | 10/04/2026 | 12:42:55 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3c5 | 10/04/2026 | 12:43:13 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3c6 | 10/04/2026 | 12:43:18 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3c7 | 10/04/2026 | 12:43:44 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3c8 | 10/04/2026 | 12:43:50 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3c9 | 10/04/2026 | 12:48:41 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3ca | 10/04/2026 | 12:48:46 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3cb | 10/04/2026 | 12:49:01 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3cc | 10/04/2026 | 12:49:06 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3cd | 10/04/2026 | 12:49:12 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3ce | 10/04/2026 | 12:49:17 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3cf | 10/04/2026 | 12:49:37 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3d0 | 10/04/2026 | 12:49:43 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3d1 | 10/04/2026 | 12:50:33 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3d2 | 10/04/2026 | 12:50:38 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3d3 | 10/04/2026 | 12:52:58 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3d4 | 10/04/2026 | 12:53:08 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3d5 | 10/04/2026 | 12:55:43 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3d6 | 10/04/2026 | 12:55:49 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3d7 | 10/04/2026 | 12:56:29 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3d8 | 10/04/2026 | 12:56:34 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3d9 | 10/04/2026 | 12:58:04 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3da | 10/04/2026 | 12:58:20 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3db | 10/04/2026 | 12:58:25 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3dc | 10/04/2026 | 12:58:40 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3dd | 10/04/2026 | 01:00:30 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3de | 10/04/2026 | 01:00:35 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3df | 10/04/2026 | 01:07:31 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3e0 | 10/04/2026 | 01:07:36 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3e1 | 10/04/2026 | 01:08:56 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3e2 | 10/04/2026 | 01:09:02 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3e3 | 10/04/2026 | 01:18:28 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3e4 | 10/04/2026 | 01:18:33 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3e5 | 10/04/2026 | 01:18:48 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3e6 | 10/04/2026 | 01:18:53 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3e7 | 10/04/2026 | 01:25:48 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3e8 | 10/04/2026 | 01:25:54 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3e9 | 10/04/2026 | 01:30:24 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3ea | 10/04/2026 | 01:30:29 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3eb | 10/04/2026 | 01:41:14 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3ec | 10/04/2026 | 01:41:30 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3ed | 10/04/2026 | 01:48:55 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3ee | 10/04/2026 | 01:49:00 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3ef | 10/04/2026 | 02:08:12 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Deasserted
+ 3f0 | 10/04/2026 | 02:08:18 PM SAST | Drive Slot / Bay #0xab | Drive Present () | Asserted
+ 3f1 | 10/04/2026 | 02:21:07 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+ 3f2 | 10/04/2026 | 02:51:08 PM SAST | Power Supply Status | Power Supply AC lost | Asserted
+ 3f3 | 10/04/2026 | 02:51:10 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Deasserted
+ 3f4 | 10/04/2026 | 02:51:40 PM SAST | Critical Interrupt PCIE Fatal Err | Bus Fatal Error ( PCI bus:01 device:00 function:0) | Asserted
+ 3f5 | 10/04/2026 | 02:51:40 PM SAST | Unknown Err Reg Pointer |  | Asserted
+ 3f6 | 10/04/2026 | 02:51:42 PM SAST | Processor CPU Machine Chk | Transition to Non-recoverable | Asserted
+ 3f7 | 10/04/2026 | 02:51:42 PM SAST | Unknown MSR Info Log |  | Asserted
+ 3f8 | 10/04/2026 | 02:51:42 PM SAST | Unknown MSR Info Log |  | Asserted
+ 3f9 | 10/04/2026 | 02:51:42 PM SAST | Unknown MSR Info Log |  | Asserted
+ 3fa | 10/04/2026 | 02:51:43 PM SAST | Unknown MSR Info Log |  | Asserted
+ 3fb | 10/04/2026 | 02:51:43 PM SAST | Memory ECC Uncorr Err | Uncorrectable ECC (UnCorrectable ECC |  DIMMB1) | Asserted
+ 3fc | 10/04/2026 | 02:51:44 PM SAST | Unknown MSR Info Log |  | Asserted
+ 3fd | 10/04/2026 | 02:51:44 PM SAST | Unknown MSR Info Log |  | Asserted
+ 3fe | 10/04/2026 | 02:51:44 PM SAST | Unknown MSR Info Log |  | Asserted
+ 3ff | 10/04/2026 | 02:51:44 PM SAST | Unknown MSR Info Log |  | Asserted
+ 400 | 10/04/2026 | 02:52:06 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Asserted
+ 401 | 10/04/2026 | 02:52:32 PM SAST | Physical Security Intrusion | General Chassis intrusion () | Deasserted
+ 402 | 10/04/2026 | 02:52:43 PM SAST | Drive Slot / Bay #0xac | Drive Present () | Deasserted
+ 403 | 10/04/2026 | 02:54:59 PM SAST | Drive Slot / Bay #0xac | Drive Fault () | Asserted
+ 404 | 10/05/2026 | 08:02:31 AM SAST | Power Supply Status | Power Supply AC lost | Asserted

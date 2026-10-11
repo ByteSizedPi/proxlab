@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rating distribution</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#00a4dc}a:hover{color:#4fc3ef}
+</style>
+</helmet>
+<div style="width: 840px; height: 500px; box-sizing: border-box; padding: 24px 28px; --rd-surface: {{tk.surface}}; --rd-text: {{tk.text}}; --rd-text-muted: {{tk.muted}}; --rd-text-faint: {{tk.faint}}; --rd-border: {{tk.border}}; --rd-grid: {{tk.grid}}; --rd-accent: {{tk.accent}}; --rd-q1: {{pal.q1}}; --rd-q2: {{pal.q2}}; --rd-q3: {{pal.q3}}; --rd-q4: {{pal.q4}}; background: var(--rd-surface); color: var(--rd-text); font-family: 'Noto Sans', sans-serif; font-variant-numeric: tabular-nums; display: flex; flex-direction: column; gap: 18px">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; height: 44px">
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 500; color: var(--rd-text)">Rating distribution</h2>
+      <div style="font-size: 12px; color: var(--rd-text-muted)">{{countLabel}}</div>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px">
+      <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rd-text)">Trakt</span>
+      <span style="width: 56px; height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--rd-q1), var(--rd-q2), var(--rd-q3), var(--rd-q4))"></span>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; height: 60px">
+    <div style="display: flex; flex-direction: column; gap: 2px; border-left: 2px solid var(--rd-q4); padding-left: 12px">
+      <span style="font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rd-text-muted)">Above 6</span>
+      <span style="font-size: 26px; font-weight: 300; line-height: 1.15">{{aboveLabel}}</span>
+      <span style="font-size: 11px; color: var(--rd-text-faint)">rated 7 or higher</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--rd-border); padding-left: 12px">
+      <span style="font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rd-text-muted)">Mean</span>
+      <span style="font-size: 26px; font-weight: 300; line-height: 1.15">{{meanLabel}}</span>
+      <span style="font-size: 11px; color: var(--rd-text-faint)">out of 10</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--rd-border); padding-left: 12px">
+      <span style="font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rd-text-muted)">Median</span>
+      <span style="font-size: 26px; font-weight: 300; line-height: 1.15">{{medLabel}}</span>
+      <span style="font-size: 11px; color: var(--rd-text-faint)">middle half {{q1Label}}–{{q3Label}}</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--rd-border); padding-left: 12px">
+      <span style="font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rd-text-muted)">Spread</span>
+      <span style="font-size: 26px; font-weight: 300; line-height: 1.15">{{sdLabel}}</span>
+      <span style="font-size: 11px; color: var(--rd-text-faint)">standard deviation</span>
+    </div>
+  </div>
+
+  <div style="position: relative; width: 784px; height: 220px">
+    <svg width="784" height="220" viewBox="0 0 784 220" role="img" aria-label="{{chartLabel}}" style="position: absolute; left: 0; top: 0">
+      <path d="{{gridPath}}" style="stroke: var(--rd-grid); fill: none" stroke-width="1"></path>
+      <path d="{{bars1}}" style="fill: var(--rd-q1)"></path>
+      <path d="{{bars2}}" style="fill: var(--rd-q2)"></path>
+      <path d="{{bars3}}" style="fill: var(--rd-q3)"></path>
+      <path d="{{bars4}}" style="fill: var(--rd-q4)"></path>
+      <line x1="28" x2="784" y1="196.5" y2="196.5" style="stroke: var(--rd-text-faint)" stroke-width="1"></line>
+      <line x1="{{xMed}}" x2="{{xMed}}" y1="22" y2="196" style="stroke: var(--rd-text)" stroke-width="1.5"></line>
+      <text x="{{xMed}}" y="14" text-anchor="middle" font-size="11" font-family="Noto Sans, sans-serif" style="fill: var(--rd-text)">median</text>
+      <line x1="{{xMean}}" x2="{{xMean}}" y1="{{meanTop}}" y2="196" style="stroke: var(--rd-text)" stroke-width="1" stroke-dasharray="3 3"></line>
+      <text x="{{xMean}}" y="{{meanLabelY}}" text-anchor="middle" font-size="11" font-family="Noto Sans, sans-serif" style="fill: var(--rd-text-muted)">mean</text>
+    </svg>
+
+    <sc-for list="{{yTicks}}" as="t" hint-placeholder-count="3">
+      <div style="position: absolute; left: 0; width: 22px; text-align: right; top: {{t.top}}px; font-size: 10px; color: var(--rd-text-faint)">{{t.label}}</div>
+    </sc-for>
+    <sc-for list="{{xTicks}}" as="x" hint-placeholder-count="10">
+      <div style="position: absolute; top: 202px; left: {{x.left}}px; width: 20px; text-align: center; font-size: 11px; color: var(--rd-text-muted)">{{x.label}}</div>
+    </sc-for>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--rd-border); padding-top: 12px">
+    <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap">
+      <span style="font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rd-text-muted); margin-right: 10px">Profile</span>
+      <sc-for list="{{profiles}}" as="p" hint-placeholder-count="6">
+        <span style="height: 28px; padding: 0 12px; border-radius: 14px; display: inline-flex; align-items: center; font-size: 12px; font-weight: {{p.weight}}; background: {{p.bg}}; color: {{p.fg}}">{{p.label}}</span>
+      </sc-for>
+    </div>
+    <div style="font-size: 12px; color: var(--rd-text-muted)">{{reason}}</div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dataset":{"editor":"enum","options":["mid","safe","acclaimed","divisive","cult","bombed"],"default":"divisive","section":"Data"},"n":{"editor":"int","default":1284,"min":5,"max":50000,"step":1,"section":"Data"},"palette":{"editor":"enum","options":["trakt","accent"],"default":"trakt","section":"Theme"},"theme":{"editor":"enum","options":["dark","light"],"default":"dark","section":"Theme"},"$preview":{"width":840,"height":500}}'>
+class Component extends DCLogic {
+  // Theme tokens: in the plugin each maps onto the host theme's variable, these are fallbacks
+  tokens(theme) {
+    if (theme === 'light') {
+      return { surface: '#ffffff', text: '#1f1f1f', muted: 'rgba(0,0,0,0.62)', faint: 'rgba(0,0,0,0.45)', border: 'rgba(0,0,0,0.1)', grid: 'rgba(0,0,0,0.06)', accent: '#00a4dc' };
+    }
+    return { surface: '#1a1a1a', text: '#f2f2f2', muted: 'rgba(255,255,255,0.62)', faint: 'rgba(255,255,255,0.4)', border: 'rgba(255,255,255,0.1)', grid: 'rgba(255,255,255,0.06)', accent: '#00a4dc' };
+  }
+  palette(id) {
+    if (id === 'accent') {
+      return { q1: 'color-mix(in srgb, var(--rd-accent) 35%, transparent)', q2: 'color-mix(in srgb, var(--rd-accent) 58%, transparent)', q3: 'color-mix(in srgb, var(--rd-accent) 80%, transparent)', q4: 'var(--rd-accent)' };
+    }
+    return { q1: '#8e44c4', q2: '#b23a98', q3: '#d22f62', q4: '#ed1c24' };
+  }
+  rng(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  // DEMO ONLY: stands in for Trakt's response, a vote count per whole rating 1–10
+  demoDistribution(id, n) {
+    const seeds = { mid: 11, safe: 23, acclaimed: 37, divisive: 41, cult: 53, bombed: 67 };
+    const R = this.rng(seeds[id] || 1);
+    const z = function () { let u = 0; while (u === 0) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); };
+    const N = function (m, s) { return m + s * z(); };
+    const g2 = function (sc) { let a = 0, b = 0; while (a === 0) a = R(); while (b === 0) b = R(); return -sc * (Math.log(a) + Math.log(b)); };
+    const c = new Array(11).fill(0);
+    for (let i = 0; i < n; i++) {
+      const r = R();
+      let x;
+      if (id === 'mid') x = N(6.0, 0.9);
+      else if (id === 'safe') x = N(6.9, 0.65);
+      else if (id === 'acclaimed') x = N(8.4, 1.0);
+      else if (id === 'divisive') x = r < 0.55 ? N(8.0, 0.9) : N(4.3, 1.2);
+      else if (id === 'cult') x = 1.5 + g2(1.5);
+      else x = r < 0.14 ? 1 : r < 0.22 ? 10 : N(7.3, 0.9);
+      c[Math.max(1, Math.min(10, Math.round(x)))]++;
+    }
+    return c;
+  }
+  // ---- Everything below is what the plugin computes from the 10 counts ----
+  stats(c) {
+    let n = 0, s1 = 0;
+    for (let k = 1; k <= 10; k++) { n += c[k]; s1 += k * c[k]; }
+    const mean = s1 / n;
+    let m2 = 0, m3 = 0, m4 = 0;
+    for (let k = 1; k <= 10; k++) { const d = k - mean; m2 += c[k] * d * d; m3 += c[k] * d * d * d; m4 += c[k] * d * d * d * d; }
+    m2 /= n; m3 /= n; m4 /= n;
+    // grouped-data quantile: rating k covers [k−0.5, k+0.5], votes spread evenly inside
+    const q = function (p) {
+      const target = p * n;
+      let cum = 0;
+      for (let k = 1; k <= 10; k++) {
+        if (c[k] > 0 && cum + c[k] >= target) return (k - 0.5) + (target - cum) / c[k];
+        cum += c[k];
+      }
+      return 10;
+    };
+    let above = 0; for (let k = 7; k <= 10; k++) above += c[k];
+    const skew = m2 > 0 ? m3 / Math.pow(m2, 1.5) : 0;
+    const exk = m2 > 0 ? m4 / (m2 * m2) - 3 : 0;
+    const bc = n > 3 ? (skew * skew + 1) / (exk + 3 * (n - 1) * (n - 1) / ((n - 2) * (n - 3))) : 0;
+    return { n: n, mean: mean, sd: Math.sqrt(m2 * n / Math.max(1, n - 1)), med: q(0.5), q1: q(0.25), q3: q(0.75), skew: skew, bc: bc, low: (c[1] + c[2]) / n, above: above / n };
+  }
+  classify(st) {
+    const f = function (x, d) { return x.toFixed(d); };
+    const pct = function (x) { return Math.round(x * 100) + '%'; };
+    if (st.n < 30) return { id: null, why: 'Only ' + st.n + ' ratings so far: too few to call a shape.' };
+    if (st.low >= 0.08 && st.med >= 6 && st.med - st.mean > 0.3) return { id: 'bombed', why: pct(st.low) + ' of votes are a 1 or 2 on a film with a median of ' + f(st.med, 1) + ', dragging the mean ' + f(st.med - st.mean, 1) + ' below it.' };
+    if (st.mean < 5.5 && st.skew > 0.5) return { id: 'cult', why: 'Low centre (' + f(st.mean, 1) + ') with right skew ' + f(st.skew, 2) + ': a tail of fans lifts the mean above the median.' };
+    if (st.bc > 0.555 && st.sd > 1.6) return { id: 'divisive', why: 'Bimodality coefficient ' + f(st.bc, 2) + ' (above 0.555) and spread ' + f(st.sd, 1) + ': two camps, little middle ground.' };
+    if (st.med >= 7.8) return { id: 'acclaimed', why: 'Median ' + f(st.med, 1) + ': half of all ratings are at or above it.' };
+    if (st.mean >= 6.3 && st.sd < 0.9) return { id: 'safe', why: 'Mean ' + f(st.mean, 1) + ' with a tight spread of ' + f(st.sd, 2) + ': broad, mild approval.' };
+    return { id: 'mid', why: 'Centred at ' + f(st.mean, 1) + ' with spread ' + f(st.sd, 1) + ': no strong lean either way.' };
+  }
+  niceStep(raw) {
+    const p = Math.pow(10, Math.floor(Math.log10(raw)));
+    const m = raw / p;
+    return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p;
+  }
+  renderVals() {
+    const theme = this.props.theme ?? 'dark';
+    const n = Math.max(5, Math.min(50000, Math.round(this.props.n ?? 1284)));
+    const c = this.demoDistribution(this.props.dataset ?? 'divisive', n);
+    const st = this.stats(c);
+
+    const PL = 28, PR = 784, TOP = 24, BASE = 196, lo = 0.5, hi = 10.5;
+    const sx = function (x) { return PL + (x - lo) / (hi - lo) * (PR - PL); };
+    let cmax = 0; for (let k = 1; k <= 10; k++) if (c[k] > cmax) cmax = c[k];
+    const step = this.niceStep(Math.max(1, cmax * 1.05) / 3);
+    const yTop = Math.ceil((cmax * 1.05) / step) * step;
+    const sy = function (v) { return BASE - v / yTop * (BASE - TOP); };
+    const r = function (v) { return Math.round(v * 10) / 10; };
+
+    // one bar per whole rating, split exactly where a quartile falls inside it
+    const bars = ['', '', '', ''];
+    const cuts = [st.q1, st.med, st.q3];
+    const halfW = 0.38;
+    for (let k = 1; k <= 10; k++) {
+      if (c[k] === 0) continue;
+      const a = k - halfW, z = k + halfW;
+      const pts = [a];
+      cuts.forEach(function (q) { if (q > a && q < z) pts.push(q); });
+      pts.push(z);
+      pts.sort(function (p, q) { return p - q; });
+      const yT = r(sy(c[k]));
+      const hgt = r(BASE - yT);
+      for (let j = 0; j < pts.length - 1; j++) {
+        const x0 = sx(pts[j]), x1 = sx(pts[j + 1]);
+        const mid = (pts[j] + pts[j + 1]) / 2;
+        const qi = mid < st.q1 ? 0 : mid < st.med ? 1 : mid < st.q3 ? 2 : 3;
+        bars[qi] += 'M' + r(x0) + ',' + yT + 'h' + r(x1 - x0) + 'v' + hgt + 'h' + r(x0 - x1) + 'Z';
+      }
+    }
+
+    const yTicks = [];
+    let gridPath = '';
+    for (let v = step; v <= yTop + 1e-9; v += step) {
+      const y = r(sy(v));
+      yTicks.push({ top: y - 7, label: v >= 1000 ? (v / 1000) + 'k' : String(Math.round(v)) });
+      gridPath += 'M' + PL + ',' + (y + 0.5) + ' L' + PR + ',' + (y + 0.5) + ' ';
+    }
+    const xTicks = [];
+    for (let v = 1; v <= 10; v++) xTicks.push({ left: r(sx(v) - 10), label: String(v) });
+
+    const xMed = r(sx(st.med)), xMean = r(sx(st.mean));
+    const close = Math.abs(xMed - xMean) < 48;
+
+    const names = { mid: 'Middle of the road', safe: 'Crowd-pleaser', acclaimed: 'Acclaimed', divisive: 'Divisive', cult: 'Cult flop', bombed: 'Review-bombed' };
+    const cls = this.classify(st);
+    const profiles = ['mid', 'safe', 'acclaimed', 'divisive', 'cult', 'bombed'].map(function (id) {
+      const on = id === cls.id;
+      return { label: names[id], bg: on ? 'var(--rd-text)' : 'transparent', fg: on ? 'var(--rd-surface)' : 'var(--rd-text-faint)', weight: on ? '500' : '400' };
+    });
+
+    return {
+      tk: this.tokens(theme),
+      pal: this.palette(this.props.palette ?? 'trakt'),
+      countLabel: st.n.toLocaleString('en-ZA') + ' votes',
+      aboveLabel: Math.round(st.above * 100) + '%',
+      meanLabel: st.mean.toFixed(1),
+      medLabel: st.med.toFixed(1),
+      q1Label: st.q1.toFixed(1),
+      q3Label: st.q3.toFixed(1),
+      sdLabel: st.sd.toFixed(2),
+      chartLabel: 'Votes per rating from 1 to 10, shaded by quartile, median ' + st.med.toFixed(1) + ', mean ' + st.mean.toFixed(1),
+      gridPath: gridPath,
+      bars1: bars[0], bars2: bars[1], bars3: bars[2], bars4: bars[3],
+      yTicks: yTicks,
+      xTicks: xTicks,
+      xMed: xMed,
+      xMean: xMean,
+      meanTop: close ? 38 : 22,
+      meanLabelY: close ? 32 : 14,
+      profiles: profiles,
+      reason: cls.why
+    };
+  }
+}
+</script>
+</body>
+</html>

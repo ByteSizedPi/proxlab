@@ -1,6 +1,6 @@
 {
   "category": "General",
-  "changelog": "First build.",
+  "changelog": "Read the nested season ratings response. Treat zero-vote responses as not found.",
   "description": "Shows the Trakt audience-rating distribution on the item detail page.",
   "guid": "1ae1801e-6503-43d1-b063-3c1a3605b302",
   "name": "Rating Distribution",
@@ -8,7 +8,7 @@
   "owner": "jj",
   "targetAbi": "12.1.0.0",
   "timestamp": "2026-10-11T00:00:00.0000000Z",
-  "version": "0.1.0.0",
+  "version": "0.1.1.0",
   "status": "Active",
   "autoUpdate": false,
   "assemblies": [ "Jellyfin.Plugin.RatingDistribution.dll" ]

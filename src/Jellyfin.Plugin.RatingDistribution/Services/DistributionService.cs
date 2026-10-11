@@ -90,11 +90,13 @@ public sealed class DistributionService
 
             TraktRatings? ratings = await _trakt.GetRatingsAsync(path, cancellationToken).ConfigureAwait(false);
             CacheEntry entry = new() { FetchedAt = DateTime.UtcNow };
-            if (ratings != null)
+            int[] counts = Enumerable.Range(1, 10)
+                .Select(k => ratings != null && ratings.Distribution.TryGetValue(k.ToString(System.Globalization.CultureInfo.InvariantCulture), out int n) ? n : 0)
+                .ToArray();
+            // No votes (or a response shape we do not know) counts as "not found", not as ten zeros.
+            if (ratings != null && counts.Sum() > 0)
             {
-                entry.Counts = Enumerable.Range(1, 10)
-                    .Select(k => ratings.Distribution.TryGetValue(k.ToString(System.Globalization.CultureInfo.InvariantCulture), out int n) ? n : 0)
-                    .ToArray();
+                entry.Counts = counts;
                 entry.Votes = ratings.Votes;
                 entry.TraktRating = ratings.Rating;
             }
@@ -135,6 +137,12 @@ public sealed class DistributionService
     private static bool IsStale(BaseItem item, CacheEntry entry)
     {
         var config = Plugin.Instance!.Configuration;
+        if (entry.Counts != null && entry.Counts.Sum() == 0)
+        {
+            // Written by 0.1.0, which misread the nested season response as ten zeros.
+            return true;
+        }
+
         DateTime? released = item.PremiereDate;
         if (released == null && item.ProductionYear is int year)
         {

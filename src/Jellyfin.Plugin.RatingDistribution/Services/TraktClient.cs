@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 
@@ -78,8 +79,23 @@ public sealed class TraktClient
     /// <summary>
     /// Gets the ratings at <paramref name="path"/>, or null if Trakt returns 404.
     /// </summary>
-    public Task<TraktRatings?> GetRatingsAsync(string path, CancellationToken cancellationToken)
-        => GetAsync<TraktRatings>(path, cancellationToken);
+    public async Task<TraktRatings?> GetRatingsAsync(string path, CancellationToken cancellationToken)
+    {
+        JsonElement? root = await GetAsync<JsonElement?>(path, cancellationToken).ConfigureAwait(false);
+        if (root is not JsonElement json || json.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        // Movie, show and episode ratings are flat: {rating, votes, distribution}.
+        // Season ratings (seen 2026-10-11) nest the same object under "trakt", beside "tmdb", "imdb" and "metascore".
+        if (json.TryGetProperty("trakt", out JsonElement nested) && nested.ValueKind == JsonValueKind.Object)
+        {
+            json = nested;
+        }
+
+        return json.Deserialize<TraktRatings>();
+    }
 
     /// <summary>
     /// Resolves a TMDB or TVDB ID to a Trakt ID. <paramref name="idType"/> is "tmdb" or "tvdb", <paramref name="mediaType"/> is "movie" or "show".
@@ -94,7 +110,6 @@ public sealed class TraktClient
     }
 
     private async Task<T?> GetAsync<T>(string path, CancellationToken cancellationToken)
-        where T : class
     {
         string clientId = ClientId ?? throw new InvalidOperationException("No Trakt client ID is configured.");
 
@@ -107,7 +122,7 @@ public sealed class TraktClient
         using HttpResponseMessage response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            return null;
+            return default;
         }
 
         if (!response.IsSuccessStatusCode)

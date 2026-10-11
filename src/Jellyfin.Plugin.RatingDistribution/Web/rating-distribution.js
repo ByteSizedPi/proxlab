@@ -217,7 +217,7 @@
     function render(page, itemId, data) {
         page.querySelectorAll('.' + PANEL).forEach(function (p) { if (p.dataset.item !== itemId) p.remove(); });
         if (page.querySelector('.' + PANEL + '[data-item="' + itemId + '"]')) return;
-        if (!data || data.source !== 'trakt' || !data.counts) return;
+        if (!data || data.source !== 'trakt' || !data.counts || !data.counts.some(function (n) { return n > 0; })) return;
         insert(page, buildPanel(itemId, data));
     }
 

@@ -7,7 +7,12 @@ design brief. `prototype/Main.dc.html` is the visual reference.
 ## Status (2026-10-11)
 
 - The plugin builds against Jellyfin.Controller 12.1.0 / net10.0 (`./build.sh`).
-- Not deployed yet. Not yet tested against a live server or the Trakt API.
+- 0.1.0 deployed to pve-prod on 2026-10-11 and renders on movie and episode pages.
+- 0.1.1 fixes season pages (see "Trakt response shapes" below).
+- Verified 2026-10-11: every library item maps to the correct Trakt item
+  (14/14 movies, 17/17 series, 30/30 seasons, 324/324 episodes by S/E number).
+  For each cached item, the vote total equals the sum of the 10 counts, and the
+  mean of the counts equals Trakt's own rating to 3 decimals.
 
 ## How it works
 
@@ -50,6 +55,17 @@ no scheduled pre-fetch yet (handoff question 5).
   reads is `--jf-palette-primary-main` (fallback `#00a4dc`), and that one is
   unverified.
 
+## Trakt response shapes
+
+- `/movies/:id/ratings`, `/shows/:id/ratings` and `.../episodes/:e/ratings`
+  return `{rating, votes, distribution}` flat.
+- `/shows/:id/seasons/:n/ratings` nests the same object under `trakt`, beside
+  `tmdb`, `imdb` and `metascore` keys. 0.1.0 missed this nesting. 0.1.1
+  accepts both shapes and treats a zero-vote result as "not found".
+- The plugin data folder (`DataFolderPath`) on 12.1 is
+  `data/plugins/Jellyfin.Plugin.RatingDistribution/`, not `configurations/`.
+  The cache is `trakt-cache.json` there.
+
 ## Known limits
 
 - Only the web client (and clients that wrap it) shows the panel. Native
@@ -61,7 +77,7 @@ no scheduled pre-fetch yet (handoff question 5).
 
 1. Run `./build.sh`.
 2. Copy `dist/Jellyfin.Plugin.RatingDistribution.dll` and `dist/meta.json` to
-   `/mnt/docker-data/appdata/jellyfin/data/plugins/Rating Distribution_0.1.0.0/` on pve-prod.
+   `/mnt/docker-data/appdata/jellyfin/data/plugins/Rating Distribution_<version>/` (remove the old version folder first) on pve-prod.
 3. Make the folder owner `abc` inside the container (uid 1000 on linuxserver images).
 4. Restart the `jellyfin` container.
 5. In Dashboard → Plugins → Rating Distribution, enter the Trakt client ID.

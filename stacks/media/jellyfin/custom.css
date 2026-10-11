@@ -1,5 +1,6 @@
-/* Catppuccin Mocha, mauve accent. Matches the desktop theme in ~/dotfiles
- * (Noctalia builtin "Catppuccin", kitty active_border_color #cba6f7).
+/* Catppuccin Frappé, mauve accent. Matches the desktop theme in ~/dotfiles
+ * (kitty themes/noctalia.conf: background #303446, active_border_color
+ * #ca9ee6). Changed from Mocha on 2026-10-11 to follow the desktop.
  *
  * Jellyfin does NOT read this file. Paste it into Dashboard > General >
  * Branding > Custom CSS code. Jellyfin stores it in /config/branding.xml.
@@ -9,29 +10,31 @@
  * Jellyfin 12: the theme styles only the "TV" and "Legacy" display modes.
  */
 @import url("https://jellyfin.catppuccin.com/theme.css");
-@import url("https://jellyfin.catppuccin.com/catppuccin-mocha.css");
+@import url("https://jellyfin.catppuccin.com/catppuccin-frappe.css");
 
-/* Mocha already defaults to mauve. Change the accent here, for example:
+/* Frappé already defaults to mauve. Change the accent here, for example:
  * :root { --main-color: var(--blue); }
  */
 
 /* ByteSizedMedia logo. The files are in ./branding, which compose.yaml
- * mounts at /usr/share/jellyfin/web/branding. Made from ByteSizedPi.ai,
- * recolored to mauve #cba6f7 and teal #94e2d5.
+ * mounts at /usr/share/jellyfin/web/branding. banner.png, logo.* and icon.*
+ * were made from ByteSizedPi.ai in Mocha mauve #cba6f7 and teal #94e2d5.
+ * No rule uses them since 2026-10-11.
  *
  * .pageTitleWithDefaultLogo is the header logo, .splashLogo the loading
  * screen. Both class names were read from the 12.1.0 web bundle.
  */
 .pageTitleWithDefaultLogo {
-  /* mark-mocha.svg is the square mark from ~/projects/kit/brand, 2026-10-11.
+  /* mark-frappe.svg is ~/projects/kit/brand/mark-mocha.svg recolored to
+   * Frappé mauve #ca9ee6 and teal #81c8be, 2026-10-11.
    * The splash logo below uses it too. */
-  background-image: url("/web/branding/mark-mocha.svg") !important;
+  background-image: url("/web/branding/mark-frappe.svg") !important;
   background-size: contain !important;
   background-repeat: no-repeat !important;
 }
 
 .splashLogo {
-  background-image: url("/web/branding/mark-mocha.svg") !important;
+  background-image: url("/web/branding/mark-frappe.svg") !important;
   background-size: contain !important;
   background-repeat: no-repeat !important;
   background-position: center !important;

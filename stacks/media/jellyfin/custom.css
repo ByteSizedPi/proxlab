@@ -2,7 +2,7 @@
  * (Noctalia builtin "Catppuccin", kitty active_border_color #cba6f7).
  *
  * Jellyfin does NOT read this file. Paste it into Dashboard > General >
- * Branding > Custom CSS code. Jellyfin stores it in /config/config/branding.xml.
+ * Branding > Custom CSS code. Jellyfin stores it in /config/branding.xml.
  * This copy is the record, so the CSS survives a rebuilt /config volume.
  *
  * Source: https://github.com/catppuccin/jellyfin (MIT).
@@ -23,7 +23,8 @@
  * screen. Both class names were read from the 12.1.0 web bundle.
  */
 .pageTitleWithDefaultLogo {
-  background-image: url("/web/branding/banner.png") !important;
+  /* mark-mocha.svg is the square mark from ~/projects/kit/brand, 2026-10-11. */
+  background-image: url("/web/branding/mark-mocha.svg") !important;
   background-size: contain !important;
   background-repeat: no-repeat !important;
 }

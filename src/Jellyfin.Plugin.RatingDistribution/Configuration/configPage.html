@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Rating Distribution</title>
+</head>
+<body>
+    <div id="RatingDistributionConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button">
+        <div data-role="content">
+            <div class="content-primary">
+                <h2>Rating Distribution</h2>
+                <form id="RatingDistributionConfigForm">
+                    <div class="inputContainer">
+                        <input is="emby-input" type="password" id="TraktClientId" label="Trakt client ID" autocomplete="off" />
+                        <div class="fieldDescription">From a Trakt API app (trakt.tv/oauth/applications). If empty, the plugin reads the TRAKT_CLIENT_ID environment variable of the server.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="number" id="MinVotes" min="1" label="Minimum votes for a chart" />
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="number" id="RecentCacheDays" min="1" label="Cache days, released in the last 180 days" />
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="number" id="OlderCacheDays" min="1" label="Cache days, older titles" />
+                    </div>
+                    <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                        <span>Save</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <script type="text/javascript">
+            (function () {
+                var pluginId = '1ae1801e-6503-43d1-b063-3c1a3605b302';
+                var fields = ['TraktClientId', 'MinVotes', 'RecentCacheDays', 'OlderCacheDays'];
+                var page = document.querySelector('#RatingDistributionConfigPage');
+
+                page.addEventListener('pageshow', function () {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        fields.forEach(function (f) { page.querySelector('#' + f).value = config[f]; });
+                        Dashboard.hideLoadingMsg();
+                    });
+                });
+
+                page.querySelector('#RatingDistributionConfigForm').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        config.TraktClientId = page.querySelector('#TraktClientId').value.trim();
+                        ['MinVotes', 'RecentCacheDays', 'OlderCacheDays'].forEach(function (f) {
+                            var v = parseInt(page.querySelector('#' + f).value, 10);
+                            if (v > 0) { config[f] = v; }
+                        });
+                        ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {
+                            Dashboard.processPluginConfigurationUpdateResult(result);
+                        });
+                    });
+                    return false;
+                });
+            })();
+        </script>
+    </div>
+</body>
+</html>

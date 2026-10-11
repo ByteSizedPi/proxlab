@@ -61,11 +61,12 @@
   overflow: hidden !important;
 }
 
-/* Item page poster. Catppuccin's theme.css gives every .cardBox a solid
- * `background: var(--main-background)`. .cardBox is square and sits outside
- * the .cardScalable clip. On the home page it matches the page, but on the
- * item page the poster sits on the backdrop image and the square corners
- * showed behind the rounded image. */
-.detailImageContainer .cardBox {
+/* Item page cards: the poster, cast, scenes, "More like this". Catppuccin's
+ * theme.css gives every .cardBox a solid `background: var(--main-background)`.
+ * .cardBox is square and sits outside the .cardScalable clip. On the home
+ * page it matches the page, but the item page sits on the backdrop image, so
+ * the square corners showed behind the rounded images. On this page the
+ * title text under a card now sits on the backdrop, not on a dark box. */
+.itemDetailPage .cardBox {
   background: transparent !important;
 }

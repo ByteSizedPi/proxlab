@@ -39,3 +39,19 @@
   background-repeat: no-repeat !important;
   background-position: center !important;
 }
+
+/* Rounded media cards (posters, thumbnails, the hover overlay), 2026-10-11.
+ * Jellyfin 12 rounds .cardContent and .cardImageContainer by only 0.2em.
+ * .cardContent already clips with overflow:hidden, so the image follows its
+ * corners. .cardScalable carries the transparent 0.5em focus border, which
+ * gets the radius plus that 0.5em so the focus ring stays parallel to the
+ * image. Class names and the defaults read from the 12.1.0 web bundle. */
+.cardContent,
+.cardImageContainer,
+.cardOverlayContainer {
+  border-radius: 0.75em !important;
+}
+
+.cardScalable {
+  border-radius: 1.25em !important;
+}

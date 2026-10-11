@@ -23,14 +23,15 @@
  * screen. Both class names were read from the 12.1.0 web bundle.
  */
 .pageTitleWithDefaultLogo {
-  /* mark-mocha.svg is the square mark from ~/projects/kit/brand, 2026-10-11. */
+  /* mark-mocha.svg is the square mark from ~/projects/kit/brand, 2026-10-11.
+   * The splash logo below uses it too. */
   background-image: url("/web/branding/mark-mocha.svg") !important;
   background-size: contain !important;
   background-repeat: no-repeat !important;
 }
 
 .splashLogo {
-  background-image: url("/web/branding/banner.png") !important;
+  background-image: url("/web/branding/mark-mocha.svg") !important;
   background-size: contain !important;
   background-repeat: no-repeat !important;
   background-position: center !important;

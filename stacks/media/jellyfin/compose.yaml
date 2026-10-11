@@ -85,8 +85,16 @@ services:
     # Kept: File Transformation and Plugin Pages, which Jellyfin Enhanced uses.
     # Backup of the earlier state: /config/plugins-backup-2026-09-22.tgz.
     #
+    # 2026-10-11: Jellyfin Enhanced "Elsewhere" (the streaming-services panel
+    # on an item page) set off: ElsewhereEnabled=false in
+    # /config/data/plugins/configurations/Jellyfin.Plugin.JellyfinEnhanced.xml.
+    # Backup next to it with the suffix .bak-2026-10-11.
+    #
     # Theme: Catppuccin Mocha, branded "ByteSizedMedia". The CSS is in
     # custom.css next to this file, pasted into Dashboard > Branding.
+    # Header logo since 2026-10-11: branding/mark-mocha.svg. Komodo only
+    # redeploys when THIS file changes, so a branding/ or custom.css change
+    # needs an edit here too.
     # Jellyfin does not read custom.css. It does serve ./branding (above).
     # The server name is set in Dashboard > General, also not in this repo.
 

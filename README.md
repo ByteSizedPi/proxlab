@@ -26,7 +26,9 @@ is configured by hand in the UI except secrets.
 │   └── prowlarr/
 │       ├── compose.yaml
 │       └── prowlarr.env     #   per-app, non-secret, committed
-└── periphery/               # the agent — systemd, outside the Core stack
+├── periphery/               # the agent — systemd, outside the Core stack
+└── plugins/                 # source for self-built app plugins, not Komodo-managed
+    └── jellyfin-rating-distribution/   # Trakt rating histogram on Jellyfin detail pages
 ```
 
 Two top-level concepts: **the control plane**, and **what it runs**. Core's

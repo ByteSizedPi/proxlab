@@ -29,6 +29,9 @@ services:
     #
     # Config pass 2026-09-21: the Jellyfin widget now sets `version: 2`,
     # which Jellyfin 12 and later require.
+    #
+    # Config pass 2026-10-11: Catppuccin Frappé colors, section 4 of
+    # config/custom.css, to match the desktop and Jellyfin.
     container_name: homepage
     environment:
       - PUID=${PUID}

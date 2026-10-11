@@ -163,3 +163,33 @@
     grid-column: 1;
   }
 }
+
+/* ── 4. Catppuccin Frappé ────────────────────────────────────────────── */
+
+/* Matches the desktop (kitty themes/noctalia.conf: background #303446,
+ * accent #ca9ee6) and Jellyfin, both on Frappé since 2026-10-11.
+ *
+ * settings.yaml keeps `color: slate`. Homepage puts a `theme-slate` class on
+ * the page, and that class sets --color-50 to --color-900 as "R G B"
+ * triplets. Every theme-* utility reads them, so overriding the ten values
+ * recolors the whole page. The selectors outrank Homepage's single-class
+ * `.theme-slate` rule. Variable names read from the 2.4.0 CSS bundle.
+ *
+ * In dark mode --color-800 is the page background (`.dark{--bg-color:
+ * var(--color-800)}`), and 200 to 400 are the text shades. 50 and 100 only
+ * show in light mode, so they take Latte's base and mantle. */
+html.theme-slate,
+html .theme-slate {
+  --color-50: 239 241 245;  /* Latte base    #eff1f5 */
+  --color-100: 230 233 239; /* Latte mantle  #e6e9ef */
+  --color-200: 198 208 245; /* text          #c6d0f5 */
+  --color-300: 165 173 206; /* subtext0      #a5adce */
+  --color-400: 148 156 187; /* overlay2      #949cbb */
+  --color-500: 115 121 148; /* overlay0      #737994 */
+  --color-600: 81 87 109;   /* surface1      #51576d */
+  --color-700: 65 69 89;    /* surface0      #414559 */
+  --color-800: 48 52 70;    /* base          #303446 */
+  --color-900: 41 44 60;    /* mantle        #292c3c */
+  --color-logo-start: 202 158 230; /* mauve  #ca9ee6 */
+  --color-logo-stop: 129 200 190;  /* teal   #81c8be */
+}

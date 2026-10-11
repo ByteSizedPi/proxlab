@@ -52,6 +52,11 @@
   border-radius: 0.75em !important;
 }
 
+/* overflow:hidden clips every child (the .cardPadder placeholder, Jellyfin
+ * Enhanced badges) at the inside of the 0.5em border, where the radius is
+ * 1.25em - 0.5em = 0.75em, the same curve as the image. Added after a corner
+ * of the card still showed past the image's rounded corner. */
 .cardScalable {
   border-radius: 1.25em !important;
+  overflow: hidden !important;
 }

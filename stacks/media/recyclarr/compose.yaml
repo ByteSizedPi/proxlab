@@ -68,6 +68,9 @@ services:
       #
       # 2026-09-22: touched again for the same reason. configs/recyclarr.yml
       # set x265 (HD) to 0 and lowered the Bluray size floors.
+      #
+      # 2026-10-27: touched again. configs/recyclarr.yml added Bluray-2160p
+      # to the Radarr profile, plus UHD tiers and HDR scoring.
 
     # No `ports:`, no Traefik labels — Recyclarr has no UI, it only talks
     # OUT to Sonarr/Radarr over `media` on its own schedule.

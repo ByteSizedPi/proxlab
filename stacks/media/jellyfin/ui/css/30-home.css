@@ -1,0 +1,88 @@
+/* Home page, 2026-11-03.
+ *
+ * Section titles ("Continue Watching", "Next Up", "Latest Movies", ...):
+ * smaller and heavier. Jellyfin renders them as h2.sectionTitle at about
+ * 1.5em, weight 400-500. The slight negative letter-spacing keeps the bold
+ * text tight at the smaller size. */
+/* rem, not em: with em the size multiplied through nested title elements,
+ * and 1.3em and 1.45em looked the same on screen. 1.35rem is about 22px. */
+.sectionTitle,
+.sectionTitle-cards,
+.sectionTitle :not(.material-icons),
+a.sectionTitleTextButton .sectionTitle {
+  font-size: 1.35rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+}
+
+/* The ">" after a linked title. Jellyfin places it inline after the h2 with
+ * its own margin, so it sat off the text's centre line once the title got
+ * smaller. A flex row with align-items:center centres both, whatever the
+ * title size. */
+a.sectionTitleTextButton,
+a:has(> .sectionTitle) {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.15em;
+}
+
+a.sectionTitleTextButton > .sectionTitle,
+a:has(> .sectionTitle) > .sectionTitle {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  line-height: 1.2;
+}
+
+.sectionTitleTextButton :is(.chevron-right, .chevron_right, .material-icons),
+a:has(> .sectionTitle) :is(.chevron-right, .chevron_right, .material-icons) {
+  margin: 0 !important;
+  line-height: 1 !important;
+  vertical-align: middle;
+  display: inline-flex !important;
+  align-items: center;
+  height: 1em;
+}
+
+/* The glyph is drawn by ::before from the icon font, which sits slightly
+ * high in its own em box. Same 1em box as the span, then a small nudge down.
+ * Tune the translateY if it is still off. */
+.sectionTitleTextButton :is(.chevron-right, .chevron_right, .material-icons)::before,
+a:has(> .sectionTitle) :is(.chevron-right, .chevron_right, .material-icons)::before {
+  display: block;
+  line-height: 1;
+  transform: translateY(0.06em);
+}
+
+/* "Recently Added in ..." rows, 2026-11-03: Movies, Series, Audiobooks.
+ * Jellyfin 12 renders these rows alphabetically (Audiobooks, Movies, Series)
+ * and ignores the user's library order (OrderedViews), measured from the live
+ * page. CSS `order` only moves them on screen, the DOM is untouched.
+ * A row is found by its title link, which points at its library. The ids
+ * are this server's libraries (GET /Library/VirtualFolders). The "My Media"
+ * row also links to the libraries, but not through a.sectionTitleTextButton.
+ * These 3 rows already come last, so order 1-3 keeps everything else put. */
+:has(> .verticalSection) {
+  display: flex;
+  flex-direction: column;
+}
+.verticalSection:has(a.sectionTitleTextButton[href*="f137a2dd21bbc1b99aa5c0f6bf02a805"]) { order: 1; } /* Movies */
+.verticalSection:has(a.sectionTitleTextButton[href*="5ddaa59a73205234890fdcfc683e14ed"]) { order: 2; } /* Series */
+.verticalSection:has(a.sectionTitleTextButton[href*="c0c1444b416777d3fa55d5f13da1ce58"]) { order: 3; } /* Audiobooks */
+
+/* Rows that js/ builds itself (e.g. "Leaving Soon"): a plain horizontal
+ * scroller instead of Jellyfin's emby-scroller element. Same card width as
+ * the native portrait rows. */
+.ui-row-scroller {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
+.ui-row-scroller::-webkit-scrollbar { display: none; }
+.ui-row-scroller > .card {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}

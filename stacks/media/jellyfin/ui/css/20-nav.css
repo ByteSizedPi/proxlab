@@ -1,0 +1,31 @@
+/* Navigation, 2026-11-03. Written against the live DOM (Legacy layout,
+ * dumped by js/90-devdump.js), not guessed.
+ *
+ * Side menu (.mainDrawer): a.navMenuOption with span.navMenuOptionIcon and
+ * span.navMenuOptionText. Per-library icon colours were tried and removed
+ * (too much). The active link (.navMenuOption-selected) gets mauve heavy
+ * text on a faint tint, instead of the solid accent block of the theme. */
+.navMenuOption.navMenuOption-selected {
+  background: rgb(255 255 255 / 0.06) !important;
+}
+
+.navMenuOption.navMenuOption-selected :is(.navMenuOptionText, .navMenuOptionIcon) {
+  color: var(--mauve, #ca9ee6) !important;
+}
+
+.navMenuOption.navMenuOption-selected .navMenuOptionText {
+  font-weight: 800 !important;
+}
+
+/* Tabs under the top bar (Home, Favourites, ... and the library tabs):
+ * button.emby-tab-button, the active one .emby-tab-button-active, its text in
+ * div.emby-button-foreground. Mauve and weight 800. The underline too. */
+.emby-tab-button-active,
+.emby-tab-button-active .emby-button-foreground {
+  color: var(--mauve, #ca9ee6) !important;
+  font-weight: 800 !important;
+}
+
+.emby-tab-button-active::after {
+  background-color: var(--mauve, #ca9ee6) !important;
+}

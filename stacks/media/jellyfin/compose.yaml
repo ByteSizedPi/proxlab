@@ -19,6 +19,8 @@ services:
       # directory mount, so a Komodo pull is seen without a recreate. But a
       # push that only touches ui/ does not deploy: touch this file too, or
       # Deploy in Komodo (same trap as recyclarr's configs/).
+      # 2026-11-03: touched to deploy the first UI release (ui/ only pushes
+      # are not deployed, see above).
       - ./ui:/usr/share/jellyfin/web/ui:ro,Z
       # Dev copy of ui/, served at /web/ui-dev/. Not in git: ui/dev.sh on the
       # laptop rsyncs into it on every save. Only browsers in dev mode

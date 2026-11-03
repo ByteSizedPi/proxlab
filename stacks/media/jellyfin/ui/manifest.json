@@ -1,8 +1,15 @@
 {
   "css": {
-    "css/00-base.css": "5888f73816"
+    "css/00-base.css": "a1038fa049",
+    "css/10-header.css": "5ffb928dc6",
+    "css/20-nav.css": "072b70824d",
+    "css/30-home.css": "889692aab0",
+    "css/40-cards.css": "dd5b1b257f"
   },
   "js": {
-    "js/00-main.js": "b039cf3c08"
+    "js/00-main.js": "b039cf3c08",
+    "js/10-defaults.js": "90991bb14e",
+    "js/20-leaving-soon.js": "4ba4d88de5",
+    "js/90-devdump.js": "41131bc644"
   }
 }

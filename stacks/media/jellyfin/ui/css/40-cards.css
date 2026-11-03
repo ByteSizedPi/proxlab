@@ -1,0 +1,64 @@
+/* Media cards, 2026-11-03.
+ *
+ * The card drop shadow (Branding CSS: filter: drop-shadow on .cardScalable)
+ * was cut off at the card's side. Two causes, both fixed here:
+ *
+ * 1. Jellyfin sets `contain: paint` on .card, which clips everything painted
+ *    outside the card box. The shadow's blur reaches past the small card
+ *    margin. `layout style` keeps the layout isolation, without the clip.
+ * 2. Catppuccin's theme.css gives every .cardBox a solid page-coloured
+ *    background, so a neighbouring card painted later covers the shadow.
+ *    It matches the page anyway, so transparent looks the same otherwise.
+ *    (The Branding CSS already did this on the item page only.) */
+.card {
+  contain: layout style !important;
+}
+
+.cardBox {
+  background: transparent !important;
+}
+
+/* Apple TV look, 2026-11-03. Four parts, each easy to remove on its own.
+ *
+ * 1+2. Rim light and sheen, one layer (::after, from the Branding CSS, here
+ *      overridden). soft-light instead of overlay: it adds light and colour
+ *      to the artwork edge without turning it white. The rim is brightest at
+ *      the top. The sheen is a faint diagonal highlight over the top of the
+ *      artwork, like light on glass. */
+.cardScalable::after {
+  border: 1px solid !important;
+  border-color: rgb(255 255 255 / 0.9) rgb(255 255 255 / 0.5) rgb(255 255 255 / 0.3) !important;
+  background: linear-gradient(160deg, rgb(255 255 255 / 0.22) 0%, rgb(255 255 255 / 0.06) 30%, transparent 55%);
+  mix-blend-mode: soft-light !important;
+  z-index: 2;
+}
+
+/* 3. Shadow: a wide soft layer for depth and a tight one for contact.
+ *    Replaces the single drop-shadow from the Branding CSS. */
+.cardScalable {
+  filter: drop-shadow(0 0.55em 0.9em rgb(0 0 0 / 0.38)) drop-shadow(0 0.12em 0.2em rgb(0 0 0 / 0.3)) !important;
+}
+
+/* 4. Hover and focus lift (mouse, keyboard, TV remote), with a deeper shadow.
+ *
+ *    No transform and no animated filter. Either one makes the browser put
+ *    the card on its own GPU layer, and text in that layer loses its fine
+ *    anti-aliasing: the resolution/codec/audio badges went blurry, even with
+ *    a whole-pixel translate and with only the artwork scaled (tested
+ *    2026-11-03). So the lift is plain `top` positioning, and the shadow
+ *    changes without a transition. */
+.cardScalable {
+  position: relative;
+  top: 0;
+  transition: top 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.card:is(:hover, :focus-within, .focused) .cardScalable {
+  top: -4px;
+  filter: drop-shadow(0 0.9em 1.3em rgb(0 0 0 / 0.45)) drop-shadow(0 0.18em 0.28em rgb(0 0 0 / 0.3)) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardScalable { transition: none; }
+  .card:is(:hover, :focus-within, .focused) .cardScalable { top: 0; }
+}

@@ -41,25 +41,64 @@
 }
 
 /* Rounded media cards (posters, thumbnails, the hover overlay), 2026-10-11.
- * Radius lowered from 0.75em to 0.5em on 2026-10-21.
+ * Radius lowered from 0.75em to 0.5em on 2026-10-21, then to 0.4em the same
+ * day. Change --card-radius to tune every corner below.
  * Jellyfin 12 rounds .cardContent and .cardImageContainer by only 0.2em.
  * .cardContent already clips with overflow:hidden, so the image follows its
- * corners. .cardScalable carries the transparent 0.5em focus border, which
- * gets the radius plus that 0.5em so the focus ring stays parallel to the
- * image. Class names and the defaults read from the 12.1.0 web bundle. */
+ * corners. Class names and the defaults read from the 12.1.0 web bundle. */
+:root {
+  --card-radius: 0.4em;
+}
+
 .cardContent,
 .cardImageContainer,
 .cardOverlayContainer {
-  border-radius: 0.5em !important;
+  border-radius: var(--card-radius) !important;
 }
 
 /* overflow:hidden clips every child (the .cardPadder placeholder, Jellyfin
- * Enhanced badges) at the inside of the 0.5em border, where the radius is
- * 1em - 0.5em = 0.5em, the same curve as the image. Added after a corner
- * of the card still showed past the image's rounded corner. */
+ * Enhanced badges) at the image's rounded corner. Added after a corner of the
+ * card still showed past the image's rounded corner.
+ *
+ * Jellyfin adds .show-focus to a card only in the TV layout (cardBuilder,
+ * `tv && (className += " show-focus")`). Only then does .cardScalable get the
+ * transparent 0.5em focus border, and only then does it need the radius plus
+ * 0.5em. Until 2026-10-21 the plus 0.5em applied in every layout, so the
+ * desktop clip was 1em and the radius changes above did not show there. */
 .cardScalable {
-  border-radius: 1em !important;
+  border-radius: var(--card-radius) !important;
   overflow: hidden !important;
+}
+
+.card.show-focus:not(.show-animation) .cardBox:not(.visualCardBox) .cardScalable {
+  border-radius: calc(var(--card-radius) + 0.5em) !important;
+}
+
+/* Soft shadow under each card, 2026-10-21. A drop-shadow filter, not a
+ * box-shadow: the filter follows the clipped, rounded image, and it ignores
+ * the transparent TV focus border. A box-shadow would start outside that
+ * border and leave a 0.5em gap. .card has contain:paint, so the shadow must
+ * stay inside the 0.6em .cardBox margin. */
+.cardScalable {
+  filter: drop-shadow(0 0.2em 0.35em rgb(0 0 0 / 0.4));
+}
+
+/* Lit 1px edge, like the Apple TV cards, 2026-10-21. A ring over the image
+ * edge that blends with overlay, so it brightens and adds contrast to the
+ * image pixels under it instead of drawing a flat grey line. The top edge is
+ * the brightest, as if lit from above. The filter above makes .cardScalable
+ * an isolated group, so the ring blends with the image only.
+ * position:absolute with inset:0 fills the padding box, which is the image
+ * box in every layout, so the ring always uses --card-radius. */
+.cardScalable::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid;
+  border-color: rgb(255 255 255 / 0.45) rgb(255 255 255 / 0.25) rgb(255 255 255 / 0.15);
+  border-radius: var(--card-radius);
+  mix-blend-mode: overlay;
+  pointer-events: none;
 }
 
 /* Item page cards: the poster, cast, scenes, "More like this". Catppuccin's
@@ -70,4 +109,36 @@
  * title text under a card now sits on the backdrop, not on a dark box. */
 .itemDetailPage .cardBox {
   background: transparent !important;
+}
+
+/* Top bar, 2026-10-21. Catppuccin's theme.css paints every
+ * .skinHeader:not(.osdHeader) solid --second-background (Frappé mantle
+ * #292c3c), a darker strip than the #303446 page. This rule has the same
+ * selector and comes after the @import, so it wins. The bar is now the page
+ * color at 80% with a blur, so the page scrolls under it like frosted glass.
+ * The inset shadow is a 1px surface0 line at the bottom edge. A normal
+ * box-shadow would not show, because .skinHeader has contain:paint. */
+.skinHeader:not(.osdHeader) {
+  background-color: var(--main-background-transparent) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: inset 0 -1px 0 var(--hover-background);
+}
+
+/* On the item page Jellyfin adds .semiTransparent so the backdrop image shows
+ * behind the bar (12.1.0 themes/dark/theme.css). The Catppuccin rule above
+ * hid that too. Here the bar fades from the page color to clear, with no
+ * blur and no bottom line. */
+.skinHeader.semiTransparent:not(.osdHeader) {
+  background: linear-gradient(to bottom, var(--main-background-transparent), transparent) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none;
+}
+
+/* Scrollbars, 2026-10-21. The Jellyfin dark theme sets grey #3b3b3b on
+ * #202020 for `*`, and Catppuccin does not change it. Frappé surface0 on
+ * mantle instead. */
+* {
+  scrollbar-color: var(--hover-background) var(--second-background);
 }

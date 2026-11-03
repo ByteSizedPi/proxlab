@@ -1,0 +1,53 @@
+/* Top nav, 2026-11-03. One look in every state: frosted glass a shade darker
+ * than the page, with a 1px bottom edge that saturates and brightens what is
+ * behind it, like the lit ring on the media cards. Applies to the legacy
+ * header (.skinHeader, also when Jellyfin adds .semiTransparent on the item
+ * page) and to the Modern layout's MUI app bar. The video player header
+ * (.osdHeader) is left alone. The scroll behaviour is not touched.
+ *
+ * The frosted layer is ::before, NOT the header itself. An element with a
+ * backdrop-filter is the backdrop root for its children, so a filtered edge
+ * inside it would only see the header's own flat colour (it showed as one
+ * solid line). ::before stops 1px above the bottom, so the ::after edge
+ * filters the real page underneath. */
+.skinHeader:not(.osdHeader),
+.skinHeader.semiTransparent:not(.osdHeader),
+.MuiAppBar-root:not(.osdHeader) {
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+  border-bottom: 0 !important;
+  isolation: isolate; /* keeps the z-index -1 layer below the bar's content */
+}
+
+/* Frosted layer: Frappé mantle #292c3c at 72%, a shade darker than the
+ * #303446 page, so the bar reads as its own surface. */
+.skinHeader:not(.osdHeader)::before,
+.MuiAppBar-root:not(.osdHeader)::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 1px 0;
+  z-index: -1;
+  background: rgb(41 44 60 / 0.72);
+  -webkit-backdrop-filter: blur(12px) saturate(1.3);
+  backdrop-filter: blur(12px) saturate(1.3);
+  pointer-events: none;
+}
+
+/* Edge: 1px of the real page underneath, saturated and darkened, so it takes
+ * the colours of whatever passes under the bar as a deep line. Flipped from
+ * light (brightness 1.5, white tint) to dark on 2026-11-03. */
+.skinHeader:not(.osdHeader)::after,
+.MuiAppBar-root:not(.osdHeader)::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: rgb(0 0 0 / 0.08);
+  -webkit-backdrop-filter: saturate(2) brightness(0.75);
+  backdrop-filter: saturate(2) brightness(0.75);
+  pointer-events: none;
+}

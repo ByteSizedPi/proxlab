@@ -17,6 +17,12 @@ No Jellyfin restart is needed for any change in this folder.
 | `/web/ui/` | this folder, in the Komodo stack clone | everybody |
 | `/web/ui-dev/` | `/mnt/docker-data/appdata/jellyfin-ui-dev` | only browsers in dev mode |
 
+The plugin's only entry is `Src: /web/ui/loader.js` (Dashboard > Plugins >
+JavaScript Injector, or `GET/POST /Plugins/f5a34f7b2e8a4e6aa7223a216a81b374/Configuration`).
+It loads `loader.js` with no version query, so a browser can cache the loader
+itself. After a change to `loader.js`, set `Src` to `/web/ui/loader.js?v=2`
+(then 3, ...). Files listed in the manifest never need this.
+
 ## Dev loop
 
 1. On jj-laptop run `stacks/media/jellyfin/ui/dev.sh`. It syncs this folder to

@@ -13,6 +13,10 @@ services:
       # for hardlinks/atomic moves between the download and the library
       # folder. See common.env and arr-stack-buildout memory.
       - ${DATA_ROOT}:/data:Z
+      # companion-cleanup.sh, run by a "Custom Script" connection on file
+      # delete. It removes the Tdarr 720p companion of the deleted file.
+      # See docs/media/TRANSCODING.md.
+      - ../scripts:/scripts:ro
 
     # No `ports:` block, same reasoning as prowlarr/compose.yaml — Traefik
     # reaches it over `ingress`, nothing needs a host port for that.

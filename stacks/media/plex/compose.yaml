@@ -43,6 +43,16 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    # Plex on the LAN, for TVs on the upstream house Wi-Fi "17 Mozart"
+    # (10.0.0.0/24) that cannot run Tailscale, e.g. the Hisense VIDAA TV. That
+    # network has no route to 10.42.0.0/24, so the AX10 forwards its WAN port
+    # 32400 to 10.42.0.11:32400 (a Virtual Server rule in the AX10 UI, not in
+    # this repo). Bound to LAN_IP only, never the tailnet address. In Plex,
+    # Settings > Network: "Custom server access URLs" holds the AX10 WAN
+    # address, and "LAN Networks" includes 10.0.0.0/24, so the TV streams as
+    # a local client without a bandwidth limit. Added 2026-11-03.
+    ports:
+      - "${LAN_IP}:32400:32400"
     networks:
       - ingress
       - media

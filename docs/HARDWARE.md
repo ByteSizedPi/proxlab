@@ -1067,3 +1067,40 @@ set `next_entry`, and GRUB clears that entry at boot only if it can write
 Fixed on 7 October with `grub-editenv - unset next_entry` (backup in
 `/root/grubenv.bak-2026-10-07`). For a future memtest run, pick the entry by
 hand in the GRUB menu. Do not use `grub-reboot` here.
+
+## pve-prod: admin zone closed to the LAN (2026-11-03)
+
+### Finding
+
+Traefik, Komodo Core (9120) and a hand-started Postgres (5432) published on
+every interface. From `pve` over the LAN, without Tailscale, every
+`*.admin.jjventer.co.za` name answered with its login page (Host header sent to
+`10.42.0.11`), and `http://10.42.0.11:9120` served the Komodo UI. The app
+logins held: the qBittorrent API answered `Forbidden` and the Sonarr API `401`.
+
+### Changes
+
+- Traefik publishes 80/443 per address: `100.91.183.47` (tailnet) goes to the
+  admin entrypoints, `10.42.0.11` (LAN) goes to `homeweb`/`homesecure`, which
+  only the Jellyfin and Seerr `home` routers join. The admin entrypoint also
+  carries the `admin-only` ipAllowList. See `stacks/platform/traefik/compose.yaml`.
+- Komodo Core publishes 9120 on `100.91.183.47` (break-glass) and `172.17.0.1`
+  (Traefik and the webhook tunnel) only. See `komodo/compose.yaml`.
+- `/etc/sysctl.d/90-nonlocal-bind.conf`, so the tailnet binds survive boot
+  when Docker starts before tailscaled:
+
+  ```
+  # Lets Docker publish ports on the tailnet address (100.91.183.47) before
+  # tailscaled has assigned it at boot. Traefik and Komodo Core bind it.
+  # Source of truth: ~/server/docs/HARDWARE.md, 2026-11-03.
+  net.ipv4.ip_nonlocal_bind = 1
+  ```
+
+### ezstream dev database stopped
+
+`postgres` (compose project `db_main`, started by hand from
+`/home/jj/dev/ezstream/db_main`) published 5432 to the LAN. It is not in this
+repo or Komodo. Stopped and set to `restart=no` with
+`docker update --restart=no postgres`. Files untouched. ezstream is a dev
+project and belongs on its own dev network, not on pve-prod's LAN or tailnet
+address. To run it again before that exists, bind it to `127.0.0.1:5432`.

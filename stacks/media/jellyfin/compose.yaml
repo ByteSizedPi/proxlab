@@ -116,9 +116,13 @@ services:
       # because naming a service below stops Traefik inferring one per router.
       - "traefik.http.routers.jellyfin-home.rule=Host(`jellyfin.${HOME_DOMAIN}`)"
       - "traefik.http.routers.jellyfin-home.service=jellyfin"
+      # Since 2026-11-03 the LAN address reaches only the homesecure
+      # entrypoint, so the home router must name it. Without this label the
+      # router lands on websecure (the default) and the TV gets a 404.
+      - "traefik.http.routers.jellyfin-home.entrypoints=homesecure"
       - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
-      # entrypoints/tls/middlewares deliberately omitted — see the comment in
-      # prowlarr/compose.yaml, same reasoning applies here.
+      # On the admin router, entrypoints/tls/middlewares are deliberately
+      # omitted — see the comment in prowlarr/compose.yaml.
 
 networks:
   ingress:

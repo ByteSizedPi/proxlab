@@ -66,8 +66,16 @@ services:
         # Without this Core races the database on boot and logs auth errors
         # until it retries into a working state.
         condition: service_healthy
+    # Not on every interface since 2026-11-03: the LAN reached the Komodo UI
+    # at http://10.42.0.11:9120 without Tailscale.
+    #   100.91.183.47  break-glass from the tailnet when Traefik is broken.
+    #                  Needs net.ipv4.ip_nonlocal_bind=1, see docs/HARDWARE.md.
+    #   172.17.0.1     the docker0 gateway, which is what host.docker.internal
+    #                  resolves to. Traefik (dynamic/komodo.yml) and the
+    #                  cloudflared webhook tunnel reach Core here.
     ports:
-      - 9120:9120
+      - "100.91.183.47:9120:9120"
+      - "172.17.0.1:9120:9120"
     env_file: ./compose.env
     environment:
       KOMODO_DATABASE_ADDRESS: mongo:27017

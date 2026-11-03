@@ -71,9 +71,12 @@ services:
       # because naming a service below stops Traefik inferring one per router.
       - "traefik.http.routers.seerr-home.rule=Host(`seerr.${HOME_DOMAIN}`)"
       - "traefik.http.routers.seerr-home.service=seerr"
+      # The LAN address reaches only the homesecure entrypoint since
+      # 2026-11-03. See the same label in ../jellyfin/compose.yaml.
+      - "traefik.http.routers.seerr-home.entrypoints=homesecure"
       - "traefik.http.services.seerr.loadbalancer.server.port=5055"
-      # entrypoints/tls deliberately omitted — see the comment in
-      # prowlarr/compose.yaml, same reasoning applies here.
+      # On the admin router, entrypoints/tls are deliberately omitted — see
+      # the comment in prowlarr/compose.yaml.
       #
       # The one middleware Seerr does NOT inherit from the entrypoint. The
       # Custom Tabs plugin in Jellyfin renders a "Requests" tab as an iframe

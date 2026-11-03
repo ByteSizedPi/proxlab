@@ -122,7 +122,9 @@ docker compose up -d
 
 log "Versions"
 sleep 5
-printf 'core:      %s\n' "$(curl -fsS http://localhost:9120/version || echo '(not up yet)')"
+# 172.17.0.1, not localhost: Core publishes 9120 only on docker0 and the
+# tailnet address (komodo/compose.yaml).
+printf 'core:      %s\n' "$(curl -fsS http://172.17.0.1:9120/version || echo '(not up yet)')"
 printf 'periphery: %s\n' "$(/usr/local/bin/periphery --version)"
 echo
 echo "These two must match. If they don't, check 'docker compose ps' in $KOMODO_DIR."

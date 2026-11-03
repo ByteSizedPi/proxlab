@@ -29,6 +29,22 @@ http:
         stsIncludeSubdomains: true
         forceSTSHeader: true
 
+    # Applied to the websecure (admin) entrypoint in ../compose.yaml, as the
+    # second guard behind binding that entrypoint to the tailnet address only.
+    #   100.64.0.0/10, fd7a:115c:a1e0::/48   Tailscale's address ranges
+    #   172.16.0.0/12                        Docker networks. A container that
+    #     calls an admin name hairpins through the host and arrives from its
+    #     network's gateway (seen in the access log: 172.22.0.1 -> seerr.admin).
+    #   127.0.0.1/32                         the host itself
+    # The LAN (10.42.0.0/24) is deliberately absent.
+    admin-only:
+      ipAllowList:
+        sourceRange:
+          - "100.64.0.0/10"
+          - "fd7a:115c:a1e0::/48"
+          - "172.16.0.0/12"
+          - "127.0.0.1/32"
+
     # Lets Jellyfin embed Seerr in an iframe, for the "Requests" tab added by
     # the Custom Tabs plugin. Applied to the seerr routers only, in
     # ../../../media/seerr/compose.yaml.

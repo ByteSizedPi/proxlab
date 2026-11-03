@@ -23,9 +23,30 @@ services:
       socket-proxy:
         condition: service_healthy
 
+    # ── One front door per zone, split by DESTINATION address ──────────────
+    #
+    # Until 2026-11-03 this was "80:80" and "443:443" on every interface. A
+    # device on the home Wi-Fi could then send `Host: sonarr.admin...` to
+    # 10.42.0.11 and get every admin login page without Tailscale (tested
+    # from pve over the LAN). DNS never decided access, the bind did.
+    #
+    # Now the tailnet address reaches the admin entrypoints and the LAN
+    # address reaches the home entrypoints, which carry only the routers that
+    # opt in with `entrypoints=homesecure`. A LAN request for an admin name
+    # lands on an entrypoint with no such router and gets a 404.
+    #
+    # ⚠️ Binding to the tailnet address needs net.ipv4.ip_nonlocal_bind=1 on
+    # the host. Docker can start before tailscaled has assigned 100.91.183.47,
+    # and without the sysctl the bind fails at boot and Traefik stays down.
+    # Set in /etc/sysctl.d/90-nonlocal-bind.conf, see docs/HARDWARE.md.
+    #
+    # The home entrypoints listen on 8081/8444 inside the container because
+    # --ping already owns :8080.
     ports:
-      - "80:80"
-      - "443:443"
+      - "${TAILNET_IP}:80:80"
+      - "${TAILNET_IP}:443:443"
+      - "${LAN_IP}:80:8081"
+      - "${LAN_IP}:443:8444"
 
     # Lets the file-provider route in dynamic/komodo.yml reach Komodo Core,
     # which publishes 9120 on the HOST and is not on any network Traefik can
@@ -70,12 +91,6 @@ services:
       # easy to hit while iterating on a stack.
       - "--entrypoints.websecure.http.tls.domains[0].main=${ADMIN_DOMAIN}"
       - "--entrypoints.websecure.http.tls.domains[0].sans=*.${ADMIN_DOMAIN}"
-      # Second wildcard, for the LAN-reachable zone. A separate certificate
-      # rather than a SAN on the first, because the two zones are different
-      # registrable names under jjventer.co.za and Traefik orders one cert per
-      # `domains[n]` entry. Same DNS-01 resolver, same Cloudflare token.
-      - "--entrypoints.websecure.http.tls.domains[1].main=${HOME_DOMAIN}"
-      - "--entrypoints.websecure.http.tls.domains[1].sans=*.${HOME_DOMAIN}"
       # Applied to every router on this entrypoint.
       #
       # ⚠️ Middlewares named here must EXIST or every route through this
@@ -83,7 +98,32 @@ services:
       # not just itself. jjserver has `crowdsec-bouncer@file` in this list;
       # it is deliberately absent until CrowdSec is actually deployed. Add it
       # here in the same commit that adds the CrowdSec stack, never before.
-      - "--entrypoints.websecure.http.middlewares=secure-headers@file"
+      #
+      # admin-only is the second guard behind the tailnet-only bind above. It
+      # rejects any source outside the tailnet and Docker ranges, so a later
+      # change to the ports list cannot quietly open the admin zone again.
+      - "--entrypoints.websecure.http.middlewares=secure-headers@file,admin-only@file"
+
+      # ── Home zone: the LAN address only ───────────────────────────────────
+      # Reached through ${LAN_IP}:80/443 (see ports). Only routers that name
+      # `entrypoints=homesecure` are served here: today jellyfin-home and
+      # seerr-home. No admin-only middleware, the TV is not on the tailnet.
+      - "--entrypoints.homeweb.address=:8081"
+      # `:443` and not `homesecure`: redirecting to an entrypoint name puts
+      # that entrypoint's container port (8444) into the URL.
+      - "--entrypoints.homeweb.http.redirections.entryPoint.to=:443"
+      - "--entrypoints.homeweb.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.homeweb.http.redirections.entryPoint.permanent=true"
+      - "--entrypoints.homesecure.address=:8444"
+      - "--entrypoints.homesecure.http.tls=true"
+      - "--entrypoints.homesecure.http.tls.certresolver=le"
+      # Second wildcard, for the LAN-reachable zone. A separate certificate
+      # rather than a SAN on the first, because the two zones are different
+      # registrable names under jjventer.co.za and Traefik orders one cert per
+      # `domains[n]` entry. Same DNS-01 resolver, same Cloudflare token.
+      - "--entrypoints.homesecure.http.tls.domains[0].main=${HOME_DOMAIN}"
+      - "--entrypoints.homesecure.http.tls.domains[0].sans=*.${HOME_DOMAIN}"
+      - "--entrypoints.homesecure.http.middlewares=secure-headers@file"
 
       # HTTP/3 is available and would go here:
       #   - "--entrypoints.websecure.http3=true"
@@ -431,7 +471,8 @@ networks:
   docker-api:
     internal: true
 
-# Deploy trigger: dynamic/middlewares.yml gained the `authentik` forwardAuth
+# Deploy trigger: dynamic/middlewares.yml gained the `admin-only` ipAllowList
+# middleware (2026-11-03), and before that the `authentik` forwardAuth
 # middleware. Editing dynamic/*.yml alone does NOT refresh Traefik's clone
 # (see dynamic/komodo.yml), so this file must change in the same commit or
 # Traefik keeps serving the old config and `authentik@file` appears missing.

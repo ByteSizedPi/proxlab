@@ -295,8 +295,8 @@ radarr:
         # direct play HEVC HDR10. The Samsung TV has no Dolby Vision, so the
         # `DV (w/o HDR fallback)` format below scores -10000. TrueHD and DTS
         # audio cost only an audio transcode, which the CPU handles. Browsers
-        # cannot play any 4K HEVC file, which is what the Tdarr companion
-        # library is for.
+        # cannot play any 4K HEVC file. Tdarr writes a 720p companion next to
+        # the original for them, a second Jellyfin version.
         qualities:
           - name: UHD Bluray + WEB
             qualities:

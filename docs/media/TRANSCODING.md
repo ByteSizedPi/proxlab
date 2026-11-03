@@ -6,6 +6,10 @@ Tdarr is allowed to touch.
 Written 2026-09-04 after one playback pushed the load average to 18.75.
 Revised 2026-09-10 after Jellyfin 12.0 changed the constraint the first version
 was built around. See "What changed on 2026-09-10" below.
+Rebuilt 2026-11-03: the companions now live next to the originals as a second
+Jellyfin version, and Tdarr runs at the lowest CPU weight. See "Design, as
+built on 2026-11-03" below. The sections before it are the measurements that
+led there.
 
 ## The hardware answer, settled
 
@@ -184,129 +188,122 @@ useless here.
 Encode H.264 High profile instead. Every browser, phone and TV decodes it in
 hardware.
 
-## Design: one 720p companion tier
+## Design, as built on 2026-11-03: companions next to the originals
 
-Build one companion tier, not two. A single 720p H.264 file answers
-compatibility and bandwidth together.
+Tdarr writes a 720p h264 SDR companion **into the same folder as the
+original**. Jellyfin groups the 2 files as 2 versions of one item, and the
+player has a version dropdown. There is no separate 720p library.
+
+This replaces the separate-library plan of 2026-09-10. Three reasons:
+
+1. One library. No duplicate titles in search, home and Continue Watching.
+2. Deletion works. Maintainerr deletes through Radarr, and Radarr deletes the
+   whole movie folder, companion included. A separate library would keep the
+   companion as an orphan.
+3. Hardlinks were never at risk. Tdarr adds a new file and never rewrites the
+   original, so seeding is not affected.
+
+### Companion format
 
 | Property | Value | Reason |
 |---|---|---|
-| Video | H.264 High, 8-bit, `bt709` SDR | Decodes everywhere in hardware |
-| Height | 720 | Enough for a phone. Cuts bitrate hard |
-| Bitrate | 2.5 Mb/s target | Survives a weak uplink |
-| Audio track 1 | AAC 2.0 stereo, default | Browsers cannot decode eac3 or dts |
-| Audio track 2 | Original, copied | The TV keeps 5.1 |
-| Subtitles | Copy `subrip` only | Text subtitles direct play |
-| Container | MKV | Matches the originals |
+| Video | H.264 High, 8-bit, `bt709` SDR, CRF 22 capped at 2.5 Mb/s | Decodes everywhere in hardware |
+| Height | 720 (never upscaled) | Enough for a phone or a browser tab |
+| HDR source | `tonemapx` bt2390 to bt709 | 43 fps on a 4K HDR10 source, 1.7x real time |
+| Audio track 1 | AAC 2.0, 192k, default | Browsers cannot decode eac3, truehd or dts |
+| Audio track 2 | Original, copied | Keeps 5.1 and 7.1 |
+| Subtitles | All copied, `default` flag removed | A default PGS track would make a browser burn it in. `forced` is kept |
 
-The AAC track matters for 145 of 244 files. Without it a browser triggers
-audio-only transcode. Audio-only transcode costs a few percent CPU, not 1700
-percent, so it is not urgent. Add the track anyway, because it is free at
-encode time.
+### Names
 
-Image subtitles are the hidden trap. Burning in a PGS subtitle forces a full
-video transcode even when the video codec is already correct. Only 4 files carry
-them, so the cost is small.
+| Kind | Original | Companion |
+|---|---|---|
+| Movie | `<folder>/<folder> - [Bluray-2160p]...mkv` | `<folder>/<folder> - 720p.mkv` |
+| Episode | `Show (2020) - S01E01 - Title [...].mkv` | `Show (2020) - S01E01 - 720p.mkv` |
 
-Expect 25 to 30 hours of encode time for all 244 files. The 21 HDR files are the
-slow ones, because tone mapping runs on CPU.
+Jellyfin 12.4 labels the companion version `720p`. Both names stay the same
+when Radarr or Sonarr upgrades the original, so a new companion overwrites the
+old one. A double episode keeps its token, `S01E01-E02`.
 
-## The one open decision
+### What was tested on 2026-11-03
 
-Jellyfin 12.0 can group episode versions, but grouping needs both files in one
-folder:
+- **Jellyfin grouping, episodes.** Two Arrested Development S05 episodes, one
+  per name pattern. After a series refresh each episode was 1 item with 2
+  MediaSources, the second named `720p`. No extra episode item appeared.
+- **Sonarr.** A `RescanSeries` left the episode files unchanged (84 files,
+  same ids, same paths). Sonarr did not import, rename or delete the
+  companions.
+- **Radarr.** Frankenweenie got the first flow-made companion. A
+  `RescanMovie` left Radarr tracking only movie file 23, the original. The
+  companion was not imported, renamed or deleted. After a refresh Jellyfin
+  showed 1 movie with 2 MediaSources, the second named `720p`.
+- **Jellyfin pickup.** About 2 minutes after the Frankenweenie companion was
+  written, Jellyfin still showed 1 version. A manual item refresh was needed.
+  Not yet known: whether the realtime monitor picks it up later, or only the
+  12-hourly "Scan Media Library" task does.
+- **Delete cleanup.** `DELETE /episodefile/191` in Sonarr ran
+  `companion-cleanup.sh`, which removed the S05E07 companion and left S05E14.
 
-```
-Silo (2023) {tvdb-000}/Season 03/
-├── Silo (2023) - S03E07 - Radio [...].mkv
-└── Silo (2023) - S03E07 - Radio [...] - 720p.mkv
-```
+### Which version a client starts
 
-That folder is a Sonarr root. Sonarr's periodic series rescan parses filenames.
-Sonarr can attach the companion to the episode and then treat the original as
-unneeded. **This behaviour has not been tested on this setup.**
+jellyfin-web `playbackmanager.js`, `getOptimalMediaSource`: "Prefer the played
+item's own source, transcoding it if needed, over another version". So every
+web-based client starts the original: Jellyfin Web, the Samsung Tizen app and
+the Android app (both wrap jellyfin-web). On the TV and the phone that is
+correct, they direct play it. **In a browser, pick `720p` in the version
+dropdown**, or the server transcodes the 4K original.
 
-**Decision for now: keep Tdarr out of the Sonarr and Radarr roots.** Write to
-`/media/tv-720p` and `/media/movies-720p`, and add a second Jellyfin library.
+`jj-laptop` runs Jellyfin Desktop (Flatpak `org.jellyfin.JellyfinDesktop`).
+It plays the 4K original directly on the laptop GPU and needs no companion.
 
-The split library costs the version dropdown. It buys two things back:
+A PlaybackInfo call with a hand-made browser DeviceProfile is not a valid
+test of this. On 2026-11-03 the server marked MKV sources direct-playable for
+a profile that allowed only mp4 and webm.
 
-1. Nothing can delete a 4K original.
-2. Jellyfin library access is per user. Household members can be given the 720p
-   library only, so they never pick the wrong file and never start a transcode.
-   `jj` keeps both.
+## How it is built
 
-Test version grouping on one series later, after the companions exist. The test
-is reversible then, because the originals are untouched.
+### Tdarr
 
-## The scope rule for Tdarr
+| Object | Id | Notes |
+|---|---|---|
+| Flow | `flowCompanion720` | One flow for both libraries. Source: `stacks/media/tdarr/flows/build_flow.py` |
+| Library | `libMovies720` | Folder `/media/movies` |
+| Library | `libTv720` | Folder `/media/tv` |
+| Node limits | 2 transcode CPU workers | Schedule: all 168 hours |
 
-Tdarr replaces files by default. That behavior is for normalizing a whole
-library, and it is the wrong behavior here.
+Flow path: skip a file whose name ends in ` - 720p.mkv`. If the file is h264,
+at most 1080p and SDR, no companion is needed: delete a stale companion if one
+exists. Otherwise encode (HDR path tone maps), copy the result next to the
+original, and set the working file back to the original. The flow never uses
+"Replace Original File".
 
-1. **Never queue a whole-library pass in one go.** Run the 35 incompatible files
-   first, confirm one plays in Firefox, then add the rest in batches.
-   `pve-prod` is powered off nightly, so a long queue runs during the hours the
-   box is used for watching.
-2. **Scope every Tdarr library by a filter**, not by a folder alone. The first
-   filter is: video height above 1080, or video codec is `hevc`.
-3. **Never let Tdarr write into `/media/tv` or `/media/movies`.** Sonarr and
-   Radarr own those paths. A file Tdarr replaces there loses its hardlink to
-   `/mnt/data/torrents`, which breaks seeding, and the *arr apps will treat the
-   changed file as an upgrade candidate.
-4. **Use a Tdarr Flow, not the classic plugin stack.** A Flow sets the output
-   path explicitly and leaves the source untouched. The classic path in the
-   stale library wrote in place.
+Two Tdarr API traps, both measured on 2026-11-03:
 
-## Layout
+1. The worker reads the library's **top-level** `flowId`. Setting only
+   `decisionMaker.flowId` gives `No plugins or edges for library selected
+   flowId:` and a transcode error.
+2. Tdarr links each file record to one library. A library that covers the
+   same folder keeps the records. The stale `Jellyfin` library (`/media`) had
+   to be deleted, and the records moved with a `FileJSONDB` update of `DB`.
 
-```
-/mnt/data/
-├── transcode/            Tdarr scratch, /temp in the container
-└── media/
-    ├── movies/           Radarr root. Never written by Tdarr.
-    ├── movies-720p/      Tdarr output. A second Jellyfin library.
-    ├── tv/               Sonarr root. Never written by Tdarr.
-    └── tv-720p/          Tdarr output. A second Jellyfin library.
-```
+The flow writes the companion with copy-then-rename. `/temp` and `/media` are
+separate bind mounts, so `rename()` from the cache gives `EXDEV`.
 
-`/mnt/data/media/tv-1080p` is the empty folder from the first version of this
-design. Remove it, or rename it to `tv-720p`.
+### CPU priority
 
-`transcode/` is on `DATA_ROOT`, not `CONFIG_ROOT`, and this matters twice.
+`stacks/media/tdarr/compose.yaml` sets `cpu_shares: 2`, which Docker maps to
+cgroup v2 `cpu.weight` 1 against 100 for every other container. Tdarr only
+uses idle CPU, so Jellyfin always wins and Tdarr may run at every hour.
+`nice` inside the container would not work: with cgroup v2 it only ranks
+processes in the same cgroup.
 
-First, `CONFIG_ROOT` is `/dev/sda1`, the 63 GB VM root disk. It sat at 87
-percent used with 8.5 GB free on 2026-08-31. One 2160p scratch file is larger
-than that, so a transcode there fills the root filesystem and takes the OS with
-it. The original `stacks/media/tdarr/compose.yaml` mounted `/temp` there.
+### Cleanup when an original is deleted
 
-The fix was WRITTEN on 2026-09-04 but sat uncommitted in the working tree until
-commit `1c29830` on 2026-09-10. The running container used the root-disk path
-for those 6 days. Tdarr ran no job in that window, so nothing filled the disk.
-
-The root filesystem did fill on 2026-09-10, to 98 percent, and Jellyfin
-crash-looped. The cause was old Docker images, not transcode scratch. Commit
-`e1509c3` adds a daily prune procedure, because Komodo Core's own `auto_prune`
-fires at UTC midnight, when `pve-prod` is powered off.
-
-Second, `transcode/` and `media/` are on the same filesystem, `/dev/sdc`. Tdarr
-finishes a job by moving the output into place. On one filesystem that is a
-rename. Across two it is a copy of several GB.
-
-## Build steps
-
-1. Delete the Tdarr library named `Jellyfin`. Do not edit it.
-2. Create `/mnt/data/media/tv-720p` and `/mnt/data/media/movies-720p`, owned by
-   `${PUID}:${PGID}`.
-3. Create a Tdarr Flow that writes the format in the Design table above.
-4. Create a Tdarr library on `/media/tv`, with the Flow attached and output set
-   to `/media/tv-720p`. Repeat for `/media/movies`.
-5. Set the Tdarr schedule to the hours nobody watches.
-6. Queue the 35 incompatible files first. Filter on codec `hevc` or height above
-   1080. Confirm one output file direct plays in Firefox before queuing more.
-7. Add the rest of the library in batches.
-8. Add `/media/tv-720p` and `/media/movies-720p` as Jellyfin libraries named
-   `TV (720p)` and `Movies (720p)`.
+`stacks/media/scripts/companion-cleanup.sh` is mounted read-only at
+`/scripts` in Sonarr and Radarr. A "Custom Script" connection named "Delete
+720p companion" runs it on file delete and on delete for upgrade. It removes
+the companion with the same name rule as the flow. Sonarr sets the variables
+as `Sonarr_EpisodeFile_Path`, so the script matches them case-insensitively.
 
 ## Two things still force a live transcode
 
@@ -327,16 +324,24 @@ decodes the whole file.
 
 On 2026-09-09 that ran at the same time as an Intro Skipper library scan. Two
 full-library `ffmpeg` passes took the `pve` load average to 19.01 and the
-`pve-prod` load average to 31.49. Turn extraction off during the library scan
-and run it as a scheduled task instead.
+`pve-prod` load average to 31.49.
 
-## The cheaper fix, which is not exclusive with the above
+Status on 2026-11-03: extraction during scan is still on, and it stays on. The
+scheduled tasks "Generate Trickplay Images" and "Extract Chapter Images" fire
+at 03:00 and 02:00, when `pve-prod` is powered off, so with extraction off
+during the scan no trickplay would ever be made. The risk is smaller now:
+`TrickplayOptions` use `ProcessPriority` `BelowNormal`, 4 threads and
+keyframe-only extraction. That runs inside the jellyfin container, so
+`BelowNormal` does rank it below a playback `ffmpeg`. Jellyfin also makes
+trickplay for each companion version, a `<name> - 720p.trickplay` folder.
 
-Install a native Jellyfin client on `jj-laptop`. Jellyfin Media Player is
-mpv-based and direct plays HEVC and DV using the Arc iGPU. Server CPU drops to
-near zero and no companion file is needed for that machine. `mpv` and `vlc` are
-already installed there. Jellyfin Media Player is not.
+## Clients
 
-This does not replace the companion library, because Firefox Android and guest
-browsers stay in the picture. It does remove the largest single source of
-transcodes today.
+`jj-laptop` has Jellyfin Desktop 2.0.0 (Flatpak
+`org.jellyfin.JellyfinDesktop`, the successor of Jellyfin Media Player). It is
+mpv-based and direct plays HEVC, HDR and DV with the Arc iGPU, so the server
+does no work for that machine. Use it instead of Firefox.
+
+The Samsung TV (Tizen) and the Android phone direct play the originals. The
+companions are for browsers: Firefox Android, guests, and any laptop session
+in a browser.

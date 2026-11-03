@@ -14,6 +14,16 @@ services:
       # Logo files for custom.css, served at /web/branding/. Inside the web
       # root because Jellyfin serves nothing else without a plugin.
       - ./branding:/usr/share/jellyfin/web/branding:ro,Z
+      # UI revamp, served at /web/ui/. JavaScript Injector loads
+      # /web/ui/loader.js, which loads what ui/manifest.json lists. A
+      # directory mount, so a Komodo pull is seen without a recreate. But a
+      # push that only touches ui/ does not deploy: touch this file too, or
+      # Deploy in Komodo (same trap as recyclarr's configs/).
+      - ./ui:/usr/share/jellyfin/web/ui:ro,Z
+      # Dev copy of ui/, served at /web/ui-dev/. Not in git: ui/dev.sh on the
+      # laptop rsyncs into it on every save. Only browsers in dev mode
+      # (?uidev=1) load from here. See ui/README.md.
+      - ${CONFIG_ROOT}/jellyfin-ui-dev:/usr/share/jellyfin/web/ui-dev:ro
 
     # No hardware transcode device passthrough (/dev/dri etc.) — not
     # confirmed available on pve-prod's VM, unlike jjserver's bare-metal

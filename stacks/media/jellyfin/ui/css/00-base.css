@@ -1,0 +1,14 @@
+/* UI revamp, base layer. Loaded by ../loader.js for every web client that
+ * runs injected JavaScript (browser, Jellyfin Desktop, Android app).
+ * Files load in name order: 00-, 10-, 20-...
+ *
+ * Jellyfin 12 "Modern" layout is React/MUI and themes through CSS variables
+ * (--jf-*). Prefer overriding those variables over class selectors: hashed
+ * MUI class names change between Jellyfin releases.
+ */
+
+/* Marker so a quick check can see the layer loaded:
+ * getComputedStyle(document.documentElement).getPropertyValue('--ui-layer') */
+:root {
+  --ui-layer: "base";
+}

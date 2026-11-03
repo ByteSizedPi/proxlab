@@ -58,11 +58,11 @@ services:
     # container would do nothing here: with cgroup v2 it only ranks processes
     # within the same cgroup, not against the jellyfin container.
     cpu_shares: 2
-    # Hard cap: at most 8 of the 24 vCPUs. cpu_shares only decides who goes
+    # Hard cap: at most 12 of the 24 vCPUs. cpu_shares only decides who goes
     # first; with nothing else running Tdarr took the whole box, and the R720
-    # fans got loud (2026-11-03). One worker (set in Tdarr, not here) inside
-    # 8 CPUs left the VM about 60% idle.
-    cpus: 8
+    # fans got loud (2026-11-03). 8 CPUs with one worker (set in Tdarr, not
+    # here) was very quiet; raised to 12 the same evening for speed.
+    cpus: 12
     security_opt:
       - no-new-privileges:true
     healthcheck:

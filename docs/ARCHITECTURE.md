@@ -101,8 +101,11 @@ rather than on how much the service is trusted.
                           The TV, a console, a guest laptop.
                           Only reachable from the AX10 SSID.
 
-*.jjventer.co.za          -> the VPS
-                          public services. Still deferred, see below.
+*.jjventer.co.za          -> Cloudflare (tunnel)
+                          public services. Since 2026-11-03 only
+                          jellyfin.jjventer.co.za, via the existing
+                          cloudflared tunnel straight to Jellyfin.
+                          The VPS plan below is still the long-term option.
 ```
 
 Splitting on the label rather than per-service keeps the boundary structural:
@@ -339,6 +342,17 @@ That specific failure mode is gone — the laptop no longer NATs for anything.
 The rule survives it, for the simpler reason stated above.
 
 ## Public ingress: VPS as the single front door
+
+> **Interim, 2026-11-03:** Jellyfin is public through the Cloudflare tunnel
+> instead (`jellyfin.jjventer.co.za` -> `http://jellyfin:8096` on the `tunnel`
+> network, not through Traefik). Chosen because Tailscale node sharing is too
+> much setup for non-technical family and friends. Known risks, accepted:
+> Cloudflare's self-serve terms restrict serving mostly video through its
+> proxy, and Cloudflare Access cannot sit in front because the Jellyfin TV and
+> phone apps cannot complete its login. Controls instead: `admin`/`jj` cannot
+> log in remotely, a country rule and a login rate limit at Cloudflare.
+> Fallback if Cloudflare objects: Tailscale node sharing. A permanent public
+> ingress is still undecided.
 
 ```
         Internet

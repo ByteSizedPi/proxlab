@@ -7,6 +7,22 @@ services:
       # Injected by Komodo into komodo.env from the CF_TUNNEL_TOKEN secret
       # Variable. Never appears in this repo. See ../../../komodo/resources/stacks.toml.
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    # `default` keeps the old path to Komodo via host.docker.internal.
+    # `tunnel` is the public Jellyfin route (jellyfin.jjventer.co.za, added
+    # 2026-11-03). Only this container and Jellyfin join it, so the tunnel can
+    # reach Jellyfin and nothing else in the media stack.
+    #
+    # ⚠️ The fixed address is load-bearing. Jellyfin's network config lists
+    # 172.31.0.2 in KnownProxies so it reads the real client address from
+    # X-Forwarded-For. Without that, every internet viewer would appear as a
+    # 172.31.x address, and Jellyfin's per-user "allow remote connections"
+    # switch would stop working. Never put this container on `ingress`:
+    # 172.22.0.0/16 is in Jellyfin's LocalNetworkSubnets, so every internet
+    # viewer would count as LOCAL.
+    networks:
+      default: {}
+      tunnel:
+        ipv4_address: 172.31.0.2
     extra_hosts:
       # The tunnel's job is to reach Komodo Core, which publishes 9120 on the
       # HOST. Inside this container "localhost" is the container itself, so
@@ -84,3 +100,10 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+networks:
+  # Created by this stack's pre_deploy (and Jellyfin's, whichever deploys
+  # first) with a fixed subnet, so cloudflared can hold 172.31.0.2. See
+  # komodo/resources/stacks.toml.
+  tunnel:
+    external: true

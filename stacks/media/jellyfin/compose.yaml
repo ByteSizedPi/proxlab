@@ -40,6 +40,9 @@ services:
     networks:
       - ingress
       - media
+      # The Cloudflare tunnel (public jellyfin.jjventer.co.za) reaches
+      # Jellyfin here. See ../../platform/cloudflared/compose.yaml.
+      - tunnel
 
     # ── Real client addresses, configured in Jellyfin, not here ──────────
     #
@@ -51,9 +54,14 @@ services:
     # Fixed in Jellyfin's own network config, which lives in the /config
     # volume and is NOT part of this repo:
     #
-    #   KnownProxies        = ["traefik"]
+    #   KnownProxies        = ["traefik", "172.31.0.2"]
     #   LocalNetworkSubnets = ["10.0.0.0/24", "10.42.0.0/24",
     #                          "100.64.0.0/10", "172.22.0.0/16"]
+    #
+    # 172.31.0.2 is cloudflared on the `tunnel` network (2026-11-03). It is
+    # trusted as a proxy but its subnet is NOT local, so internet viewers are
+    # REMOTE. `admin` and `jj` have "allow remote connections" off, so they
+    # cannot log in through the tunnel at all, only over the LAN or tailnet.
     #
     # Set via POST /System/Configuration/network, then a container restart.
     # Verified afterwards: a session from the laptop reports 10.42.0.145.
@@ -109,8 +117,9 @@ services:
       #            high-bitrate remux should not pay WireGuard's encryption
       #            cost and 1280-byte MTU to cross a single LAN hop.
       #
-      # Still NOT the public jjventer.co.za zone. That needs the VPS, which is
-      # deferred until pve-prod is always on (see docs/ARCHITECTURE.md).
+      # The public zone, jellyfin.jjventer.co.za, does NOT go through Traefik.
+      # It is a Cloudflare tunnel route straight to http://jellyfin:8096 over
+      # the `tunnel` network (2026-11-03). See docs/ARCHITECTURE.md.
       - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${ADMIN_DOMAIN}`)"
       # A second router on the same container needs an explicit `.service`,
       # because naming a service below stops Traefik inferring one per router.
@@ -130,4 +139,8 @@ networks:
   # Created by prowlarr's pre_deploy hook — see prowlarr/compose.yaml and
   # komodo/resources/stacks.toml. Seerr reaches Jellyfin's API over this.
   media:
+    external: true
+  # Created by the jellyfin or cloudflared pre_deploy hook, see
+  # komodo/resources/stacks.toml.
+  tunnel:
     external: true

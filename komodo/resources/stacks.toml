@@ -265,6 +265,18 @@ webhook_enabled = false
 auto_update = true
 poll_for_updates = true
 
+# --- Pre-deploy: create the shared `tunnel` network ---
+#
+# cloudflared <-> Jellyfin only, for the public jellyfin.jjventer.co.za route.
+# Both stacks carry this hook because either can deploy first. A fixed subnet
+# because cloudflared holds 172.31.0.2, which Jellyfin trusts as a proxy (see
+# stacks/platform/cloudflared/compose.yaml). Same inspect-or-create pattern as
+# `ingress` below.
+[stack.config.pre_deploy]
+path = ""
+command = "docker network inspect tunnel >/dev/null 2>&1 || docker network create --subnet 172.31.0.0/24 tunnel"
+shell_mode = true
+
 
 [[stack]]
 name = "plex"
@@ -648,6 +660,18 @@ additional_env_files = ["../../common.env", "cloudflared.env"]
 webhook_enabled = false
 auto_update = true
 poll_for_updates = true
+
+# --- Pre-deploy: create the shared `tunnel` network ---
+#
+# cloudflared <-> Jellyfin only, for the public jellyfin.jjventer.co.za route.
+# Both stacks carry this hook because either can deploy first. A fixed subnet
+# because cloudflared holds 172.31.0.2, which Jellyfin trusts as a proxy (see
+# stacks/platform/cloudflared/compose.yaml). Same inspect-or-create pattern as
+# `ingress` below.
+[stack.config.pre_deploy]
+path = ""
+command = "docker network inspect tunnel >/dev/null 2>&1 || docker network create --subnet 172.31.0.0/24 tunnel"
+shell_mode = true
 
 ## Note there is no separate socket-proxy stack. It is a second service inside
 ## the traefik stack, which is what lets its network be project-local instead

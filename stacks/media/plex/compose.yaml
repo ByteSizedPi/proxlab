@@ -15,7 +15,11 @@ services:
       # it is.
     volumes:
       - ${CONFIG_ROOT}/plex:/config:Z
-      - ${DATA_ROOT}:/data:Z
+      # Media only, read-only (2026-11-03). Plex only reads media, so a
+      # compromised Plex cannot delete or encrypt the library, and it does not
+      # see the torrents folder at all. The libraries point at
+      # /data/media/movies and /data/media/tv, so the paths are unchanged.
+      - ${DATA_ROOT}/media:/data/media:ro,Z
 
     # No hardware transcode device passthrough — same reasoning as
     # jellyfin/compose.yaml.

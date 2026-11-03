@@ -50,6 +50,14 @@ services:
     # docs/media/TRANSCODING.md for the scope rule.
     #
     # No `ports:` block, same reasoning as prowlarr/compose.yaml.
+    #
+    # Lowest CPU priority on the host. One libx264 job takes ~15 of 24 cores
+    # (measured 2026-11-03, load 18-21). Docker maps cpu_shares 2 to cgroup v2
+    # cpu.weight 1, against 100 for every other container, so Jellyfin always
+    # wins the CPU and Tdarr only uses what is idle. `nice` inside the
+    # container would do nothing here: with cgroup v2 it only ranks processes
+    # within the same cgroup, not against the jellyfin container.
+    cpu_shares: 2
     security_opt:
       - no-new-privileges:true
     healthcheck:

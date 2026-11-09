@@ -92,13 +92,47 @@ sonarr:
           min: 10
 
     quality_profiles:
+      # ── Profiles, 2026-11-09 ─────────────────────────────────────────────
+      # "Series - 1080p" is the default (Seerr, family requests). "Series -
+      # 4K" is chosen per request by JJ. 4K episodes cost 4-8 GB each plus a
+      # slow companion encode, and Maintainerr deletes them 14 days after
+      # watching, so 4K is opt-in for series.
+      #
+      # Both were renamed in Sonarr through the API on the same day, before
+      # this file changed, so Recyclarr matched them by name and did not
+      # create duplicates. Rename here AND in Sonarr, or a new profile appears.
+      #
+      # min_format_score -2000 with x265 (HD) at -2000 (below): HEVC 1080p
+      # loses to every H.264 1080p release, but is still taken when it is the
+      # only release (older shows, see the Bluray minimums comment above).
+      # The -10000 formats stay rejected. H.264 needs no 720p companion.
       - trash_id: 72dae194fc92bf828f32cde7744e51a1  # WEB-1080p
-        # Renamed 2026-08-14 so the name in Seerr's profile picker states the
-        # behavior (starts at 1080p, auto-upgrades to 4K over time) instead of
-        # a resolution that reads as a hard cap. `name:` overrides the guide's
-        # default name; Recyclarr tracks the rename via trash_id so this is
-        # an update to the existing profile, not a new one.
-        name: "1080p, auto-upgrade to 4K"
+        name: "Series - 1080p"
+        min_format_score: -2000
+        reset_unmatched_scores:
+          enabled: true
+        qualities:
+          - name: WEB 1080p
+            qualities:
+              - WEBRip-1080p
+              - WEBDL-1080p
+          - name: Bluray-1080p
+          - name: HDTV-1080p
+          - name: WEB 720p
+            qualities:
+              - WEBRip-720p
+              - WEBDL-720p
+          - name: Bluray-720p
+          - name: HDTV-720p
+        upgrade:
+          allowed: true
+          until_quality: WEB 1080p
+          until_score: 10000
+      - trash_id: 72dae194fc92bf828f32cde7744e51a1  # WEB-1080p
+        # Was "1080p, auto-upgrade to 4K" (2026-08-14 to 2026-11-09). Starts at
+        # 1080p and upgrades to 4K over time. Profile id 7 in Sonarr.
+        name: "Series - 4K"
+        min_format_score: -2000
         reset_unmatched_scores:
           enabled: true
 
@@ -179,8 +213,10 @@ sonarr:
       - trash_ids:
           - 47435ece6b99a0b477caf360e79ba0bb  # x265 (HD)
         assign_scores_to:
-          - name: "1080p, auto-upgrade to 4K"
-            score: 0
+          - name: "Series - 1080p"
+            score: -2000
+          - name: "Series - 4K"
+            score: -2000
 
     custom_format_groups:
       add:
@@ -253,9 +289,34 @@ radarr:
           min: 34.5
 
     quality_profiles:
+      # ── Profiles, 2026-11-09 ─────────────────────────────────────────────
+      # "Movies - 4K when available" is the default. "Movies - 1080p" is for
+      # animation and for films with no good 4K release. Renamed in Radarr
+      # first, same as Sonarr above. x265 (HD) at -2000: see Sonarr.
+      - trash_id: d1d67249d3890e49bc12e275d989a7e9  # HD Bluray + WEB
+        name: "Movies - 1080p"
+        min_format_score: -2000
+        reset_unmatched_scores:
+          enabled: true
+        qualities:
+          - name: Bluray-1080p
+          - name: WEB 1080p
+            qualities:
+              - WEBRip-1080p
+              - WEBDL-1080p
+          - name: Bluray-720p
+          - name: WEB 720p
+            qualities:
+              - WEBRip-720p
+              - WEBDL-720p
+        upgrade:
+          allowed: true
+          until_quality: Bluray-1080p
+          until_score: 10000
       - trash_id: d1d67249d3890e49bc12e275d989a7e9  # HD Bluray + WEB
         # Renamed 2026-08-14, same reasoning as the Sonarr profile above.
-        name: "1080p, auto-upgrade to 4K"
+        name: "Movies - 4K when available"
+        min_format_score: -2000
         reset_unmatched_scores:
           enabled: true
 
@@ -323,8 +384,10 @@ radarr:
       - trash_ids:
           - dc98083864ea246d05a42df0d05f81cc  # x265 (HD)
         assign_scores_to:
-          - name: "1080p, auto-upgrade to 4K"
-            score: 0
+          - name: "Movies - 1080p"
+            score: -2000
+          - name: "Movies - 4K when available"
+            score: -2000
 
     custom_format_groups:
       add:
@@ -348,17 +411,18 @@ radarr:
         # each one needs `assign_scores_to` or Recyclarr skips it.
         - trash_id: b2f2af430f73f3ad1f9948f33e0f0cf8  # [Release Groups] HQ
           assign_scores_to:
-            - name: "1080p, auto-upgrade to 4K"
+            - name: "Movies - 4K when available"
           select:
             - 4d74ac4c4db0b64bff6ce0cffef99bf0  # UHD Bluray Tier 01
             - a58f517a70193f8e578056642178419d  # UHD Bluray Tier 02
             - e71939fae578037e7aed3ee219bbe7c1  # UHD Bluray Tier 03
         - trash_id: ef20e67b95a381fb3bc6d1f06ea24f46  # [HDR Formats] HDR
           assign_scores_to:
-            - name: "1080p, auto-upgrade to 4K"
+            - name: "Movies - 4K when available"
         - trash_id: 7fc2751eef7e6bdc70b74136e5e35c76  # [HDR Formats] DV (w/o HDR fallback)
           assign_scores_to:
-            - name: "1080p, auto-upgrade to 4K"
+            - name: "Movies - 4K when available"
+            - name: "Movies - 1080p"
 
       skip: []
     # Radarr HAS a native per-movie language field, unlike Sonarr — no

@@ -38,6 +38,14 @@ GUARD = HELPER + r"""
 module.exports = async (args) => {
   // Output 2 ends the flow: never make a companion of a companion.
   if (isCompanion(args.originalLibraryFile._id)) { args.jobLog('Companion file, skipping'); return done(args, 2); }
+  // Subtitle codec per stream, read by the encode step as subArgs. MKV
+  // cannot hold MP4 mov_text subtitles (ffmpeg: "Subtitle codec 94213 is not
+  // supported", 6 Peep Show episodes failed 2026-11-04), so convert those to
+  // SRT. Copy every other subtitle stream as it is.
+  const subs = ((args.inputFileObj.ffProbeData || {}).streams || []).filter((s) => s.codec_type === 'subtitle');
+  let subArgs = '-c:s copy';
+  subs.forEach((s, i) => { if (s.codec_name === 'mov_text') subArgs += ' -c:s:' + i + ' srt'; });
+  args.variables.user = Object.assign({}, args.variables.user, { subArgs });
   return done(args, 1);
 };
 """
@@ -69,7 +77,7 @@ module.exports = async (args) => {
 COMMON_IN = '-hide_banner -i "{{{args.inputFileObj._id}}}" -map 0:v:0 -map 0:a:0 -map 0:a:0 -map 0:s?'
 COMMON_OUT = (
     '-c:v libx264 -preset medium -profile:v high -crf 22 -maxrate 2500k -bufsize 5000k '
-    '-c:a:0 aac -ac:a:0 2 -b:a:0 192k -c:a:1 copy -c:s copy '
+    '-c:a:0 aac -ac:a:0 2 -b:a:0 192k -c:a:1 copy {{{args.variables.user.subArgs}}} '
     '-disposition:a:0 default -disposition:a:1 0 -disposition:s -default -map_chapters 0 '
     '-max_muxing_queue_size 9999 -y "${outputFilePath}"'
 )

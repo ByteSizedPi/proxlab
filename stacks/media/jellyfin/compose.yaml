@@ -50,11 +50,17 @@ services:
         max-size: "10m"
         max-file: "3"
     networks:
-      - ingress
-      - media
+      ingress: {}
+      media: {}
       # The Cloudflare tunnel (public jellyfin.jjventer.co.za) reaches
       # Jellyfin here. See ../../platform/cloudflared/compose.yaml.
-      - tunnel
+      #
+      # Fixed address, because cloudflared holds 172.31.0.2. Without a fixed
+      # address, Docker gives Jellyfin the first free one. On the 2026-11-07
+      # boot Jellyfin started first and got 172.31.0.2. Then cloudflared failed
+      # with "Address already in use", and the public route was down for 2 days.
+      tunnel:
+        ipv4_address: 172.31.0.3
 
     # ── Real client addresses, configured in Jellyfin, not here ──────────
     #

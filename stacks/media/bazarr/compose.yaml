@@ -12,6 +12,11 @@ services:
       # matches subtitle files against the exact paths Sonarr/Radarr report
       # over their APIs, so its view of /data has to be identical to theirs.
       - ${DATA_ROOT}:/data:Z
+      # Post-processing hook companion-subs.py: copies each new subtitle for
+      # the Tdarr 720p companion, so Jellyfin shows it on that version too.
+      # Set in Bazarr's own config.yaml (postprocessing_cmd), not here.
+      # See docs/media/TRANSCODING.md.
+      - ../scripts:/scripts:ro
 
     # No `ports:` block, same reasoning as prowlarr/compose.yaml — Traefik
     # reaches it over `ingress`.

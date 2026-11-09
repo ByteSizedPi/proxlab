@@ -31,6 +31,13 @@ const companionOf = (orig) => {
   if (!/^\/media\/(movies|tv)\//.test(out)) throw new Error('Refusing path outside /media/movies or /media/tv: ' + out);
   return out;
 };
+// External subtitles of the original ("<original>.en.srt", ".en.forced.srt",
+// ...) belong to the original only in Jellyfin. A copy named after the
+// companion shows on the 720p version too (tested on Parasite, 2026-11-09).
+const SUBEXT = /\.(srt|ass|ssa|vtt)$/i;
+const stem = (p) => path.basename(p).replace(/\.[^.]+$/, '');
+const companionSubs = (dst) => fs.readdirSync(path.dirname(dst))
+  .filter((f) => f.startsWith(stem(dst) + '.') && SUBEXT.test(f));
 const done = (args, n) => ({ outputFileObj: args.inputFileObj, outputNumber: n, variables: args.variables });
 """
 
@@ -38,14 +45,33 @@ GUARD = HELPER + r"""
 module.exports = async (args) => {
   // Output 2 ends the flow: never make a companion of a companion.
   if (isCompanion(args.originalLibraryFile._id)) { args.jobLog('Companion file, skipping'); return done(args, 2); }
-  // Subtitle codec per stream, read by the encode step as subArgs. MKV
-  // cannot hold MP4 mov_text subtitles (ffmpeg: "Subtitle codec 94213 is not
-  // supported", 6 Peep Show episodes failed 2026-11-04), so convert those to
-  // SRT. Copy every other subtitle stream as it is.
-  const subs = ((args.inputFileObj.ffProbeData || {}).streams || []).filter((s) => s.codec_type === 'subtitle');
-  let subArgs = '-c:s copy';
-  subs.forEach((s, i) => { if (s.codec_name === 'mov_text') subArgs += ' -c:s:' + i + ' srt'; });
-  args.variables.user = Object.assign({}, args.variables.user, { subArgs });
+  // Per-file stream selection, read by the encode step as mapArgs and
+  // codecArgs (2026-11-09):
+  //  - Audio 1: AAC stereo, made from the first track. The default track.
+  //  - Audio 2: the first LOSSY track with more than 2 channels, copied, for
+  //    surround on a laptop or soundbar. Never TrueHD/DTS/FLAC: the copied
+  //    TrueHD made the Mad Max companion 7.0 GB, and no phone decodes it.
+  //    No such track: no second track (a stereo copy only repeats track 1).
+  //  - Subtitles: text only. MP4 mov_text becomes SRT (MKV cannot hold
+  //    mov_text). Image subtitles (PGS, VobSub) are dropped: on a phone
+  //    they force Jellyfin to burn them in, a full live transcode. The
+  //    original's external .srt files are copied in the PLACE step instead.
+  const st = (args.inputFileObj.ffProbeData || {}).streams || [];
+  const aud = st.filter((x) => x.codec_type === 'audio');
+  const LOSSY = ['ac3', 'eac3', 'aac', 'mp3', 'opus', 'vorbis'];
+  const sur = aud.findIndex((a) => LOSSY.includes(a.codec_name) && (a.channels || 0) > 2);
+  let mapArgs = '-map 0:v:0 -map 0:a:0';
+  let codecArgs = '-c:a:0 aac -ac:a:0 2 -b:a:0 192k -disposition:a:0 default';
+  if (sur >= 0) { mapArgs += ' -map 0:a:' + sur; codecArgs += ' -c:a:1 copy -disposition:a:1 0'; }
+  const TEXT = ['subrip', 'ass', 'ssa', 'mov_text', 'webvtt', 'text'];
+  let j = 0;
+  st.filter((x) => x.codec_type === 'subtitle').forEach((x, i) => {
+    if (!TEXT.includes(x.codec_name)) return;
+    mapArgs += ' -map 0:s:' + i;
+    codecArgs += ' -c:s:' + j + ' ' + (x.codec_name === 'mov_text' ? 'srt' : 'copy') + ' -disposition:s:' + j + ' 0';
+    j++;
+  });
+  args.variables.user = Object.assign({}, args.variables.user, { mapArgs, codecArgs });
   return done(args, 1);
 };
 """
@@ -59,6 +85,11 @@ module.exports = async (args) => {
   fs.copyFileSync(src, dst + '.partial');
   fs.renameSync(dst + '.partial', dst);
   args.jobLog('Companion written: ' + dst);
+  const orig = args.originalLibraryFile._id, dir = path.dirname(orig), os = stem(orig);
+  fs.readdirSync(dir).filter((f) => f.startsWith(os + '.') && SUBEXT.test(f)).forEach((f) => {
+    fs.copyFileSync(path.join(dir, f), path.join(dir, stem(dst) + f.slice(os.length)));
+    args.jobLog('Subtitle copied for the companion: ' + f);
+  });
   return done(args, 1);
 };
 """
@@ -69,16 +100,24 @@ module.exports = async (args) => {
   // SDR). Remove a stale one so Jellyfin stops offering it.
   const orig = args.originalLibraryFile._id;
   const dst = companionOf(orig);
-  if (dst !== orig && fs.existsSync(dst)) { fs.unlinkSync(dst); args.jobLog('Removed stale companion ' + dst); }
+  if (dst !== orig && fs.existsSync(dst)) {
+    companionSubs(dst).forEach((f) => fs.unlinkSync(path.join(path.dirname(dst), f)));
+    fs.unlinkSync(dst); args.jobLog('Removed stale companion ' + dst);
+  }
   return done(args, 1);
 };
 """
 
-COMMON_IN = '-hide_banner -i "{{{args.inputFileObj._id}}}" -map 0:v:0 -map 0:a:0 -map 0:a:0 -map 0:s?'
+COMMON_IN = '-hide_banner -i "{{{args.inputFileObj._id}}}" {{{args.variables.user.mapArgs}}}'
+# The original's mkvmerge statistics tags (BPS, NUMBER_OF_BYTES, ...) are
+# copied as they are and are then wrong: the Mad Max companion said 20
+# Mbit/s video. An empty value deletes a tag. Language and title tags stay.
+CLEAR_STATS = ' '.join('-metadata:s %s=' % t for t in (
+    'BPS', 'DURATION', 'NUMBER_OF_FRAMES', 'NUMBER_OF_BYTES', '_STATISTICS_TAGS',
+    '_STATISTICS_WRITING_APP', '_STATISTICS_WRITING_DATE_UTC'))
 COMMON_OUT = (
     '-c:v libx264 -preset medium -profile:v high -crf 22 -maxrate 2500k -bufsize 5000k '
-    '-c:a:0 aac -ac:a:0 2 -b:a:0 192k -c:a:1 copy {{{args.variables.user.subArgs}}} '
-    '-disposition:a:0 default -disposition:a:1 0 -disposition:s -default -map_chapters 0 '
+    '{{{args.variables.user.codecArgs}}} -map_chapters 0 ' + CLEAR_STATS + ' '
     '-max_muxing_queue_size 9999 -y "${outputFilePath}"'
 )
 VF_HDR = ('-vf "scale=-2:720,setparams=color_primaries=bt2020:color_trc=smpte2084:colorspace=bt2020nc,'

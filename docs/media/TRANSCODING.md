@@ -211,8 +211,15 @@ This replaces the separate-library plan of 2026-09-10. Three reasons:
 | Height | 720 (never upscaled) | Enough for a phone or a browser tab |
 | HDR source | `tonemapx` bt2390 to bt709 | 43 fps on a 4K HDR10 source, 1.7x real time |
 | Audio track 1 | AAC 2.0, 192k, default | Browsers cannot decode eac3, truehd or dts |
-| Audio track 2 | Original, copied | Keeps 5.1 and 7.1 |
-| Subtitles | All copied, `default` flag removed | A default PGS track would make a browser burn it in. `forced` is kept |
+| Audio track 2 | First lossy surround track (AC3, EAC3, AAC, ...) of the original, copied. None if there is no such track | Keeps 5.1 for a laptop or soundbar. TrueHD, DTS and FLAC are never copied: copied TrueHD made the Mad Max companion 7.0 GB, and no phone decodes it |
+| Subtitles | Text only (SRT, ASS, WebVTT). MP4 `mov_text` becomes SRT. `default` flag removed | MKV cannot hold `mov_text`. Image subtitles (PGS, VobSub) are dropped: on a phone they force a burn-in, which is a full live transcode |
+| External subtitles | The original's `.en.srt` etc. copied as `<companion stem>.en.srt` | Jellyfin shows an external subtitle only on the version whose file name it starts with. The Tdarr flow copies them when it writes the companion. Bazarr runs `stacks/media/scripts/companion-subs.py` as post-processing for later downloads and upgrades |
+| Stream tags | mkvmerge statistics tags (`BPS`, `NUMBER_OF_BYTES`, ...) deleted | The copied values describe the original. The Mad Max companion said 20 Mb/s video |
+
+Changed on 2026-11-09 (audio track 2, subtitles, tags). The 56 companions
+made before that date were remuxed to the new rules with a stream copy, no new
+encode. The Parasite test: Jellyfin listed the English SRT on the 720p version
+only after a copy named after the companion was added.
 
 ### Names
 

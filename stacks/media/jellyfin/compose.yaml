@@ -111,6 +111,17 @@ services:
     # Kept: File Transformation and Plugin Pages, which Jellyfin Enhanced uses.
     # Backup of the earlier state: /config/plugins-backup-2026-09-22.tgz.
     #
+    # 2026-11-09: Media Bar (3.0.2.0, header slideshow) and Home Screen
+    # Sections (3.0.4.0) enabled again, both built for 12.4. Home rows, in
+    # order: Continue Watching/Next Up, Leaving Soon (ui/js), Recently Added
+    # Movies/Series/Audiobooks, Because You Watched, Seerr requests, Upcoming
+    # episodes/movies, Genre. Seerr Discover rows stay OFF (slow, see above).
+    # Per-user overrides OFF, so every account and the TV get one layout.
+    # Set in Jellyfin.Plugin.HomeScreenSections.xml (backup .bak-2026-11-09).
+    # Collection Sections stays disabled.
+    # Same day: "Group movies/shows into collections" OFF (it hid the shows of
+    # "Leaving soon - Shows" from the Series list) and HDR tone mapping ON.
+    #
     # 2026-10-11: Jellyfin Enhanced "Elsewhere" (the streaming-services panel
     # on an item page) set off: ElsewhereEnabled=false in
     # /config/data/plugins/configurations/Jellyfin.Plugin.JellyfinEnhanced.xml.

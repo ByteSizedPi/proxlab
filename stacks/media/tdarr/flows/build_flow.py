@@ -38,6 +38,16 @@ const SUBEXT = /\.(srt|ass|ssa|vtt)$/i;
 const stem = (p) => path.basename(p).replace(/\.[^.]+$/, '');
 const companionSubs = (dst) => fs.readdirSync(path.dirname(dst))
   .filter((f) => f.startsWith(stem(dst) + '.') && SUBEXT.test(f));
+// Log line on ntfy topic srv-log (priority 2, no push). The token is in
+// /app/configs/ntfy-token (CONFIG_ROOT, not git; ntfy user "alerts", label
+// "tdarr"). A failed post never fails the job. See docs/NOTIFICATIONS.md.
+const notify = async (title, msg) => {
+  try {
+    const tok = fs.readFileSync('/app/configs/ntfy-token', 'utf8').trim();
+    await fetch('http://ntfy/srv-log', { method: 'POST', body: msg, signal: AbortSignal.timeout(10000),
+      headers: { Authorization: 'Bearer ' + tok, Title: title, Priority: '2', Tags: 'film_frames' } });
+  } catch (e) { /* notification only */ }
+};
 const done = (args, n) => ({ outputFileObj: args.inputFileObj, outputNumber: n, variables: args.variables });
 """
 
@@ -85,6 +95,8 @@ module.exports = async (args) => {
   fs.copyFileSync(src, dst + '.partial');
   fs.renameSync(dst + '.partial', dst);
   args.jobLog('Companion written: ' + dst);
+  const mb = Math.round(fs.statSync(dst).size / 1e6);
+  await notify('Tdarr: 720p companion', path.basename(dst) + ' (' + mb + ' MB)');
   const orig = args.originalLibraryFile._id, dir = path.dirname(orig), os = stem(orig);
   fs.readdirSync(dir).filter((f) => f.startsWith(os + '.') && SUBEXT.test(f)).forEach((f) => {
     fs.copyFileSync(path.join(dir, f), path.join(dir, stem(dst) + f.slice(os.length)));

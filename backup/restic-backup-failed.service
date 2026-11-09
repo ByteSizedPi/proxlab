@@ -11,14 +11,17 @@ Documentation=file:///home/jj/proxlab/docs/WORK.md
 # Triggered by OnFailure= in restic-backup.service.
 #
 # /etc/restic/ntfy.env (root:root 600, never committed):
-#   NTFY_URL=https://ntfy.admin.jjventer.co.za/alerts
-#   NTFY_USER=alerts
-#   NTFY_PASSWORD=<the alerts password, see stacks/platform/ntfy/ntfy.env>
+#   NTFY_URL=https://ntfy.admin.jjventer.co.za/srv-urgent
+#   NTFY_TOKEN=<ntfy token of user "alerts", label "restic">
+#
+# 2026-11-09: moved from topic `alerts` (user/password) to `srv-urgent` with
+# a token, priority urgent (5), which overrides Do Not Disturb on the phone.
+# See docs/NOTIFICATIONS.md for the topic scheme.
 
 [Service]
 Type=oneshot
 EnvironmentFile=/etc/restic/ntfy.env
-ExecStart=/bin/sh -c 'curl -fsS --max-time 20 -u "$NTFY_USER:$NTFY_PASSWORD" \
-  -H "Title: pve-prod backup FAILED" -H "Priority: high" -H "Tags: warning" \
+ExecStart=/bin/sh -c 'curl -fsS --max-time 20 -H "Authorization: Bearer $NTFY_TOKEN" \
+  -H "Title: pve-prod backup FAILED" -H "Priority: urgent" -H "Tags: rotating_light" \
   -d "restic-backup.service failed at $(date -Is). Read: journalctl -u restic-backup -n 50" \
   "$NTFY_URL"'

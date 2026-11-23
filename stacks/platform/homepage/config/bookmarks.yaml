@@ -38,9 +38,6 @@
     - Seerr:
         - icon: jellyseerr.png
           href: https://seerr.admin.jjventer.co.za
-    - Plex:
-        - icon: plex.png
-          href: https://plex.admin.jjventer.co.za
     - Immich:
         - icon: immich.png
           href: https://immich.admin.jjventer.co.za

@@ -36,6 +36,11 @@ services:
       - NTFY_AUTH_FILE=/var/lib/ntfy/auth.db
       - NTFY_ATTACHMENT_CACHE_DIR=/var/lib/ntfy/attachments
 
+      # How long the server keeps messages. The default is 12h, which made
+      # `srv-log` useless as a history: a phone that was off the tailnet for
+      # a day missed messages for good. 30 days of this traffic is a few MB.
+      - NTFY_CACHE_DURATION=720h
+
       # ⚠️ THIS IS THE ACCESS CONTROL. Default is read-write for anonymous
       # users, which on a server reachable by anything on 10.42.0.0/24 means
       # any device can publish to, and read, every topic. deny-all inverts

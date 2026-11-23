@@ -20,7 +20,7 @@
 ##                                           (prowlarr, radarr, sonarr,
 ##                                            bazarr, qbittorrent, tdarr)
 ##                           + streaming    consumption
-##                                           (jellyfin, plex, seerr)
+##                                           (jellyfin, seerr)
 ##                 platform  + ingress      traefik, cloudflared
 ##                           + security     authelia, crowdsec,
 ##                                           docker-socket-proxy
@@ -145,6 +145,7 @@ file_paths = ["compose.yaml"]
 #
 #   AIRVPN_WG_PRIVATE_KEY     [Interface] PrivateKey
 #   AIRVPN_WG_PRESHARED_KEY   [Peer] PresharedKey
+#   GLUETUN_CONTROL_API_KEY   openssl rand -hex 32 (also used by homepage)
 #
 # WireGuard keys are base64 and never contain `$`, so compose's
 # substitution in env-file values cannot mangle them.
@@ -152,6 +153,7 @@ file_paths = ["compose.yaml"]
 environment = """
 AIRVPN_WG_PRIVATE_KEY=[[AIRVPN_WG_PRIVATE_KEY]]
 AIRVPN_WG_PRESHARED_KEY=[[AIRVPN_WG_PRESHARED_KEY]]
+GLUETUN_CONTROL_API_KEY=[[GLUETUN_CONTROL_API_KEY]]
 """
 env_file_path = "komodo.env"
 additional_env_files = ["../../common.env", "qbittorrent.env", "airvpn.env"]
@@ -302,28 +304,6 @@ shell_mode = true
 
 
 [[stack]]
-name = "plex"
-tags = ["media", "streaming"]
-[stack.config]
-server = "pve-prod"
-
-# --- Source ---
-repo = "ByteSizedPi/proxlab"
-branch = "main"
-run_directory = "stacks/media/plex"
-file_paths = ["compose.yaml"]
-
-# --- Environment ---
-env_file_path = "komodo.env"
-additional_env_files = ["../../common.env", "plex.env"]
-
-# --- Automation ---
-webhook_enabled = false
-auto_update = true
-poll_for_updates = true
-
-
-[[stack]]
 name = "tdarr"
 tags = ["media", "arr"]
 [stack.config]
@@ -457,9 +437,9 @@ file_paths = ["compose.yaml"]
 #   PROWLARR_API_KEY                     Prowlarr  > Settings > General
 #   BAZARR_API_KEY                       Bazarr    > Settings > General
 #   JELLYFIN_API_KEY                     Jellyfin  > Dashboard > API Keys
-#   PLEX_TOKEN                           Plex Preferences.xml, PlexOnlineToken
 #   SEERR_API_KEY                        Seerr     > Settings > General
 #   KOMODO_API_KEY / KOMODO_API_SECRET   Komodo    > Settings > API Keys
+#   GLUETUN_CONTROL_API_KEY              already exists (qbittorrent stack)
 #   TRAEFIK_DASH_USER / _PASS            the BasicAuth pair on the traefik
 #                                        dashboard router
 #
@@ -471,12 +451,12 @@ RADARR_API_KEY=[[RADARR_API_KEY]]
 PROWLARR_API_KEY=[[PROWLARR_API_KEY]]
 BAZARR_API_KEY=[[BAZARR_API_KEY]]
 JELLYFIN_API_KEY=[[JELLYFIN_API_KEY]]
-PLEX_TOKEN=[[PLEX_TOKEN]]
 SEERR_API_KEY=[[SEERR_API_KEY]]
 QBITTORRENT_USERNAME=[[QBITTORRENT_USERNAME]]
 QBITTORRENT_PASSWORD=[[QBITTORRENT_PASSWORD]]
 KOMODO_API_KEY=[[KOMODO_API_KEY]]
 KOMODO_API_SECRET=[[KOMODO_API_SECRET]]
+GLUETUN_CONTROL_API_KEY=[[GLUETUN_CONTROL_API_KEY]]
 TRAEFIK_DASH_USER=[[TRAEFIK_DASH_USER]]
 TRAEFIK_DASH_PASS=[[TRAEFIK_DASH_PASS]]
 """

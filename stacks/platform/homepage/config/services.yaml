@@ -36,17 +36,6 @@
           enableUser: true
           showEpisodeNumber: true
 
-    - Plex:
-        icon: plex.png
-        href: https://plex.admin.jjventer.co.za
-        description: Media server, for TVs with no Jellyfin client
-        server: pve-prod
-        container: plex
-        widget:
-          type: plex
-          url: http://plex:32400
-          key: "{{HOMEPAGE_VAR_PLEX_TOKEN}}"
-
     - Seerr:
         icon: jellyseerr.png
         href: https://seerr.admin.jjventer.co.za
@@ -168,6 +157,18 @@
           # enableLeechProgress deliberately OFF, same reason as the *arr
           # queues: it draws a progress bar per active torrent. The widget
           # still shows leech / download / seed / upload totals.
+
+    - Gluetun:
+        icon: gluetun.png
+        description: AirVPN WireGuard tunnel and kill switch for qBittorrent
+        server: pve-prod
+        container: gluetun
+        # Shows the exit IP and country. If the country is not Netherlands,
+        # or the widget errors, the tunnel is down and qBittorrent is offline.
+        widget:
+          type: gluetun
+          url: http://gluetun:8000
+          key: "{{HOMEPAGE_VAR_GLUETUN_KEY}}"
 
 - Platform:
     - Traefik:
@@ -310,6 +311,13 @@
         #   url: http://freshrss:80
         #   username: "{{HOMEPAGE_VAR_FRESHRSS_USER}}"
         #   password: "{{HOMEPAGE_VAR_FRESHRSS_PASS}}"
+
+    - OpenProject:
+        icon: openproject.png
+        href: https://projects.admin.jjventer.co.za
+        description: Project management (work stack)
+        server: pve-prod
+        container: openproject
 
 # ── Not containers on pve-prod ───────────────────────────────────
 #
@@ -454,3 +462,9 @@
         description: NO WEB UI. Read-only docker API for Netdata, CONTAINERS only
         server: pve-prod
         container: netdata-socket-proxy
+
+    - OpenProject PostgreSQL:
+        icon: postgres.png
+        description: NO WEB UI. OpenProject's database
+        server: pve-prod
+        container: openproject_postgres

@@ -43,6 +43,12 @@ services:
       - WIREGUARD_MTU=${AIRVPN_WG_MTU:?}
       - SERVER_COUNTRIES=${AIRVPN_SERVER_COUNTRIES:?}
       - FIREWALL_VPN_INPUT_PORTS=${AIRVPN_FORWARDED_PORT:?}
+      # Control server (:8000) needs an API key on every route. Without
+      # one, any container on `ingress` or `media` could stop the VPN with
+      # PUT /v1/vpn/status, and gluetun v3.41 logs that these routes will
+      # lose anonymous access in a later release anyway. Homepage's gluetun
+      # widget sends the same key (GLUETUN_CONTROL_API_KEY, Komodo Variable).
+      - 'HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE={"auth":"apikey","apikey":"${GLUETUN_CONTROL_API_KEY:?}"}'
     # No `ports:` block. Traefik reaches the WebUI over `ingress`, and peers
     # arrive through the tunnel, not through a host port (the ISP blocks
     # inbound anyway).

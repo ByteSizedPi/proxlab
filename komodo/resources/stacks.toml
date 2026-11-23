@@ -935,6 +935,76 @@ path = ""
 command = "mountpoint -q /mnt/work && sh ../../platform/authentik/check-secrets.sh komodo.env && mkdir -p /mnt/work/openproject/assets /mnt/work/openproject/postgres"
 shell_mode = true
 
+[[stack]]
+name = "homarr"
+tags = ["platform", "monitoring"]
+[stack.config]
+server = "pve-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/platform/homarr"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+# On trial next to Homepage from 2026-11-23. One secret, a Komodo Variable
+# with "Secret" enabled. Create it before the first deploy:
+#
+#   HOMARR_SECRET_ENCRYPTION_KEY   openssl rand -hex 32
+#                                  ⚠️ Never change it after the first start.
+#                                  Homarr encrypts every saved integration
+#                                  credential with it.
+environment = """
+HOMARR_SECRET_ENCRYPTION_KEY=[[HOMARR_SECRET_ENCRYPTION_KEY]]
+"""
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "homarr.env"]
+
+# --- Automation ---
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+# --- Pre-deploy: refuse unresolved secrets, then create the data dir ---
+# The guard is authentik's script, shared the same way openproject uses it.
+# A placeholder key would be accepted by Homarr and would encrypt every
+# integration credential with text that is public in this repo.
+[stack.config.pre_deploy]
+path = ""
+command = "sh ../../platform/authentik/check-secrets.sh komodo.env && mkdir -p /mnt/docker-data/appdata/homarr"
+shell_mode = true
+
+
+[[stack]]
+name = "beszel"
+tags = ["platform", "monitoring"]
+[stack.config]
+server = "pve-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/platform/beszel"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+# On trial next to Netdata from 2026-11-23. No secrets: the agent needs only
+# the hub's public key, which is in beszel.env.
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "beszel.env"]
+
+# --- Automation ---
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+# --- Pre-deploy: create the hub, agent and shared socket directories ---
+[stack.config.pre_deploy]
+path = ""
+command = "mkdir -p /mnt/docker-data/appdata/beszel/hub /mnt/docker-data/appdata/beszel/agent /mnt/docker-data/appdata/beszel/socket"
+shell_mode = true
+
 ## ── Komodo Core is deliberately NOT here ────────────────────────────────
 ##
 ## Core and Periphery are updated by scripts/update-komodo.sh, driven by

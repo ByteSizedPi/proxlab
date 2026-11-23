@@ -1,0 +1,94 @@
+# Beszel: light host and container monitoring (CPU, memory, network, disk)
+# with history and alerts. On trial from 2026-11-23 next to Netdata, as the
+# "btop-like" view. If it stays, Netdata goes.
+#
+# Two parts:
+#   - beszel        the hub: web UI, stores history (PocketBase, SQLite).
+#   - beszel-agent  collects the numbers on pve-prod. Host network, because
+#                   that is the only way it sees the host's real network
+#                   interfaces (Beszel's docs say the same).
+#
+# The hub talks to the agent over a unix socket in a shared directory, the
+# local setup Beszel's docs recommend. Nothing listens on a TCP port, so the
+# agent is not reachable from the LAN or the tailnet.
+#
+# No secrets. The agent needs only the hub's PUBLIC key (BESZEL_HUB_PUBLIC_KEY
+# in beszel.env), which the hub generates on its first start.
+
+services:
+  beszel:
+    image: henrygd/beszel:latest
+    container_name: beszel
+    environment:
+      - TZ=${TZ}
+      - APP_URL=https://beszel.${ADMIN_DOMAIN}
+    volumes:
+      - ${CONFIG_ROOT}/beszel/hub:/beszel_data
+      - ${CONFIG_ROOT}/beszel/socket:/beszel_socket
+    security_opt:
+      - no-new-privileges:true
+    # The image ships no healthcheck. This is the one from Beszel's own
+    # example compose (commented out there), with a shorter interval.
+    healthcheck:
+      test: ["CMD", "/beszel", "health", "--url", "http://localhost:8090"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ingress
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.beszel.rule=Host(`beszel.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.beszel.loadbalancer.server.port=8090"
+      # Forward auth on top of Beszel's own login, same tier as the *arr
+      # apps. See docs/AUTH.md and netdata/compose.yaml for why the
+      # middleware sits on the router, not the entrypoint.
+      - "traefik.http.routers.beszel.middlewares=authentik@file"
+
+  # beszel-agent is added in phase 2, once the hub has generated its key
+  # pair and BESZEL_HUB_PUBLIC_KEY is in beszel.env.
+
+  # ── Beszel's OWN socket proxy ──────────────────────────────────────────
+  # CONTAINERS only (list, inspect, stats), read-only. Beszel's docs say it
+  # "only needs read access to container information". Its own instance, not
+  # a shared one: see netdata/compose.yaml for why.
+  beszel-socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: beszel-socket-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - CONTAINERS=1
+      - PING=1
+      - VERSION=1
+      - POST=0
+    # Loopback only. The agent runs on the host network and cannot join a
+    # Docker network, so it reaches the proxy through this published port.
+    ports:
+      - "127.0.0.1:23750:2375"
+    security_opt:
+      - no-new-privileges:true
+      - label=disable
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:2375/_ping | grep -q OK"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  ingress:
+    external: true

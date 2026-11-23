@@ -1,0 +1,102 @@
+# Homarr: dashboard with service integrations, a container table and a
+# Ctrl+K launcher. On trial from 2026-11-23 next to Homepage. If it stays,
+# Homepage goes.
+#
+# ⚠️ Homarr keeps its boards, apps and integrations in its own database
+# (${CONFIG_ROOT}/homarr/db/db.sqlite), set up in its web UI. Only this
+# compose file is in git. That breaks the repo's "everything in git" rule,
+# which was accepted for the trial. The restic config backup covers the
+# database because it is under CONFIG_ROOT.
+#
+# Login: Authentik forward auth on the router, plus Homarr's own account.
+# Homarr supports OIDC (AUTH_PROVIDERS=oidc), which would remove the second
+# login. Set that up only if Homarr is kept.
+
+services:
+  homarr:
+    # :v2, not :latest. Homarr's docs warn that :latest can move to a new
+    # major version.
+    image: ghcr.io/homarr-labs/homarr:v2
+    container_name: homarr
+    depends_on:
+      homarr-socket-proxy:
+        condition: service_healthy
+    environment:
+      - TZ=${TZ}
+      # Encrypts the integration credentials stored in the database. Must
+      # never change after the first start, or every saved integration
+      # becomes unreadable. Komodo Variable, see stacks.toml.
+      - SECRET_ENCRYPTION_KEY=${HOMARR_SECRET_ENCRYPTION_KEY:?}
+      - BASE_URL=https://homarr.${ADMIN_DOMAIN}
+      # Docker stats come from this stack's own read-only proxy, never from
+      # docker.sock. Homarr's container actions (start, stop, remove) need
+      # POST=1 and will fail. That is on purpose.
+      - DOCKER_HOSTNAMES=homarr-socket-proxy
+      - DOCKER_PORTS=2375
+    volumes:
+      - ${CONFIG_ROOT}/homarr:/appdata
+    security_opt:
+      - no-new-privileges:true
+    # Healthcheck: the image ships its own (HEAD /api/health/live, checked
+    # with docker inspect on 2026-11-23), so none is set here.
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ingress
+      # Integrations call each service by container name over `media`, the
+      # same way Homepage's widgets do. Services that are only on `ingress`
+      # (Immich, Netdata, Beszel, ntfy, gluetun) are reached over `ingress`.
+      - media
+      - docker-api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.homarr.rule=Host(`homarr.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.homarr.loadbalancer.server.port=7575"
+      # See netdata/compose.yaml for why the middleware is on the router.
+      - "traefik.http.routers.homarr.middlewares=authentik@file"
+
+  # ── Homarr's OWN socket proxy ──────────────────────────────────────────
+  # CONTAINERS only (list, inspect, stats), POST=0. See netdata/compose.yaml
+  # for why each consumer gets its own instance.
+  homarr-socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: homarr-socket-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - CONTAINERS=1
+      - PING=1
+      - VERSION=1
+      - POST=0
+    security_opt:
+      - no-new-privileges:true
+      - label=disable
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:2375/_ping | grep -q OK"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - docker-api
+
+networks:
+  ingress:
+    external: true
+  media:
+    external: true
+  # Project-local and internal, so nothing outside this stack can reach the
+  # proxy. Same pattern as every other docker-api network in this repo.
+  docker-api:
+    driver: bridge
+    internal: true

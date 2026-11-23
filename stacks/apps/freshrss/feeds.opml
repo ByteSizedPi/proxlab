@@ -1,98 +1,78 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Starter subscription list for FreshRSS.
+  FreshRSS subscription list, rebuilt 2026-11-23 for the daily digest.
 
-  The running container never reads this file. It is mounted read only at
-  /opml/feeds.opml and imported once by hand. The command is in compose.yaml,
-  above the volume that mounts it.
+  FreshRSS is the single collector: the digest job (stacks/apps/digest) reads
+  new items from FreshRSS over its API, and JJ reads the same feeds on his
+  phone. Add or remove a source here, then import it (command in
+  compose.yaml). An import only ADDS feeds, and it does not move a feed
+  that already exists to a new category. Remove or move feeds in the
+  FreshRSS UI (Subscription management).
 
-  Importing is manual on purpose. If it ran on every deploy, every feed you
-  unsubscribed from would come back the next time a commit touched this
-  stack. Re-running the import is safe: FreshRSS matches on xmlUrl and skips
-  feeds that already exist.
-
-  Every URL below returned HTTP 200 and XML when checked on 2026-09-08.
-  Reddit is deliberately absent: www.reddit.com/r/*.rss answers 403 and 429 to
-  anything that is not a browser, so those feeds would fail on every refresh.
+  Every URL returned HTTP 200 and XML from pve-prod on 2026-11-23.
+  Dropped as dead: News24 (no working feed URL), AP News (403).
+  Removed on purpose: the Rust, security and Phoronix/Fedora groups.
 -->
 <opml version="2.0">
   <head>
-    <title>jj homelab starter feeds</title>
+    <title>jj feeds for FreshRSS and the daily digest</title>
   </head>
   <body>
-    <outline text="Homelab" title="Homelab">
-      <outline type="rss" text="selfh.st" title="selfh.st"
-               xmlUrl="https://selfh.st/rss/" htmlUrl="https://selfh.st/"/>
-      <outline type="rss" text="Proxmox VE announcements" title="Proxmox VE announcements"
-               xmlUrl="https://forum.proxmox.com/forums/proxmox-ve-announcements.16/index.rss"
-               htmlUrl="https://forum.proxmox.com/forums/proxmox-ve-announcements.16/"/>
-      <outline type="rss" text="Traefik blog" title="Traefik blog"
-               xmlUrl="https://traefik.io/rss.xml" htmlUrl="https://traefik.io/blog/"/>
-      <outline type="rss" text="Tailscale blog" title="Tailscale blog"
-               xmlUrl="https://tailscale.com/blog/index.xml" htmlUrl="https://tailscale.com/blog/"/>
-      <outline type="rss" text="Docker blog" title="Docker blog"
-               xmlUrl="https://www.docker.com/feed/" htmlUrl="https://www.docker.com/blog/"/>
-      <outline type="rss" text="Jellyfin blog" title="Jellyfin blog"
-               xmlUrl="https://jellyfin.org/index.xml" htmlUrl="https://jellyfin.org/posts/"/>
+    <!-- Release notes for what runs on jj-laptop. -->
+    <outline text="Desktop releases" title="Desktop releases">
+      <outline type="rss" text="Hyprland" title="Hyprland" xmlUrl="https://github.com/hyprwm/Hyprland/releases.atom"/>
+      <outline type="rss" text="niri" title="niri" xmlUrl="https://github.com/YaLTeR/niri/releases.atom"/>
+      <outline type="rss" text="Noctalia" title="Noctalia" xmlUrl="https://github.com/noctalia-dev/noctalia-shell/releases.atom"/>
+      <outline type="rss" text="zellij" title="zellij" xmlUrl="https://github.com/zellij-org/zellij/releases.atom"/>
+      <outline type="rss" text="kitty" title="kitty" xmlUrl="https://github.com/kovidgoyal/kitty/releases.atom"/>
+      <outline type="rss" text="Neovim" title="Neovim" xmlUrl="https://github.com/neovim/neovim/releases.atom"/>
+      <outline type="rss" text="yazi" title="yazi" xmlUrl="https://github.com/sxyazi/yazi/releases.atom"/>
+      <outline type="rss" text="Zed" title="Zed" xmlUrl="https://github.com/zed-industries/zed/releases.atom"/>
+      <outline type="rss" text="Zen browser" title="Zen browser" xmlUrl="https://github.com/zen-browser/desktop/releases.atom"/>
+      <outline type="rss" text="RapidRAW" title="RapidRAW" xmlUrl="https://github.com/CyberTimon/RapidRAW/releases.atom"/>
+      <outline type="rss" text="espanso" title="espanso" xmlUrl="https://github.com/espanso/espanso/releases.atom"/>
+      <outline type="rss" text="Obsidian" title="Obsidian" xmlUrl="https://github.com/obsidianmd/obsidian-releases/releases.atom"/>
+      <outline type="rss" text="Claude Code" title="Claude Code" xmlUrl="https://github.com/anthropics/claude-code/releases.atom"/>
     </outline>
-    <outline text="Releases" title="Releases">
-      <outline type="rss" text="Komodo releases" title="Komodo releases"
-               xmlUrl="https://github.com/moghtech/komodo/releases.atom"
-               htmlUrl="https://github.com/moghtech/komodo/releases"/>
-      <outline type="rss" text="Traefik releases" title="Traefik releases"
-               xmlUrl="https://github.com/traefik/traefik/releases.atom"
-               htmlUrl="https://github.com/traefik/traefik/releases"/>
-      <outline type="rss" text="Jellyfin releases" title="Jellyfin releases"
-               xmlUrl="https://github.com/jellyfin/jellyfin/releases.atom"
-               htmlUrl="https://github.com/jellyfin/jellyfin/releases"/>
-      <outline type="rss" text="Immich releases" title="Immich releases"
-               xmlUrl="https://github.com/immich-app/immich/releases.atom"
-               htmlUrl="https://github.com/immich-app/immich/releases"/>
-      <outline type="rss" text="Authentik releases" title="Authentik releases"
-               xmlUrl="https://github.com/goauthentik/authentik/releases.atom"
-               htmlUrl="https://github.com/goauthentik/authentik/releases"/>
-      <outline type="rss" text="CrowdSec releases" title="CrowdSec releases"
-               xmlUrl="https://github.com/crowdsecurity/crowdsec/releases.atom"
-               htmlUrl="https://github.com/crowdsecurity/crowdsec/releases"/>
+    <!-- Release notes for services on pve-prod. -->
+    <outline text="Homelab releases" title="Homelab releases">
+      <outline type="rss" text="Komodo" title="Komodo" xmlUrl="https://github.com/moghtech/komodo/releases.atom"/>
+      <outline type="rss" text="Traefik" title="Traefik" xmlUrl="https://github.com/traefik/traefik/releases.atom"/>
+      <outline type="rss" text="Jellyfin" title="Jellyfin" xmlUrl="https://github.com/jellyfin/jellyfin/releases.atom"/>
+      <outline type="rss" text="Immich" title="Immich" xmlUrl="https://github.com/immich-app/immich/releases.atom"/>
+      <outline type="rss" text="Authentik" title="Authentik" xmlUrl="https://github.com/goauthentik/authentik/releases.atom"/>
+      <outline type="rss" text="Homarr" title="Homarr" xmlUrl="https://github.com/homarr-labs/homarr/releases.atom"/>
+      <outline type="rss" text="Beszel" title="Beszel" xmlUrl="https://github.com/henrygd/beszel/releases.atom"/>
+      <outline type="rss" text="gluetun" title="gluetun" xmlUrl="https://github.com/qdm12/gluetun/releases.atom"/>
     </outline>
-    <outline text="Rust" title="Rust">
-      <outline type="rss" text="This Week in Rust" title="This Week in Rust"
-               xmlUrl="https://this-week-in-rust.org/rss.xml" htmlUrl="https://this-week-in-rust.org/"/>
-      <outline type="rss" text="Rust Blog" title="Rust Blog"
-               xmlUrl="https://blog.rust-lang.org/feed.xml" htmlUrl="https://blog.rust-lang.org/"/>
-      <outline type="rss" text="Inside Rust" title="Inside Rust"
-               xmlUrl="https://blog.rust-lang.org/inside-rust/feed.xml"
-               htmlUrl="https://blog.rust-lang.org/inside-rust/"/>
-      <outline type="rss" text="Rust releases" title="Rust releases"
-               xmlUrl="https://github.com/rust-lang/rust/releases.atom"
-               htmlUrl="https://github.com/rust-lang/rust/releases"/>
-      <outline type="rss" text="RustSec advisories" title="RustSec advisories"
-               xmlUrl="https://rustsec.org/feed.xml" htmlUrl="https://rustsec.org/advisories/"/>
-      <outline type="rss" text="fasterthanli.me" title="fasterthanli.me"
-               xmlUrl="https://fasterthanli.me/index.xml" htmlUrl="https://fasterthanli.me/"/>
-      <outline type="rss" text="without.boats" title="without.boats"
-               xmlUrl="https://without.boats/index.xml" htmlUrl="https://without.boats/"/>
-    </outline>
-    <outline text="Security" title="Security">
-      <outline type="rss" text="oss-security" title="oss-security"
-               xmlUrl="https://seclists.org/rss/oss-sec.rss" htmlUrl="https://seclists.org/oss-sec/"/>
-      <outline type="rss" text="CISA advisories" title="CISA advisories"
-               xmlUrl="https://www.cisa.gov/cybersecurity-advisories/all.xml"
-               htmlUrl="https://www.cisa.gov/cybersecurity-advisories"/>
-      <outline type="rss" text="Krebs on Security" title="Krebs on Security"
-               xmlUrl="https://krebsonsecurity.com/feed/" htmlUrl="https://krebsonsecurity.com/"/>
-    </outline>
+    <!-- Few, high-signal sources. HN only above 300 points. -->
     <outline text="Tech news" title="Tech news">
-      <outline type="rss" text="Hacker News front page" title="Hacker News front page"
-               xmlUrl="https://hnrss.org/frontpage" htmlUrl="https://news.ycombinator.com/"/>
-      <outline type="rss" text="LWN" title="LWN"
-               xmlUrl="https://lwn.net/headlines/newrss" htmlUrl="https://lwn.net/"/>
-      <outline type="rss" text="Ars Technica" title="Ars Technica"
-               xmlUrl="https://feeds.arstechnica.com/arstechnica/index" htmlUrl="https://arstechnica.com/"/>
-      <outline type="rss" text="Phoronix" title="Phoronix"
-               xmlUrl="https://www.phoronix.com/rss.php" htmlUrl="https://www.phoronix.com/"/>
-      <outline type="rss" text="Fedora Magazine" title="Fedora Magazine"
-               xmlUrl="https://fedoramagazine.org/feed/" htmlUrl="https://fedoramagazine.org/"/>
+      <outline type="rss" text="LWN" title="LWN" xmlUrl="https://lwn.net/headlines/rss"/>
+      <outline type="rss" text="selfh.st" title="selfh.st" xmlUrl="https://selfh.st/rss/"/>
+      <outline type="rss" text="Hacker News 300+" title="Hacker News 300+" xmlUrl="https://hnrss.org/frontpage?points=300"/>
+      <outline type="rss" text="The Verge" title="The Verge" xmlUrl="https://www.theverge.com/rss/index.xml"/>
+      <outline type="rss" text="Ars Technica" title="Ars Technica" xmlUrl="https://feeds.arstechnica.com/arstechnica/index"/>
+      <outline type="rss" text="TechCrunch" title="TechCrunch" xmlUrl="https://techcrunch.com/feed/"/>
+    </outline>
+
+    <outline text="World news" title="World news">
+      <outline type="rss" text="BBC World" title="BBC World" xmlUrl="https://feeds.bbci.co.uk/news/world/rss.xml"/>
+      <outline type="rss" text="Al Jazeera" title="Al Jazeera" xmlUrl="https://www.aljazeera.com/xml/rss/all.xml"/>
+      <outline type="rss" text="The Guardian World" title="The Guardian World" xmlUrl="https://www.theguardian.com/world/rss"/>
+    </outline>
+
+    <outline text="South Africa" title="South Africa">
+      <outline type="rss" text="Daily Maverick" title="Daily Maverick" xmlUrl="https://www.dailymaverick.co.za/dmrss/"/>
+      <outline type="rss" text="BusinessTech" title="BusinessTech" xmlUrl="https://businesstech.co.za/news/feed/"/>
+      <outline type="rss" text="Moneyweb" title="Moneyweb" xmlUrl="https://www.moneyweb.co.za/feed/"/>
+    </outline>
+    <!-- FT and Economist are paywalled: headlines and summaries only. -->
+    <outline text="Business and markets" title="Business and markets">
+      <outline type="rss" text="Financial Times" title="Financial Times" xmlUrl="https://www.ft.com/rss/home"/>
+      <outline type="rss" text="The Economist business" title="The Economist business" xmlUrl="https://www.economist.com/business/rss.xml"/>
+      <outline type="rss" text="The Economist finance" title="The Economist finance" xmlUrl="https://www.economist.com/finance-and-economics/rss.xml"/>
+      <outline type="rss" text="CNBC Markets" title="CNBC Markets" xmlUrl="https://www.cnbc.com/id/10000664/device/rss/rss.html"/>
+      <outline type="rss" text="BBC Business" title="BBC Business" xmlUrl="https://feeds.bbci.co.uk/news/business/rss.xml"/>
     </outline>
   </body>
 </opml>

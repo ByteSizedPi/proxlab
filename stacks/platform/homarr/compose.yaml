@@ -58,6 +58,15 @@ services:
       - "traefik.http.services.homarr.loadbalancer.server.port=7575"
       # See netdata/compose.yaml for why the middleware is on the router.
       - "traefik.http.routers.homarr.middlewares=authentik@file"
+      #
+      # MCP endpoint WITHOUT Authentik (added 2026-11-23). MCP clients
+      # (Claude Code) cannot complete an Authentik browser login and got a
+      # 302. Homarr protects this path itself: without an `ApiKey` header it
+      # answers 401. Exact path only, so the rest of Homarr keeps both logins.
+      # The higher priority makes Traefik pick this router before `homarr`.
+      - "traefik.http.routers.homarr-mcp.rule=Host(`homarr.${ADMIN_DOMAIN}`) && Path(`/api/mcp`)"
+      - "traefik.http.routers.homarr-mcp.priority=1000"
+      - "traefik.http.routers.homarr-mcp.service=homarr"
 
   # ── Homarr's OWN socket proxy ──────────────────────────────────────────
   # CONTAINERS only (list, inspect, stats), POST=0. See netdata/compose.yaml

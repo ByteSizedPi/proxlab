@@ -1002,7 +1002,7 @@ poll_for_updates = true
 # --- Pre-deploy: create the hub, agent and shared socket directories ---
 [stack.config.pre_deploy]
 path = ""
-command = "mkdir -p /mnt/docker-data/appdata/beszel/hub /mnt/docker-data/appdata/beszel/agent /mnt/docker-data/appdata/beszel/socket"
+command = "mkdir -p /mnt/docker-data/appdata/beszel/hub /mnt/docker-data/appdata/beszel/agent /mnt/docker-data/appdata/beszel/socket /mnt/data/.beszel"
 shell_mode = true
 
 ## ── Komodo Core is deliberately NOT here ────────────────────────────────

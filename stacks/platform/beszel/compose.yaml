@@ -69,6 +69,10 @@ services:
     volumes:
       - ${CONFIG_ROOT}/beszel/agent:/var/lib/beszel-agent
       - ${CONFIG_ROOT}/beszel/socket:/beszel_socket
+      # The 3 TB media disk. Beszel reports a second disk when any folder on
+      # it is mounted under /extra-filesystems/. An empty marker folder is
+      # enough, so the agent never sees the media itself.
+      - ${DATA_ROOT}/.beszel:/extra-filesystems/data:ro
     security_opt:
       - no-new-privileges:true
     healthcheck:

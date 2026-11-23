@@ -1104,3 +1104,21 @@ repo or Komodo. Stopped and set to `restart=no` with
 `docker update --restart=no postgres`. Files untouched. ezstream is a dev
 project and belongs on its own dev network, not on pve-prod's LAN or tailnet
 address. To run it again before that exists, bind it to `127.0.0.1:5432`.
+
+## pve: read-only API token for Homarr (2026-11-23)
+
+Homarr's Proxmox integration needs an API token. Created on `pve`:
+
+```
+pveum user add homarr@pve --comment "Homarr dashboard, read-only (2026-11-23)"
+pveum acl modify / --users homarr@pve --roles PVEAuditor
+pveum user token add homarr@pve homarr --privsep 0 --comment "Homarr"
+```
+
+`PVEAuditor` grants only `*.Audit` privileges (read). The token secret was
+pasted into Homarr's UI and is stored only there and in Proxmox. To revoke:
+`pveum user token remove homarr@pve homarr` (or `pveum user delete homarr@pve`).
+
+The same pass created two more credentials on pve-prod for Homarr: a Jellyfin
+API key named `Homarr` (Dashboard > API Keys) and an ntfy token labelled
+`homarr` for the read-only user `phone`.

@@ -139,13 +139,36 @@ run_directory = "stacks/media/qbittorrent"
 file_paths = ["compose.yaml"]
 
 # --- Environment ---
+# gluetun (AirVPN WireGuard) runs in this stack in front of qBittorrent.
+# Two secrets, both Komodo Variables with "Secret" enabled. Create BOTH before
+# the deploy. Copy each value from the AirVPN .conf file:
+#
+#   AIRVPN_WG_PRIVATE_KEY     [Interface] PrivateKey
+#   AIRVPN_WG_PRESHARED_KEY   [Peer] PresharedKey
+#
+# WireGuard keys are base64 and never contain `$`, so compose's
+# substitution in env-file values cannot mangle them.
+# Non-secret AirVPN values (address, MTU, country, port) are in airvpn.env.
+environment = """
+AIRVPN_WG_PRIVATE_KEY=[[AIRVPN_WG_PRIVATE_KEY]]
+AIRVPN_WG_PRESHARED_KEY=[[AIRVPN_WG_PRESHARED_KEY]]
+"""
 env_file_path = "komodo.env"
-additional_env_files = ["../../common.env", "qbittorrent.env"]
+additional_env_files = ["../../common.env", "qbittorrent.env", "airvpn.env"]
 
 # --- Automation ---
 webhook_enabled = false
 auto_update = true
 poll_for_updates = true
+
+# --- Pre-deploy: refuse to deploy with unresolved secrets ---
+# Same guard as authentik (see that stack). Without it, a missing Variable
+# reaches gluetun as the literal placeholder text. gluetun would then fail
+# the handshake and qBittorrent would sit offline with no clear error.
+[stack.config.pre_deploy]
+path = ""
+command = "sh check-secrets.sh komodo.env"
+shell_mode = true
 
 
 [[stack]]

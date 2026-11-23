@@ -1,7 +1,83 @@
+# qBittorrent behind gluetun (AirVPN, WireGuard, Netherlands).
+#
+# How the two containers fit together:
+#
+#   - gluetun owns the network stack. It joins `ingress` and `media`, opens
+#     the WireGuard tunnel to AirVPN, and sets a firewall that drops every
+#     packet that is not tunnel traffic or local Docker traffic. If the tunnel
+#     goes down, nothing leaks out of the home connection (kill switch).
+#   - qbittorrent has `network_mode: service:gluetun`. It has no network of
+#     its own. It shares gluetun's interfaces, so all its internet traffic
+#     goes through the tunnel, and its WebUI on :8080 answers on gluetun's
+#     container IPs.
+#
+# gluetun carries the network alias `qbittorrent` on both networks, so
+# Sonarr, Radarr, decluttarr and Homepage still reach `http://qbittorrent:8080`
+# with no change on their side.
+#
+# Incoming peers: AirVPN forwards port 64023 on the Netherlands exit IP down
+# the tunnel. FIREWALL_VPN_INPUT_PORTS lets it through gluetun's firewall, and
+# qBittorrent listens on 64023 (Settings > Connection > Port, set over the API
+# on 2026-11-23). This is what makes the client "connectable" and gets more
+# peers, despite the ISP blocking all inbound traffic at home.
+
 services:
+  gluetun:
+    image: qmcgaw/gluetun:v3
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - TZ=${TZ}
+      - VPN_SERVICE_PROVIDER=airvpn
+      - VPN_TYPE=wireguard
+      # Secrets, from Komodo Variables via komodo.env (see stacks.toml).
+      # Both come from the [Interface] PrivateKey and [Peer] PresharedKey
+      # lines of the AirVPN .conf file.
+      - WIREGUARD_PRIVATE_KEY=${AIRVPN_WG_PRIVATE_KEY:?}
+      - WIREGUARD_PRESHARED_KEY=${AIRVPN_WG_PRESHARED_KEY:?}
+      # Non-secret, from airvpn.env.
+      - WIREGUARD_ADDRESSES=${AIRVPN_WG_ADDRESSES:?}
+      - WIREGUARD_MTU=${AIRVPN_WG_MTU:?}
+      - SERVER_COUNTRIES=${AIRVPN_SERVER_COUNTRIES:?}
+      - FIREWALL_VPN_INPUT_PORTS=${AIRVPN_FORWARDED_PORT:?}
+    # No `ports:` block. Traefik reaches the WebUI over `ingress`, and peers
+    # arrive through the tunnel, not through a host port (the ISP blocks
+    # inbound anyway).
+    #
+    # Healthcheck: the image ships its own (`/gluetun-entrypoint healthcheck`,
+    # checked with docker inspect on v3.41.3), so none is set here.
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      ingress:
+        aliases:
+          - qbittorrent
+      media:
+        aliases:
+          - qbittorrent
+    # Traefik labels live here, not on qbittorrent: Traefik routes to a
+    # container's IP on `ingress`, and only gluetun has one.
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"
+      # entrypoints/tls/middlewares deliberately omitted — see the comment in
+      # prowlarr/compose.yaml, same reasoning applies here.
+
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
+    network_mode: service:gluetun
+    depends_on:
+      gluetun:
+        condition: service_healthy
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -10,25 +86,6 @@ services:
     volumes:
       - ${CONFIG_ROOT}/qbittorrent:/config:Z
       - ${DATA_ROOT}/torrents:/data/torrents:Z
-
-    # Peer port, published on the host to accept incoming BitTorrent
-    # connections.
-    #
-    # ⚠️ Has no effect end-to-end today: the ISP blocks inbound at the WAN
-    # edge (see homelab-constraints memory) and there is no VPN with port
-    # forwarding in front of this container (deliberately skipped 2026-08-02,
-    # see arr-stack-buildout memory — cost, revisit later). Published anyway
-    # so nothing here needs to change if that ever gets fixed.
-    #
-    # The linuxserver image has no env var for the listening port — after
-    # first login, set Settings > Connection > Port to 6881 by hand in the
-    # WebUI so the app's actual listening port matches this publish.
-    ports:
-      - "6881:6881/tcp"
-      - "6881:6881/udp"
-
-    # No published WebUI port. Same reasoning as prowlarr's compose.yaml —
-    # Traefik reaches it over `ingress`, nothing needs a host port for that.
     security_opt:
       - no-new-privileges:true
     healthcheck:
@@ -43,21 +100,9 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    networks:
-      - ingress
-      - media
-
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.${ADMIN_DOMAIN}`)"
-      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"
-      # entrypoints/tls/middlewares deliberately omitted — see the comment in
-      # prowlarr/compose.yaml, same reasoning applies here.
 
 networks:
   ingress:
     external: true
-  # Reserved for when Sonarr/Radarr exist and need to reach qBittorrent's API
-  # directly, same as they'll reach Prowlarr — see prowlarr/compose.yaml.
   media:
     external: true

@@ -21,6 +21,25 @@ cannot set a priority and send priority 3, which would make a sound.
 
 The old topic `alerts` is no longer used.
 
+## Phone
+
+JJ's Android phone uses the ntfy app with the user `phone`, which has
+read-only access to `srv-*` and nothing else (set up 2026-11-23). If the
+phone is lost, remove that user: `docker exec ntfy ntfy user del phone`.
+
+Tailscale is on only when JJ wants it, so alerts arrive when the phone next
+joins the tailnet. ntfy keeps messages for 30 days (`NTFY_CACHE_DURATION`),
+so nothing is lost, only late. Instant delivery is on for each topic, and
+the app's battery setting is Unrestricted.
+
+To test the phone, publish with the `manual-test` token, kept in
+`~/arrtest/ntfy/manual-test` on pve-prod (mode 600):
+
+    T=$(cat ~/arrtest/ntfy/manual-test)
+    docker exec ntfy wget -qO- --header "Authorization: Bearer $T" \
+      --header "Title: Test" --header "Priority: 5" --post-data "hello" \
+      http://localhost:80/srv-urgent
+
 ## Publishers
 
 All publishers use the ntfy user `alerts` (write-only on `alerts` and

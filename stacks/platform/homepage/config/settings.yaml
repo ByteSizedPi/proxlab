@@ -43,6 +43,10 @@ layout:
   # whole page. Raising this to 2 or 3 still aligns them, it just puts several
   # narrower tables beside each other. Above 3 the stat cells stop fitting on
   # one line. Homepage caps `columns` at 8.
+  Load:
+    style: row
+    columns: 1
+    icon: mdi-speedometer
   Media:
     style: row
     columns: 1

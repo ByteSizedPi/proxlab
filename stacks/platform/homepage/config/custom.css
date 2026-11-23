@@ -193,3 +193,21 @@ html .theme-slate {
   --color-logo-start: 202 158 230; /* mauve  #ca9ee6 */
   --color-logo-stop: 129 200 190;  /* teal   #81c8be */
 }
+
+/* ── Top containers table (filled by custom.js) ─────────────────────── */
+.tc-table {
+  display: grid;
+  gap: 2px;
+  padding: 4px 8px 8px;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.tc-row {
+  display: grid;
+  grid-template-columns: 1fr 4.5rem 5.5rem;
+  gap: 8px;
+}
+.tc-row > span:not(:first-child) { text-align: right; }
+.tc-head { opacity: 0.6; font-weight: 600; }
+.tc-mid { color: #e5c890; }  /* one full core or more */
+.tc-high { color: #e78284; } /* four full cores or more */

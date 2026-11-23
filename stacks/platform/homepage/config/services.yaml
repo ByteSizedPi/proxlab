@@ -15,6 +15,36 @@
 # {{HOMEPAGE_VAR_*}} is substituted at runtime from the environment. The keys
 # live in Komodo Variables, never here. See ../compose.yaml.
 
+# ── Load: which container is busy right now ──────────────────────────────
+#
+# Homepage cannot sort an API response, so the two customapi widgets below
+# only FETCH data from Netdata (average over the last 60 s, one value per
+# container). custom.js reads the same data through Homepage's own proxy
+# (/api/services/proxy?group=Load&service=Top containers&index=N), sorts it,
+# and replaces this card's widget area with a top-8 table. If custom.js
+# fails, the card shows the plain widgets below and nothing else breaks.
+#
+# CPU is percent of ONE core (pve-prod has 24, so 2400% is the ceiling).
+# Memory is RAM only, in MiB. Netdata's own CPU is in the list on purpose.
+- Load:
+    - Top containers:
+        icon: netdata.png
+        href: https://netdata.admin.jjventer.co.za
+        description: Busiest containers over the last 60 s (from Netdata)
+        widgets:
+          - type: customapi
+            url: "http://netdata:19999/api/v3/data?group_by=instance&aggregation=sum&time_group=average&after=-60&points=1&format=json2&contexts=cgroup.cpu"
+            refreshInterval: 15000
+            mappings:
+              - field: api
+                label: Loading CPU
+          - type: customapi
+            url: "http://netdata:19999/api/v3/data?group_by=instance&aggregation=sum&time_group=average&after=-60&points=1&format=json2&contexts=cgroup.mem_usage&dimensions=ram"
+            refreshInterval: 15000
+            mappings:
+              - field: api
+                label: Loading memory
+
 - Media:
     - Jellyfin:
         icon: jellyfin.png

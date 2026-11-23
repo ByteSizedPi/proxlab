@@ -52,8 +52,37 @@ services:
       # middleware sits on the router, not the entrypoint.
       - "traefik.http.routers.beszel.middlewares=authentik@file"
 
-  # beszel-agent is added in phase 2, once the hub has generated its key
-  # pair and BESZEL_HUB_PUBLIC_KEY is in beszel.env.
+  beszel-agent:
+    image: henrygd/beszel-agent:latest
+    container_name: beszel-agent
+    network_mode: host
+    depends_on:
+      beszel-socket-proxy:
+        condition: service_healthy
+    environment:
+      - LISTEN=/beszel_socket/beszel.sock
+      - KEY=${BESZEL_HUB_PUBLIC_KEY:?}
+      # Docker API through this stack's own read-only proxy, published on
+      # loopback only. The agent is on the host network, so 127.0.0.1 is
+      # the host itself.
+      - DOCKER_HOST=tcp://127.0.0.1:23750
+    volumes:
+      - ${CONFIG_ROOT}/beszel/agent:/var/lib/beszel-agent
+      - ${CONFIG_ROOT}/beszel/socket:/beszel_socket
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "/agent", "health"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ── Beszel's OWN socket proxy ──────────────────────────────────────────
   # CONTAINERS only (list, inspect, stats), read-only. Beszel's docs say it

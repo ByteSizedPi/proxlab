@@ -102,6 +102,31 @@ services:
       # entrypoints/tls/middlewares deliberately omitted — see the comment in
       # prowlarr/compose.yaml, same reasoning applies here.
 
+  # Tdarr flows have no error hook, so a failed transcode was silent. This
+  # side-car asks Tdarr's API every 15 minutes and posts each new failed file
+  # to ntfy srv-urgent (priority 3). Added 2026-11-24. Code: watch/errors.py.
+  tdarr-error-watch:
+    image: python:3.13-alpine
+    container_name: tdarr-error-watch
+    command: ["python", "-u", "/app/errors.py"]
+    volumes:
+      - ./watch:/app:ro
+      # Same ntfy token the flow uses (user "alerts", label "tdarr").
+      - ${CONFIG_ROOT}/tdarr/configs/ntfy-token:/run/ntfy-token:ro
+      - ${CONFIG_ROOT}/tdarr/error-watch:/state
+    depends_on:
+      - tdarr
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "2"
+    networks:
+      - ingress   # tdarr:8266 and ntfy
+
 networks:
   ingress:
     external: true

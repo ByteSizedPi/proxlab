@@ -61,11 +61,21 @@ HTTPS name.
 | Maintainerr | Settings > Notifications, 3 entries "ntfy: ..." on both rule groups | Rule or collection handling failed | Added to "Leaving soon", about to be deleted (3 days before) | Deleted, removed from collection, update available |
 | Netdata | `${CONFIG_ROOT}/netdata/config/health_alarm_notify.conf` (custom sender) | CRITICAL (priority 5), and its clear | | WARNING and every other change |
 | Tdarr | Flow `flowCompanion720`, PLACE step (`stacks/media/tdarr/flows/build_flow.py`) | | | Companion written |
+| Tdarr errors | Side-car `tdarr-error-watch` (`stacks/media/tdarr/watch/errors.py`), polls every 15 min, token = the flow's | New file in the error table (priority 3) | | |
+| Proxmox `pve` | `/etc/pve/notifications.cfg` on pve: webhook targets `ntfy-urgent`, `ntfy-log`, matchers `to-ntfy-urgent`, `to-ntfy-log` (token label `pve`, copy in `~/arrtest/ntfy/pve` on pve-prod) | Severity error: failed backup, fencing, root mail from smartd and ZED (priority 5) | | info, notice, warning: package updates, finished jobs (priority 2) |
 | restic | `backup/restic-backup-failed.service`, `/etc/restic/ntfy.env` | Backup failed (priority 5) | | |
 | Komodo | Alerters in the Komodo UI (see below) | Server unreachable, disk/CPU/memory, stack or container down, failed procedure | | Image updates, auto-updates |
 
-Not covered: Tdarr transcode errors (Tdarr flows have no error hook), and the
-Proxmox host `pve` (its own notification targets, set on that host).
+Not covered: the iDRAC hardware event log (SEL) on the R720xd. Proxmox does
+not read it.
+
+### Proxmox (`pve`)
+
+Set up 2026-11-24 with `pvesh`. The webhook targets send the token as the
+Proxmox secret `token`, so it is not readable in the config file. The built-in
+`default-matcher` (everything to `mail-to-root`) is unchanged. Test:
+
+    pvesh create /cluster/notifications/targets/ntfy-urgent/test
 
 ### Jellyfin playback filter
 

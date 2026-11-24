@@ -62,6 +62,7 @@ HTTPS name.
 | Netdata | `${CONFIG_ROOT}/netdata/config/health_alarm_notify.conf` (custom sender) | CRITICAL (priority 5), and its clear | | WARNING and every other change |
 | Tdarr | Flow `flowCompanion720`, PLACE step (`stacks/media/tdarr/flows/build_flow.py`) | | | Companion written |
 | Tdarr errors | Side-car `tdarr-error-watch` (`stacks/media/tdarr/watch/errors.py`), polls every 15 min, token = the flow's | New file in the error table (priority 3) | | |
+| Gatus | `stacks/platform/gatus/config/config.yaml`, token in `${CONFIG_ROOT}/gatus/ntfy.env` (label `gatus`) | A check failed 3 times in a row, and its recovery (priority 4) | | |
 | Proxmox `pve` | `/etc/pve/notifications.cfg` on pve: webhook targets `ntfy-urgent`, `ntfy-log`, matchers `to-ntfy-urgent`, `to-ntfy-log` (token label `pve`, copy in `~/arrtest/ntfy/pve` on pve-prod) | Severity error: failed backup, fencing, root mail from smartd and ZED (priority 5) | | info, notice, warning: package updates, finished jobs (priority 2) |
 | restic | `backup/restic-backup-failed.service`, `/etc/restic/ntfy.env` | Backup failed (priority 5) | | |
 | Komodo | Alerters in the Komodo UI (see below) | Server unreachable, disk/CPU/memory, stack or container down, failed procedure | | Image updates, auto-updates |

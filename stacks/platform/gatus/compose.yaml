@@ -1,0 +1,54 @@
+# Gatus: black-box checks. It asks "does each service answer, and is each
+# TLS certificate valid?" from the outside of the container. Netdata and
+# Beszel watch host and container internals. Gatus watches what a user sees.
+# Added 2026-11-24.
+#
+# Checks are in config/config.yaml (in git). Failures go to ntfy srv-urgent
+# after 3 failed checks in a row, with a "resolved" message after recovery.
+# The ntfy token is NOT in git: ${CONFIG_ROOT}/gatus/ntfy.env holds
+# NTFY_GATUS_TOKEN (ntfy user "alerts", token label "gatus", copy in
+# ~/arrtest/ntfy/gatus on pve-prod).
+#
+# ⚠️ Editing only config/config.yaml does NOT redeploy (Komodo redeploys when
+# this file changes). Edit the "Config pass" line in the same commit.
+# Config pass 2026-11-24: first version.
+
+services:
+  gatus:
+    image: ghcr.io/twin/gatus:latest
+    container_name: gatus
+    environment:
+      - TZ=${TZ}
+      - GATUS_CONFIG_PATH=/config/config.yaml
+    env_file:
+      - ${CONFIG_ROOT}/gatus/ntfy.env
+    volumes:
+      - ./config:/config:ro
+      - ${CONFIG_ROOT}/gatus/data:/data
+    extra_hosts:
+      # Komodo Core listens on the host, not on a Docker network.
+      - "host.docker.internal:host-gateway"
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ingress   # every routed service, plus ntfy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gatus.rule=Host(`status.${ADMIN_DOMAIN}`)"
+      - "traefik.http.services.gatus.loadbalancer.server.port=8080"
+      - "traefik.http.routers.gatus.middlewares=authentik@file"
+
+networks:
+  ingress:
+    external: true

@@ -1005,6 +1005,36 @@ path = ""
 command = "mkdir -p /mnt/docker-data/appdata/beszel/hub /mnt/docker-data/appdata/beszel/agent /mnt/docker-data/appdata/beszel/socket /mnt/data/.beszel"
 shell_mode = true
 
+[[stack]]
+name = "gatus"
+tags = ["platform", "monitoring"]
+[stack.config]
+server = "pve-prod"
+
+# --- Source ---
+repo = "ByteSizedPi/proxlab"
+branch = "main"
+run_directory = "stacks/platform/gatus"
+file_paths = ["compose.yaml"]
+
+# --- Environment ---
+# Black-box checks, added 2026-11-24. The ntfy token is not a Komodo
+# Variable: it is in /mnt/docker-data/appdata/gatus/ntfy.env on pve-prod
+# (env_file in compose.yaml), the same pattern as Tdarr's ntfy token.
+env_file_path = "komodo.env"
+additional_env_files = ["../../common.env", "gatus.env"]
+
+# --- Automation ---
+webhook_enabled = false
+auto_update = true
+poll_for_updates = true
+
+# --- Pre-deploy: create the data directory; fail early without the token ---
+[stack.config.pre_deploy]
+path = ""
+command = "mkdir -p /mnt/docker-data/appdata/gatus/data && test -s /mnt/docker-data/appdata/gatus/ntfy.env"
+shell_mode = true
+
 ## ── Komodo Core is deliberately NOT here ────────────────────────────────
 ##
 ## Core and Periphery are updated by scripts/update-komodo.sh, driven by
